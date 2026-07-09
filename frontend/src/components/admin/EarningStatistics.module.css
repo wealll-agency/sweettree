@@ -1,0 +1,136 @@
+.cardContainer {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: none;
+  height: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #343a40;
+  margin: 0;
+}
+
+.buttonGroup {
+  display: flex;
+  border: 1px solid #e0e6ed;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.btn {
+  background: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #007bff;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-right: 1px solid #e0e6ed;
+}
+
+.btn:last-child {
+  border-right: none;
+}
+
+.btn.active {
+  background: #007bff;
+  color: #ffffff;
+}
+
+.legendContainer {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.legendBox {
+  width: 32px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.inHouseBox {
+  background-color: #82ca9d;
+}
+
+.sellerBox {
+  background-color: #007bff;
+}
+
+.commissionBox {
+  background-color: #fca311;
+}
+
+.customTooltip {
+  background-color: #1b253b;
+  border-radius: 6px;
+  padding: 12px;
+  color: #ffffff;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: none;
+}
+
+.tooltipLabel {
+  margin: 0 0 8px 0;
+  font-weight: 600;
+  color: #e0e6ed;
+}
+
+.tooltipItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.tooltipItem:last-child {
+  margin-bottom: 0;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.dotInHouse {
+  background-color: #82ca9d;
+}
+
+.dotSeller {
+  background-color: #007bff;
+}
+
+.dotCommission {
+  background-color: #fca311;
+}
+
+.chartWrapper {
+  width: 100%;
+  height: 300px;
+}

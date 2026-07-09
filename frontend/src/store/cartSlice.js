@@ -1,0 +1,134 @@
+import { createSlice } from '@reduxjs/toolkit';
+
+const getInitialCart = () => {
+  return [];
+};
+
+const calculateTotals = (items, discountPercentage = 0, applicableProducts = []) => {
+  let subtotal = 0;
+  let discountableSubtotal = 0;
+
+  items.forEach(item => {
+    const itemTotal = item.price * item.quantity;
+    subtotal += itemTotal;
+    
+    // If applicableProducts array is empty, we assume it applies to all.
+    // Otherwise, it must include the specific product ID.
+    if (!applicableProducts || applicableProducts.length === 0 || applicableProducts.includes(item.product)) {
+      discountableSubtotal += itemTotal;
+    }
+  });
+
+  const discount = Math.round((discountableSubtotal * discountPercentage) / 100);
+  const taxableAmount = subtotal - discount;
+  const tax = Math.round(taxableAmount * 0.18); // 18% GST
+  const shippingFee = taxableAmount > 500 || items.length === 0 ? 0 : 40;
+  const total = taxableAmount + tax + shippingFee;
+
+  return { subtotal, discount, tax, shippingFee, total };
+};
+
+const cartSlice = createSlice({
+  name: 'cart',
+  initialState: {
+    items: getInitialCart(),
+    couponCode: '',
+    discountPercentage: 0,
+    applicableProducts: [],
+    subtotal: 0,
+    discount: 0,
+    tax: 0,
+    shippingFee: 0,
+    total: 0
+  },
+  reducers: {
+    addToCart: (state, action) => {
+      const { product, quantity, size } = action.payload;
+      const activePrice = product.discount > 0 
+        ? Math.round(product.price * (1 - product.discount / 100))
+        : product.price;
+
+      const existingIndex = state.items.findIndex(
+        item => item.product === product._id && item.size === size
+      );
+
+      if (existingIndex > -1) {
+        state.items[existingIndex].quantity += quantity;
+      } else {
+        state.items.push({
+          product: product._id,
+          name: product.name,
+          price: activePrice,
+          image: product.images[0] || '',
+          quantity,
+          size,
+          maxStock: product.stock
+        });
+      }
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('sweettree_cart', JSON.stringify(state.items));
+      }
+
+      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts);
+      Object.assign(state, totals);
+    },
+    removeFromCart: (state, action) => {
+      const { product, size } = action.payload;
+      state.items = state.items.filter(item => !(item.product === product && item.size === size));
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('sweettree_cart', JSON.stringify(state.items));
+      }
+
+      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts);
+      Object.assign(state, totals);
+    },
+    updateCartQuantity: (state, action) => {
+      const { product, size, quantity } = action.payload;
+      const item = state.items.find(item => item.product === product && item.size === size);
+      if (item) {
+        item.quantity = Math.max(1, Math.min(item.maxStock, quantity));
+      }
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('sweettree_cart', JSON.stringify(state.items));
+      }
+
+      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts);
+      Object.assign(state, totals);
+    },
+    applyCouponCode: (state, action) => {
+      const { code, discountPercentage, applicableProducts } = action.payload;
+      state.couponCode = code;
+      state.discountPercentage = discountPercentage;
+      state.applicableProducts = applicableProducts || [];
+
+      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts);
+      Object.assign(state, totals);
+    },
+    clearCart: (state) => {
+      state.items = [];
+      state.couponCode = '';
+      state.discountPercentage = 0;
+      state.applicableProducts = [];
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('sweettree_cart');
+      }
+      const totals = calculateTotals([], 0, []);
+      Object.assign(state, totals);
+    },
+    recalculateCart: (state) => {
+      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts);
+      Object.assign(state, totals);
+    },
+    hydrateCart: (state, action) => {
+      state.items = action.payload;
+      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts);
+      Object.assign(state, totals);
+    }
+  }
+});
+
+export const { addToCart, removeFromCart, updateCartQuantity, applyCouponCode, clearCart, recalculateCart, hydrateCart } = cartSlice.actions;
+export default cartSlice.reducer;

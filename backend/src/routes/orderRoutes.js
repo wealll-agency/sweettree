@@ -1,0 +1,29 @@
+import express from 'express';
+import {
+  createOrder,
+  verifyPayment,
+  getMyOrders,
+  getOrderById,
+  getAllOrders,
+  updateOrderStatus,
+  processRefund
+} from '../controllers/OrderController.js';
+import { protect, authorizeRoles } from '../middleware/auth.js';
+import { auditRoute } from '../middleware/logger.js';
+
+const router = express.Router();
+
+router.route('/')
+  .post(protect, createOrder)
+  .get(protect, authorizeRoles('Super Admin', 'Manager', 'Staff'), getAllOrders);
+
+router.post('/verify', protect, verifyPayment);
+router.get('/my-orders', protect, getMyOrders);
+
+router.route('/:id')
+  .get(protect, getOrderById);
+
+router.put('/:id/status', protect, authorizeRoles('Super Admin', 'Manager', 'Staff'), auditRoute('UPDATE_ORDER_STATUS'), updateOrderStatus);
+router.post('/:id/refund', protect, authorizeRoles('Super Admin'), auditRoute('PROCESS_REFUND'), processRefund);
+
+export default router;
