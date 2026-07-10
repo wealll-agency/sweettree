@@ -1,8 +1,18 @@
 'use client';
-import React, from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProducts } from '../../store/productsSlice.js';
+import ProductCard from '../../components/ProductCard.jsx';
 
 export default function ShopPage() {
+  const dispatch = useDispatch();
+  const { items: products, loading } = useSelector((state) => state.products);
+
+  useEffect(() => {
+    dispatch(fetchProducts({ limit: 100 }));
+  }, [dispatch]);
+
   return (
     <>
       <div className="marquee-wrapper">
@@ -149,102 +159,39 @@ export default function ShopPage() {
             </div>
 
             <div className="row row-cols-2 row-cols-lg-3 g-2 g-lg-4" id="shopProductGrid">
-              {/* Product 1 */}
-              <div className="col">
-                <div className="Sweettree-product-card">
-                  <Link href="/shop-details?name=Nutraj%20Anmol%20Premium%20Medjool%20Dates%20500gm" className="product-card-link">
-                    <div className="product-img-box">
-                      <div className="product-tags d-flex justify-content-between">
-                        <span className="tag-left">PREMIUM</span>
-                        <span className="tag-right">45% off</span>
-                      </div>
-                      <img src="/top_product1.png" alt="Product" />
+              {loading ? (
+                // Loading placeholders
+                Array(6).fill(0).map((_, idx) => (
+                  <div className="col" key={idx}>
+                    <div className="placeholder-glow">
+                      <div className="placeholder bg-light w-100 rounded mb-2" style={{ height: '260px' }}></div>
+                      <div className="placeholder bg-light col-8 mb-1"></div>
+                      <div className="placeholder bg-light col-4"></div>
                     </div>
-                    <div className="card-divider"></div>
-                    <div className="product-details-content">
-                      <div className="product-meta d-flex justify-content-between align-items-center">
-                        <span className="brand-text">NUTRAJ ANMOL</span>
-                        <div className="rating-heart">
-                          <span className="rating-badge"><i className="fas fa-star"></i> 4.9</span>
-                          <i className="far fa-heart"></i>
-                        </div>
-                      </div>
-                      <h3 className="product-name">Nutraj Anmol Premium Medjool Dates 500gm</h3>
-                      <div className="product-pricing">
-                        MRP: <del>₹1,578</del> <span className="current-price">₹856</span> <span className="per-gram">( ₹171 / 100g )</span>
-                      </div>
-                    </div>
-                  </Link>
-                  <div className="px-3 pb-3">
-                    <button className="Sweettree-btn-cart">Add To Cart</button>
                   </div>
-                </div>
-              </div>
-
-              {/* Product 2 */}
-              <div className="col">
-                <div className="Sweettree-product-card">
-                  <Link href="/shop-details?name=Nutraj%20Anmol%20Walnut%20Kernels%20Premium%20500gm" className="product-card-link">
-                    <div className="product-img-box">
-                      <div className="product-tags d-flex justify-content-between">
-                        <span className="tag-left">PREMIUM</span>
-                        <span className="tag-right">35% off</span>
-                      </div>
-                      <img src="/top_product2.png" alt="Product" />
-                    </div>
-                    <div className="card-divider"></div>
-                    <div className="product-details-content">
-                      <div className="product-meta d-flex justify-content-between align-items-center">
-                        <span className="brand-text">NUTRAJ ANMOL</span>
-                        <div className="rating-heart">
-                          <span className="rating-badge"><i className="fas fa-star"></i> 4.8</span>
-                          <i className="far fa-heart"></i>
-                        </div>
-                      </div>
-                      <h3 className="product-name">Nutraj Anmol Walnut Kernels Premium 500gm</h3>
-                      <div className="product-pricing">
-                        MRP: <del>₹1,499</del> <span className="current-price">₹972</span> <span className="per-gram">( ₹194 / 100g )</span>
-                      </div>
-                    </div>
-                  </Link>
-                  <div className="px-3 pb-3">
-                    <button className="Sweettree-btn-cart">Add To Cart</button>
+                ))
+              ) : products && products.length > 0 ? (
+                products.map((product) => (
+                  <div className="col" key={product._id}>
+                    <ProductCard 
+                      product={{
+                        ...product,
+                        image: product.images?.[0] || product.image || '/placeholder.png',
+                        mrp: product.price,
+                        price: product.discount > 0 ? Math.round(product.price * (1 - product.discount / 100)) : product.price,
+                        brand: 'Sweettree',
+                        tagLeft: product.discount > 0 ? 'PREMIUM' : '',
+                        tagRight: product.discount > 0 ? `${product.discount}% OFF` : '',
+                      }} 
+                    />
                   </div>
+                ))
+              ) : (
+                <div className="col-12 py-5 text-center w-100">
+                  <h4 className="fw-bold mb-2">No Products Found</h4>
+                  <p className="text-muted">There are no products to display at the moment.</p>
                 </div>
-              </div>
-              
-              {/* Product 3 */}
-              <div className="col">
-                <div className="Sweettree-product-card">
-                  <Link href="/shop-details?name=Nutraj%20Anmol%20Jumbo%20Size%20Mamra%20Almonds%20500gm" className="product-card-link">
-                    <div className="product-img-box">
-                      <div className="product-tags d-flex justify-content-between">
-                        <span className="tag-left">PREMIUM</span>
-                        <span className="tag-right">19% off</span>
-                      </div>
-                      <img src="/top_product3.png" alt="Product" />
-                    </div>
-                    <div className="card-divider"></div>
-                    <div className="product-details-content">
-                      <div className="product-meta d-flex justify-content-between align-items-center">
-                        <span className="brand-text">NUTRAJ ANMOL</span>
-                        <div className="rating-heart">
-                          <span className="rating-badge"><i className="fas fa-star"></i> 5.0</span>
-                          <i className="far fa-heart"></i>
-                        </div>
-                      </div>
-                      <h3 className="product-name">Nutraj Anmol Jumbo Size Mamra Almonds 500gm</h3>
-                      <div className="product-pricing">
-                        MRP: <del>₹3,389</del> <span className="current-price">₹2,737</span> <span className="per-gram">( ₹547 / 100g )</span>
-                      </div>
-                    </div>
-                  </Link>
-                  <div className="px-3 pb-3">
-                    <button className="Sweettree-btn-cart">Add To Cart</button>
-                  </div>
-                </div>
-              </div>
-
+              )}
             </div>
             
             {/* Pagination */}

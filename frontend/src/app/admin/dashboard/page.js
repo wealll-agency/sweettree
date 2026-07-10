@@ -5,11 +5,17 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchDashboardStats } from '../../../store/adminSlice.js';
 import Link from 'next/link';
 import { DollarSign, ShoppingBag, Users, AlertTriangle, Star, RefreshCw, Store, Box, Package, Truck, CheckCircle, XCircle, Clock, RotateCcw, ShieldAlert, FileText, Activity } from 'lucide-react';
-import EarningStatistics from '../../../components/admin/EarningStatistics.js';
+import Image from 'next/image';
+import dynamic from 'next/dynamic';
+
+const EarningStatistics = dynamic(() => import('../../../components/admin/EarningStatistics.js'), { 
+  ssr: false,
+  loading: () => <div className="d-flex justify-content-center align-items-center" style={{height: 300}}>Loading chart...</div>
+});
 
 export default function DashboardPage() {
   const dispatch = useDispatch();
-  
+
   const { stats, salesOverview, topProducts, lowStockDetails, loading } = useSelector((state) => state.admin);
   const { user } = useSelector((state) => state.auth);
 
@@ -103,7 +109,7 @@ export default function DashboardPage() {
           { label: 'Out for delivery', count: stats.orderStatuses.Shipped, icon: <Truck size={18} />, color: 'text-brand', query: 'Shipped' },
           { label: 'Delivered', count: stats.orderStatuses.Delivered, icon: <CheckCircle size={18} />, color: 'text-success', query: 'Delivered' },
           { label: 'Canceled', count: stats.orderStatuses.Cancelled, icon: <XCircle size={18} />, color: 'text-danger', query: 'Cancelled' },
-          { label: 'Returned', count: 0, icon: <RotateCcw size={18} />, color: 'text-secondary', query: 'Returned' }, 
+          { label: 'Returned', count: 0, icon: <RotateCcw size={18} />, color: 'text-secondary', query: 'Returned' },
           { label: 'Failed to delivery', count: 0, icon: <ShieldAlert size={18} />, color: 'text-danger', query: 'Failed' }
         ].map((status, idx) => (
           <div key={idx} className="col-6 col-md-3">
@@ -136,11 +142,13 @@ export default function DashboardPage() {
               {topProducts.map((prod) => (
                 <div key={prod._id} className="d-flex align-items-center justify-content-between">
                   <div className="d-flex align-items-center gap-2">
-                    <img
+                    <Image
                       src={prod.image || 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=80'}
                       alt={prod.name}
+                      width={40}
+                      height={40}
                       className="rounded object-fit-cover"
-                      style={{ width: '40px', height: '40px' }}
+                      unoptimized={true}
                     />
                     <div>
                       <span className="fw-bold d-block text-dark fs-7 text-truncate" style={{ maxWidth: '140px' }}>{prod.name}</span>

@@ -1,21 +1,41 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../store/authSlice.js';
 import { clearCart } from '../store/cartSlice.js';
-import { LayoutDashboard, ShoppingBag, ClipboardList, ShoppingCart, Users, Receipt, LogOut, Tag, ChevronLeft, ChevronRight, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, ClipboardList, ShoppingCart, Users, Receipt, LogOut, Tag, ChevronLeft, ChevronRight, RotateCcw, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
 
 export default function AdminSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isRefundOpen, setIsRefundOpen] = useState(false);
+  const [unreadEnquiries, setUnreadEnquiries] = useState(0);
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useDispatch();
 
   const { user } = useSelector((state) => state.auth);
+
+  // Poll for new enquiries every 30 seconds
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
+        if (!token) return;
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api'}/enquiries`, {
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include'
+        });
+        const data = await res.json();
+        if (data.success) setUnreadEnquiries(data.unreadCount);
+      } catch {}
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     dispatch(logoutUser());
@@ -43,6 +63,7 @@ export default function AdminSidebar() {
       ]
     },
     { label: 'Customer Profiling', path: '/admin/customers', icon: <Users size={20} /> },
+    { label: 'Enquiries', path: '/admin/enquiries', icon: <MessageSquare size={20} />, badge: unreadEnquiries },
     { label: 'Reports Center', path: '/admin/reports', icon: <Receipt size={20} /> },
     { label: 'Coupon Manager', path: '/admin/coupons', icon: <Tag size={20} /> }
   ];
@@ -91,7 +112,7 @@ export default function AdminSidebar() {
               </div>
             </>
           ) : (
-            <span className="fs-3 fw-bold display-font text-white">M</span>
+            <span className="fs-3 fw-bold display-font text-white">ST</span>
           )}
         </div>
 
@@ -198,6 +219,9 @@ export default function AdminSidebar() {
               >
                 {item.icon}
                 {!isCollapsed && <span>{item.label}</span>}
+                {!isCollapsed && item.badge > 0 && (
+                  <span className="badge bg-danger ms-auto rounded-pill" style={{ fontSize: '11px' }}>{item.badge}</span>
+                )}
               </Link>
             );
           })}

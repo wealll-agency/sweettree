@@ -3,8 +3,27 @@ import mongoose from 'mongoose';
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   category: { type: String, required: true, index: true },
-  price: { type: Number, required: true, min: 0 },
-  discount: { type: Number, default: 0, min: 0, max: 100 }, // Percentage discount
+  subCategory: { type: String, default: '' },
+  subSubCategory: { type: String, default: '' },
+  brand: { type: String, default: '' },
+  productType: { type: String, enum: ['Physical', 'Digital'], default: 'Physical' },
+  sku: { type: String, default: '' },
+  unit: { type: String, default: 'kg' },
+  searchTags: [{ type: String }],
+  
+  price: { type: Number, required: true, min: 0 }, // This represents Unit Price
+  purchasePrice: { type: Number, default: 0, min: 0 },
+  minOrderQty: { type: Number, default: 1, min: 1 },
+  discount: { type: Number, default: 0, min: 0 }, // Represents Discount Amount
+  discountType: { type: String, enum: ['Flat', 'Percent'], default: 'Flat' },
+  taxAmount: { type: Number, default: 0, min: 0 },
+  taxCalculation: { type: String, enum: ['Include with product', 'Exclude'], default: 'Include with product' },
+  shippingCost: { type: Number, default: 0, min: 0 },
+  shippingMultiplyWithQty: { type: Boolean, default: false },
+  
+  isFeatured: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: true },
+  
   description: { type: String, required: true },
   ingredients: [{ type: String }],
   benefits: [{ type: String }],
@@ -20,7 +39,11 @@ const productSchema = new mongoose.Schema({
 // Virtual for discounted price
 productSchema.virtual('discountedPrice').get(function () {
   if (this.discount > 0) {
-    return Math.round(this.price * (1 - this.discount / 100));
+    if (this.discountType === 'Percent') {
+      return Math.round(this.price * (1 - this.discount / 100));
+    } else {
+      return Math.max(0, this.price - this.discount);
+    }
   }
   return this.price;
 });

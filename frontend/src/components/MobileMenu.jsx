@@ -21,7 +21,7 @@ const MobileMenu = () => {
             </Link>
           </li>
           <li className="list-group-item">
-            <Link href="/products?category=Combo Gift Box" className="d-block py-2 text-dark text-decoration-none fw-bold" data-bs-dismiss="offcanvas">
+            <Link href="/build-combo" className="d-block py-2 text-dark text-decoration-none fw-bold" data-bs-dismiss="offcanvas">
               <i className="fas fa-gift me-2 text-muted"></i>COMBO GIFT BOX
             </Link>
           </li>

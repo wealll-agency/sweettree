@@ -15,7 +15,7 @@ export default function CheckoutPage() {
   const router = useRouter();
 
   const { user } = useSelector((state) => state.auth);
-  const { items, couponCode, subtotal, discount, tax, shippingFee, total } = useSelector((state) => state.cart);
+  const { items, couponCode, subtotal, discount, tax, shippingFee, total, isCombo, applicableProducts, discountPercentage } = useSelector((state) => state.cart);
   const { loading, error } = useSelector((state) => state.orders);
 
   // Address selection states
@@ -208,9 +208,9 @@ export default function CheckoutPage() {
 
       if (applicableProducts.length > 0) {
         const hasEligibleItem = items.some(item => applicableProducts.includes(item.product));
-        if (!hasEligibleItem) {
+        if (!hasEligibleItem && !response.data.isCombo) {
           setCouponError('This coupon is not valid for any items in your cart.');
-          dispatch(applyCouponCode({ code: '', discountPercentage: 0, applicableProducts: [] }));
+          dispatch(applyCouponCode({ code: '', discountPercentage: 0, applicableProducts: [], isCombo: false }));
           return;
         }
       }
@@ -218,13 +218,14 @@ export default function CheckoutPage() {
       dispatch(applyCouponCode({
         code: response.data.code,
         discountPercentage: response.data.discountPercentage,
-        applicableProducts: applicableProducts
+        applicableProducts: applicableProducts,
+        isCombo: response.data.isCombo
       }));
 
       setCouponSuccess(`Coupon "${response.data.code}" applied! ${response.data.discountPercentage}% Discount.`);
     } catch (error) {
       setCouponError(error.response?.data?.message || 'Failed to apply coupon');
-      dispatch(applyCouponCode({ code: '', discountPercentage: 0 }));
+      dispatch(applyCouponCode({ code: '', discountPercentage: 0, applicableProducts: [], isCombo: false }));
     }
   };
 
@@ -404,6 +405,23 @@ export default function CheckoutPage() {
               </form>
               {couponError && <div className="text-danger fs-8 mt-1">{couponError}</div>}
               {couponSuccess && <div className="text-success fs-8 mt-1">{couponSuccess}</div>}
+              {couponCode && (
+                <div className="d-flex justify-content-between align-items-center mt-3 bg-light p-2 rounded border">
+                  <span className="fw-semibold text-success fs-7">Code: {couponCode}</span>
+                  <button type="button" className="btn btn-sm text-danger p-0" onClick={() => {
+                    setCouponInput('');
+                    setCouponError('');
+                    setCouponSuccess('');
+                    dispatch(applyCouponCode({ code: '', discountPercentage: 0, applicableProducts: [], isCombo: false }));
+                  }}>Remove</button>
+                </div>
+              )}
+              {isCombo && discount === 0 && couponCode && (
+                <div className="alert alert-warning py-2 px-3 mt-3 fs-8 mb-0">
+                  <i className="fas fa-exclamation-circle me-1"></i>
+                  <strong>Combo Incomplete!</strong> You must add all required combo products to your cart to activate the {discountPercentage}% discount.
+                </div>
+              )}
             </div>
 
             <div className="d-flex flex-column gap-2 text-muted border-top pt-3 fs-7">

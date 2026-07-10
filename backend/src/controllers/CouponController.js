@@ -5,7 +5,7 @@ import { logActivity } from '../middleware/logger.js';
 // @route   POST /api/coupons
 // @access  Private/Admin/Manager
 export const createCoupon = async (req, res, next) => {
-  const { code, discountPercentage, expiryDate, usageLimit, applicableProducts } = req.body;
+  const { code, discountPercentage, expiryDate, usageLimit, applicableProducts, isCombo } = req.body;
 
   try {
     const codeUpper = code.toUpperCase().trim();
@@ -20,6 +20,7 @@ export const createCoupon = async (req, res, next) => {
       discountPercentage,
       expiryDate: new Date(expiryDate),
       usageLimit: usageLimit || 100,
+      isCombo: isCombo || false,
       applicableProducts: applicableProducts || []
     });
 
@@ -57,6 +58,7 @@ export const applyCoupon = async (req, res, next) => {
       message: 'Coupon applied successfully',
       discountPercentage: coupon.discountPercentage,
       code: coupon.code,
+      isCombo: coupon.isCombo,
       applicableProducts: coupon.applicableProducts
     });
   } catch (error) {

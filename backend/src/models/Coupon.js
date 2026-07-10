@@ -7,6 +7,7 @@ const couponSchema = new mongoose.Schema({
   usageLimit: { type: Number, default: 100, min: 1 },
   usageCount: { type: Number, default: 0, min: 0 },
   isActive: { type: Boolean, default: true },
+  isCombo: { type: Boolean, default: false },
   applicableProducts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }]
 }, {
   timestamps: true

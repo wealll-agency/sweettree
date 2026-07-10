@@ -9,7 +9,7 @@ const Navigation = () => {
           <ul className="nav-links">
             <li><Link href="/">🏠 HOME</Link></li>
             <li><Link href="/shop">🛍️ SHOP </Link></li>
-            <li><Link href="/combo">🎁 COMBO GIFT BOX</Link></li>
+            <li><Link href="/build-combo">🎁 COMBO GIFT BOX</Link></li>
             <li><Link href="/about">ℹ️ ABOUT</Link></li>
             <li><Link href="/blog">📝 BLOG</Link></li>
             <li><Link href="/contact">📞 CONTACT</Link></li>

@@ -12,7 +12,7 @@ export default function CartPage() {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { items, couponCode, subtotal, discount, tax, shippingFee, total, discountPercentage } = useSelector(
+  const { items, couponCode, subtotal, discount, tax, shippingFee, total, discountPercentage, isCombo, applicableProducts } = useSelector(
     (state) => state.cart
   );
   const { user } = useSelector((state) => state.auth);
@@ -61,9 +61,9 @@ export default function CartPage() {
       // If the coupon has specific products, check if the cart contains at least one
       if (applicableProducts.length > 0) {
         const hasEligibleItem = items.some(item => applicableProducts.includes(item.product));
-        if (!hasEligibleItem) {
+        if (!hasEligibleItem && !response.data.isCombo) {
           setCouponError('This coupon is not valid for any items in your cart.');
-          dispatch(applyCouponCode({ code: '', discountPercentage: 0, applicableProducts: [] }));
+          dispatch(applyCouponCode({ code: '', discountPercentage: 0, applicableProducts: [], isCombo: false }));
           return;
         }
       }
@@ -71,13 +71,14 @@ export default function CartPage() {
       dispatch(applyCouponCode({
         code: response.data.code,
         discountPercentage: response.data.discountPercentage,
-        applicableProducts: applicableProducts
+        applicableProducts: applicableProducts,
+        isCombo: response.data.isCombo
       }));
 
       setCouponSuccess(`Coupon "${response.data.code}" applied! ${response.data.discountPercentage}% Discount.`);
     } catch (error) {
       setCouponError(error.response?.data?.message || 'Failed to apply coupon');
-      dispatch(applyCouponCode({ code: '', discountPercentage: 0 }));
+      dispatch(applyCouponCode({ code: '', discountPercentage: 0, applicableProducts: [], isCombo: false }));
     }
   };
 
@@ -93,8 +94,8 @@ export default function CartPage() {
     return (
       <div className="container py-5 text-center animate-fade-in">
         <div className="glass-card bg-white p-5 max-w-lg mx-auto">
-          <ShoppingBag size={56} className="text-muted mb-3 mx-auto" />
-          <h2 className="fw-bold mb-2">Your Cart is Empty</h2>
+          <i className="fas fa-shopping-bag fa-3x text-muted mb-3 d-block"></i>
+          <h2 className="fw-bold mb-2" style={{ color: '#203d74' }}>Your Cart is Empty</h2>
           <p className="text-muted mb-4">Discover our high-quality herbal products and start shopping.</p>
           <Link href="/products" className="btn btn-brand">Shop Catalog</Link>
         </div>
@@ -103,8 +104,8 @@ export default function CartPage() {
   }
 
   return (
-    <div className="container py-5 animate-fade-in">
-      <h1 className="fw-bold mb-4 display-font">Shopping Cart</h1>
+    <div className="container py-5">
+      <h1 className="fw-bold mb-4" style={{ color: '#203d74' }}>Shopping Cart</h1>
 
       <div className="row g-4">
         
@@ -181,8 +182,43 @@ export default function CartPage() {
 
         {/* Right Side: Price Breakdown Card */}
         <div className="col-lg-4">
-          <div className="glass-card p-4">
-            <h4 className="fw-bold mb-4 display-font text-dark border-bottom pb-2">Order Summary</h4>
+          <div className="card border-0 shadow-sm rounded-0 p-4 mb-4">
+            <h5 className="fw-bold mb-3 text-dark">Apply Coupon</h5>
+            <form onSubmit={handleApplyCoupon} className="d-flex gap-2 mb-2">
+              <input 
+                type="text" 
+                className="form-control" 
+                placeholder="Enter coupon code" 
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+              />
+              <button type="submit" className="btn btn-dark">Apply</button>
+            </form>
+            {couponError && <div className="text-danger fs-8 mt-1">{couponError}</div>}
+            {couponSuccess && <div className="text-success fs-8 mt-1">{couponSuccess}</div>}
+            
+            {couponCode && (
+              <div className="d-flex justify-content-between align-items-center mt-3 bg-light p-2 rounded border">
+                <span className="fw-semibold text-success fs-7">Code: {couponCode}</span>
+                <button type="button" className="btn btn-sm text-danger p-0" onClick={() => {
+                  setCouponInput('');
+                  setCouponError('');
+                  setCouponSuccess('');
+                  dispatch(applyCouponCode({ code: '', discountPercentage: 0, applicableProducts: [], isCombo: false }));
+                }}>Remove</button>
+              </div>
+            )}
+
+            {isCombo && discount === 0 && couponCode && (
+              <div className="alert alert-warning py-2 px-3 mt-3 fs-8 mb-0">
+                <i className="fas fa-exclamation-circle me-1"></i>
+                <strong>Combo Incomplete!</strong> You must add all required combo products to your cart to activate the {discountPercentage}% discount.
+              </div>
+            )}
+          </div>
+
+          <div className="card border-0 shadow-sm rounded-0 p-4">
+            <h4 className="fw-bold mb-4 text-dark border-bottom pb-2">Order Summary</h4>
             
             <div className="d-flex flex-column gap-3 fs-6">
               <div className="d-flex justify-content-between text-muted">

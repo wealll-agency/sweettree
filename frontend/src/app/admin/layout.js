@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from '../../components/AdminSidebar.js';
-import Header from '../../components/Header.jsx';
+import AdminHeader from '../../components/AdminHeader.js';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import './admin.css';
 
 export default function AdminLayout({ children }) {
   const router = useRouter();
@@ -66,8 +67,8 @@ export default function AdminLayout({ children }) {
       <AdminSidebar />
       
       {/* Content panel */}
-      <div className="flex-grow-1 bg-light d-flex flex-column" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
-        <Header />
+      <div className="flex-grow-1 bg-light d-flex flex-column admin-wrapper" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
+        <AdminHeader />
         <div className="p-4 flex-grow-1">
           {children}
         </div>

@@ -1,8 +1,41 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api';
+
 export default function ContactPage() {
+  const [form, setForm] = useState({ firstName: '', lastName: '', phone: '', email: '', queryType: 'Order Related Queries', message: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch(`${API_BASE}/enquiries`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSubmitted(true);
+        setForm({ firstName: '', lastName: '', phone: '', email: '', queryType: 'Order Related Queries', message: '' });
+      } else {
+        setError(data.message || 'Something went wrong. Please try again.');
+      }
+    } catch {
+      setError('Could not connect to server. Please try again later.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <>
       <div className="marquee-wrapper">
@@ -28,9 +61,11 @@ export default function ContactPage() {
             <div className="contact-sidebar">
               <h4 className="contact-sidebar-title">Select Query Type</h4>
               <ul className="contact-query-list list-unstyled">
-                <li><a href="#" className="active">Order Related Queries</a></li>
-                <li><a href="#">Non-Order Related Issues</a></li>
-                <li><a href="#">Other Issues</a></li>
+                {['Order Related Queries', 'Non-Order Related Issues', 'Other Issues'].map((type) => (
+                  <li key={type}>
+                    <a href="#" className={form.queryType === type ? 'active' : ''} onClick={(e) => { e.preventDefault(); setForm({...form, queryType: type}); }}>{type}</a>
+                  </li>
+                ))}
               </ul>
               <hr className="contact-sidebar-divider" />
               <a href="#" className="contact-faq-link">Frequently Asked Questions <i className="fas fa-chevron-right float-end mt-1" style={{ fontSize: '12px' }}></i></a>
@@ -49,32 +84,40 @@ export default function ContactPage() {
             {/* Main Form Body */}
             <div className="contact-main-body flex-grow-1">
               <h3 className="contact-form-title">Contact Me</h3>
-              <form className="contact-query-form">
+              {submitted && (
+                <div className="alert alert-success" role="alert">
+                  ✅ Your message has been sent! We will get back to you soon.
+                </div>
+              )}
+              {error && <div className="alert alert-danger">{error}</div>}
+              <form className="contact-query-form" onSubmit={handleSubmit}>
                 <div className="row g-4 mb-4">
                   <div className="col-md-6">
                     <label className="form-label mb-1">First Name*</label>
-                    <input type="text" className="form-control" required />
+                    <input type="text" name="firstName" value={form.firstName} onChange={handleChange} className="form-control" required />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label mb-1">Last Name*</label>
-                    <input type="text" className="form-control" required />
+                    <input type="text" name="lastName" value={form.lastName} onChange={handleChange} className="form-control" required />
                   </div>
                 </div>
                 <div className="row g-4 mb-4">
                   <div className="col-md-6">
                     <label className="form-label mb-1">Phone Number*</label>
-                    <input type="tel" className="form-control" required />
+                    <input type="tel" name="phone" value={form.phone} onChange={handleChange} className="form-control" required />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label mb-1">Email*</label>
-                    <input type="email" className="form-control" required />
+                    <input type="email" name="email" value={form.email} onChange={handleChange} className="form-control" required />
                   </div>
                 </div>
                 <div className="mb-4">
                   <label className="form-label mb-1">Write Your Message*</label>
-                  <textarea className="form-control" rows="5" required></textarea>
+                  <textarea name="message" value={form.message} onChange={handleChange} className="form-control" rows="5" required></textarea>
                 </div>
-                <button type="submit" className="btn contact-submit-btn">SUBMIT NOW</button>
+                <button type="submit" className="btn contact-submit-btn" disabled={submitting}>
+                  {submitting ? 'Sending...' : 'SUBMIT NOW'}
+                </button>
               </form>
 
               {/* Track Box */}

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../store/authSlice';
+import { logoutUser } from '../store/authSlice';
 import { useRouter } from 'next/navigation';
 
 const Header = () => {
@@ -11,12 +11,15 @@ const Header = () => {
   const wishlistItems = useSelector((state) => state.wishlist?.items || []);
   const wishlistCount = wishlistItems.length;
   
+  const { items: cartItems, total: cartTotal } = useSelector((state) => state.cart);
+  const cartCount = cartItems ? cartItems.reduce((acc, item) => acc + item.quantity, 0) : 0;
+  
   const dispatch = useDispatch();
   const router = useRouter();
 
   const handleLogout = (e) => {
     e.preventDefault();
-    dispatch(logout());
+    dispatch(logoutUser());
     router.push('/login');
   };
 
@@ -34,7 +37,7 @@ const Header = () => {
             <ul className="d-flex justify-content-center align-items-center m-0 p-0" style={{ listStyle: 'none', gap: '30px', fontSize: '14px', whiteSpace: 'nowrap' }}>
               <li><Link href="/" className="premium-nav-link">HOME</Link></li>
               <li><Link href="/shop" className="premium-nav-link">SHOP</Link></li>
-              <li><Link href="/products?category=Combo Gift Box" className="premium-nav-link">COMBO GIFT BOX</Link></li>
+              <li><Link href="/build-combo" className="premium-nav-link">COMBO GIFT BOX</Link></li>
               <li><Link href="/about" className="premium-nav-link">ABOUT</Link></li>
               <li><Link href="/blog" className="premium-nav-link">BLOG</Link></li>
               <li><Link href="/contact" className="premium-nav-link">CONTACT</Link></li>
@@ -99,11 +102,11 @@ const Header = () => {
             <Link href="#" className="header-icon-box text-decoration-none position-relative d-flex align-items-center" onClick={(e) => e.preventDefault()} data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas">
               <div className="position-relative">
                 <i className="fas fa-shopping-basket"></i>
-                <span className="cart-badge">0</span>
+                <span className="cart-badge">{cartCount}</span>
               </div>
               <div className="ms-2 d-none d-xl-block">
                 <span className="d-block text-white" style={{ fontSize: '11px', lineHeight: '1', opacity: 0.8 }}>Shopping cart:</span>
-                <span className="cart-amount text-white fw-bold">₹00.00</span>
+                <span className="cart-amount text-white fw-bold">₹{cartTotal ? cartTotal.toFixed(2) : '0.00'}</span>
               </div>
             </Link>
             <Link href="#" className="header-icon-box d-lg-none text-decoration-none" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">

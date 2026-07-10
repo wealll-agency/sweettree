@@ -4,18 +4,27 @@ const getInitialCart = () => {
   return [];
 };
 
-const calculateTotals = (items, discountPercentage = 0, applicableProducts = []) => {
+const calculateTotals = (items, discountPercentage = 0, applicableProducts = [], isCombo = false) => {
   let subtotal = 0;
   let discountableSubtotal = 0;
+
+  const cartProductIds = items.map(item => item.product);
+  const hasAllComboProducts = isCombo && applicableProducts.length > 0 
+    ? applicableProducts.every(pid => cartProductIds.includes(pid))
+    : false;
 
   items.forEach(item => {
     const itemTotal = item.price * item.quantity;
     subtotal += itemTotal;
     
-    // If applicableProducts array is empty, we assume it applies to all.
-    // Otherwise, it must include the specific product ID.
-    if (!applicableProducts || applicableProducts.length === 0 || applicableProducts.includes(item.product)) {
-      discountableSubtotal += itemTotal;
+    if (isCombo) {
+      if (hasAllComboProducts && applicableProducts.includes(item.product)) {
+        discountableSubtotal += itemTotal;
+      }
+    } else {
+      if (!applicableProducts || applicableProducts.length === 0 || applicableProducts.includes(item.product)) {
+        discountableSubtotal += itemTotal;
+      }
     }
   });
 
@@ -35,6 +44,7 @@ const cartSlice = createSlice({
     couponCode: '',
     discountPercentage: 0,
     applicableProducts: [],
+    isCombo: false,
     subtotal: 0,
     discount: 0,
     tax: 0,
@@ -70,7 +80,7 @@ const cartSlice = createSlice({
         localStorage.setItem('sweettree_cart', JSON.stringify(state.items));
       }
 
-      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts);
+      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts, state.isCombo);
       Object.assign(state, totals);
     },
     removeFromCart: (state, action) => {
@@ -81,7 +91,7 @@ const cartSlice = createSlice({
         localStorage.setItem('sweettree_cart', JSON.stringify(state.items));
       }
 
-      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts);
+      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts, state.isCombo);
       Object.assign(state, totals);
     },
     updateCartQuantity: (state, action) => {
@@ -95,16 +105,17 @@ const cartSlice = createSlice({
         localStorage.setItem('sweettree_cart', JSON.stringify(state.items));
       }
 
-      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts);
+      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts, state.isCombo);
       Object.assign(state, totals);
     },
     applyCouponCode: (state, action) => {
-      const { code, discountPercentage, applicableProducts } = action.payload;
+      const { code, discountPercentage, applicableProducts, isCombo } = action.payload;
       state.couponCode = code;
       state.discountPercentage = discountPercentage;
       state.applicableProducts = applicableProducts || [];
+      state.isCombo = isCombo || false;
 
-      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts);
+      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts, state.isCombo);
       Object.assign(state, totals);
     },
     clearCart: (state) => {
@@ -112,19 +123,20 @@ const cartSlice = createSlice({
       state.couponCode = '';
       state.discountPercentage = 0;
       state.applicableProducts = [];
+      state.isCombo = false;
       if (typeof window !== 'undefined') {
         localStorage.removeItem('sweettree_cart');
       }
-      const totals = calculateTotals([], 0, []);
+      const totals = calculateTotals([], 0, [], false);
       Object.assign(state, totals);
     },
     recalculateCart: (state) => {
-      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts);
+      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts, state.isCombo);
       Object.assign(state, totals);
     },
     hydrateCart: (state, action) => {
       state.items = action.payload;
-      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts);
+      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts, state.isCombo);
       Object.assign(state, totals);
     }
   }

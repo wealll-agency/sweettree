@@ -30,12 +30,32 @@ export const fetchDashboardStats = createAsyncThunk(
 
 export const fetchAdminProducts = createAsyncThunk(
   'admin/fetchProducts',
-  async (_, { rejectWithValue }) => {
+  async (filters = {}, { rejectWithValue }) => {
     try {
-      const response = await axios.get(PRODUCTS_URL, getConfig());
+      const queryParams = new URLSearchParams();
+      if (filters.brand) queryParams.append('brand', filters.brand);
+      if (filters.category) queryParams.append('category', filters.category);
+      if (filters.subCategory) queryParams.append('subCategory', filters.subCategory);
+      if (filters.subSubCategory) queryParams.append('subSubCategory', filters.subSubCategory);
+      if (filters.keyword) queryParams.append('keyword', filters.keyword);
+
+      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+      const response = await axios.get(`${PRODUCTS_URL}${queryString}`, getConfig());
       return response.data.products;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch products');
+    }
+  }
+);
+
+export const toggleProductState = createAsyncThunk(
+  'admin/toggleProductState',
+  async ({ id, field, value }, { rejectWithValue }) => {
+    try {
+      const response = await axios.patch(`${PRODUCTS_URL}/${id}/toggle`, { field, value }, getConfig());
+      return response.data.product;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to toggle product status');
     }
   }
 );
@@ -185,6 +205,13 @@ const adminSlice = createSlice({
       })
       // Edit product
       .addCase(editProduct.fulfilled, (state, action) => {
+        const index = state.products.findIndex(p => p._id === action.payload._id);
+        if (index > -1) {
+          state.products[index] = action.payload;
+        }
+      })
+      // Toggle product state
+      .addCase(toggleProductState.fulfilled, (state, action) => {
         const index = state.products.findIndex(p => p._id === action.payload._id);
         if (index > -1) {
           state.products[index] = action.payload;

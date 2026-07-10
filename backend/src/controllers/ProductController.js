@@ -7,7 +7,7 @@ import { logActivity } from '../middleware/logger.js';
 // @access  Public
 export const getProducts = async (req, res, next) => {
   try {
-    const { keyword, category, minPrice, maxPrice, sort, page = 1, limit = 12 } = req.query;
+    const { keyword, category, subCategory, subSubCategory, brand, minPrice, maxPrice, sort, page = 1, limit = 12 } = req.query;
 
     const query = {};
 
@@ -17,8 +17,23 @@ export const getProducts = async (req, res, next) => {
     }
 
     // Category Filter
-    if (category) {
+    if (category && category !== 'All Categories') {
       query.category = category;
+    }
+    
+    // Sub Category Filter
+    if (subCategory && subCategory !== 'All') {
+      query.subCategory = subCategory;
+    }
+
+    // Sub Sub Category Filter
+    if (subSubCategory && subSubCategory !== 'All') {
+      query.subSubCategory = subSubCategory;
+    }
+
+    // Brand Filter
+    if (brand && brand !== 'All Brands') {
+      query.brand = brand;
     }
 
     // Price Range Filter
@@ -78,14 +93,35 @@ export const getProductById = async (req, res, next) => {
 // @route   POST /api/products
 // @access  Private/Admin/Manager/Staff
 export const createProduct = async (req, res, next) => {
-  const { name, category, price, discount, description, ingredients, benefits, images, videos, batchNumber, expiryDate, stock } = req.body;
+  const { 
+    name, category, subCategory, subSubCategory, brand, productType, sku, unit, searchTags, 
+    price, purchasePrice, minOrderQty, discount, discountType, taxAmount, taxCalculation, 
+    shippingCost, shippingMultiplyWithQty, isFeatured, isActive,
+    description, ingredients, benefits, images, videos, batchNumber, expiryDate, stock 
+  } = req.body;
 
   try {
     const product = new Product({
       name,
       category,
+      subCategory: subCategory || '',
+      subSubCategory: subSubCategory || '',
+      brand: brand || '',
+      productType: productType || 'Physical',
+      sku: sku || '',
+      unit: unit || 'kg',
+      searchTags: searchTags || [],
       price,
+      purchasePrice: purchasePrice || 0,
+      minOrderQty: minOrderQty || 1,
       discount: discount || 0,
+      discountType: discountType || 'Flat',
+      taxAmount: taxAmount || 0,
+      taxCalculation: taxCalculation || 'Include with product',
+      shippingCost: shippingCost || 0,
+      shippingMultiplyWithQty: shippingMultiplyWithQty || false,
+      isFeatured: isFeatured || false,
+      isActive: isActive !== undefined ? isActive : true,
       description,
       ingredients: ingredients || [],
       benefits: benefits || [],
@@ -130,8 +166,25 @@ export const updateProduct = async (req, res, next) => {
     if (product) {
       product.name = req.body.name || product.name;
       product.category = req.body.category || product.category;
+      product.subCategory = req.body.subCategory !== undefined ? req.body.subCategory : product.subCategory;
+      product.subSubCategory = req.body.subSubCategory !== undefined ? req.body.subSubCategory : product.subSubCategory;
+      product.brand = req.body.brand !== undefined ? req.body.brand : product.brand;
+      product.productType = req.body.productType || product.productType;
+      product.sku = req.body.sku !== undefined ? req.body.sku : product.sku;
+      product.unit = req.body.unit || product.unit;
+      product.searchTags = req.body.searchTags || product.searchTags;
+      
       product.price = req.body.price !== undefined ? req.body.price : product.price;
+      product.purchasePrice = req.body.purchasePrice !== undefined ? req.body.purchasePrice : product.purchasePrice;
+      product.minOrderQty = req.body.minOrderQty !== undefined ? req.body.minOrderQty : product.minOrderQty;
       product.discount = req.body.discount !== undefined ? req.body.discount : product.discount;
+      product.discountType = req.body.discountType || product.discountType;
+      product.taxAmount = req.body.taxAmount !== undefined ? req.body.taxAmount : product.taxAmount;
+      product.taxCalculation = req.body.taxCalculation || product.taxCalculation;
+      product.shippingCost = req.body.shippingCost !== undefined ? req.body.shippingCost : product.shippingCost;
+      product.shippingMultiplyWithQty = req.body.shippingMultiplyWithQty !== undefined ? req.body.shippingMultiplyWithQty : product.shippingMultiplyWithQty;
+      product.isFeatured = req.body.isFeatured !== undefined ? req.body.isFeatured : product.isFeatured;
+      product.isActive = req.body.isActive !== undefined ? req.body.isActive : product.isActive;
       product.description = req.body.description || product.description;
       product.ingredients = req.body.ingredients || product.ingredients;
       product.benefits = req.body.benefits || product.benefits;
@@ -192,6 +245,31 @@ export const deleteProduct = async (req, res, next) => {
     } else {
       res.status(404).json({ success: false, message: 'Product not found' });
     }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Toggle product status (isFeatured or isActive)
+// @route   PATCH /api/products/:id/toggle
+// @access  Private/Admin/Manager
+export const toggleProductStatus = async (req, res, next) => {
+  try {
+    const { field, value } = req.body; // field should be 'isFeatured' or 'isActive'
+    if (!['isFeatured', 'isActive'].includes(field)) {
+      return res.status(400).json({ success: false, message: 'Invalid toggle field' });
+    }
+
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    product[field] = value;
+    await product.save();
+    
+    await logActivity(req.user._id, 'UPDATE_PRODUCT', `Toggled ${field} to ${value} for product ID: ${product._id}`, req);
+    res.json({ success: true, product });
   } catch (error) {
     next(error);
   }

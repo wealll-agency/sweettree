@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function ShopDetailsPage() {
+function ShopDetailsContent() {
   const searchParams = useSearchParams();
   const [productName, setProductName] = useState('Loading...');
   const [quantity, setQuantity] = useState(1);
@@ -203,5 +203,13 @@ export default function ShopDetailsPage() {
          </div>
       </div>
     </div>
+  );
+}
+
+export default function ShopDetailsPage() {
+  return (
+    <Suspense fallback={<div className="container py-5 text-center">Loading product details...</div>}>
+      <ShopDetailsContent />
+    </Suspense>
   );
 }

@@ -24,7 +24,8 @@ export default function CouponManagerPage() {
     discountPercentage: '',
     expiryDate: '',
     usageLimit: 100,
-    applicableProducts: []
+    applicableProducts: [],
+    isCombo: false
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -58,6 +59,12 @@ export default function CouponManagerPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (formData.isCombo && formData.applicableProducts.length < 2) {
+      setError('Combo coupons must have at least 2 applicable products selected.');
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
     setSuccess(null);
@@ -70,7 +77,8 @@ export default function CouponManagerPage() {
         discountPercentage: '',
         expiryDate: '',
         usageLimit: 100,
-        applicableProducts: []
+        applicableProducts: [],
+        isCombo: false
       });
       fetchData();
     } catch (err) {
@@ -148,6 +156,20 @@ export default function CouponManagerPage() {
                 />
               </div>
 
+              <div className="mb-3 form-check">
+                <input 
+                  type="checkbox" 
+                  className="form-check-input" 
+                  id="isComboCheck"
+                  checked={formData.isCombo}
+                  onChange={(e) => setFormData({...formData, isCombo: e.target.checked})}
+                />
+                <label className="form-check-label fs-7 fw-semibold" htmlFor="isComboCheck">
+                  Is this a Combo Coupon?
+                </label>
+                <div className="form-text fs-8 text-muted">If checked, customer must have ALL selected products below in their cart to use this coupon. Minimum 2 products required.</div>
+              </div>
+
               <div className="mb-4">
                 <label className="form-label fs-7 fw-semibold">Applicable Products</label>
                 <p className="text-muted fs-8 mb-2">Hold Ctrl (Windows) or Cmd (Mac) to select multiple products.</p>
@@ -204,6 +226,7 @@ export default function CouponManagerPage() {
                       <tr key={coupon._id}>
                         <td>
                           <span className="badge bg-dark px-2 py-1 fs-8 font-monospace">{coupon.code}</span>
+                          {coupon.isCombo && <span className="badge bg-primary ms-2 px-2 py-1 fs-8">COMBO</span>}
                         </td>
                         <td className="fw-bold text-success">{coupon.discountPercentage}% OFF</td>
                         <td style={{ maxWidth: '200px' }}>
