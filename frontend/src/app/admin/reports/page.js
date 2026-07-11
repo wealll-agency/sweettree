@@ -8,7 +8,7 @@ export default function AdminReportsPage() {
   const [endDate, setEndDate] = useState('');
   
   const handleExportPDF = () => {
-    let url = 'http://localhost:7050/api/reports/export/pdf';
+    let url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api'}/reports/export/pdf`;
     const params = [];
     if (startDate) params.push(`startDate=${startDate}`);
     if (endDate) params.push(`endDate=${endDate}`);
@@ -18,7 +18,7 @@ export default function AdminReportsPage() {
   };
 
   const handleExportExcel = () => {
-    let url = 'http://localhost:7050/api/reports/export/excel';
+    let url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api'}/reports/export/excel`;
     const params = [];
     if (startDate) params.push(`startDate=${startDate}`);
     if (endDate) params.push(`endDate=${endDate}`);

@@ -120,7 +120,7 @@ export default function RefundDetailsModal({ refund, onClose }) {
                             <td className="ps-3 py-2">
                               <div className="d-flex align-items-center gap-2">
                                 <div style={{ width: '30px', height: '30px', backgroundColor: '#f0f0f0', borderRadius: '4px', overflow: 'hidden' }}>
-                                  {item.product?.image && <img src={`http://localhost:7050${item.product.image}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                  {item.product?.image && <img src={`${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:7050'}${item.product.image}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                                 </div>
                                 <span style={{ fontSize: '0.9rem' }}>{item.product?.name || item.name}</span>
                               </div>

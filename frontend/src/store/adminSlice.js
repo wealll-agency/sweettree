@@ -1,10 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const PRODUCTS_URL = 'http://localhost:7050/api/products';
-const ORDERS_URL = 'http://localhost:7050/api/orders';
-const REPORTS_URL = 'http://localhost:7050/api/reports';
-const REFUNDS_URL = 'http://localhost:7050/api/refunds';
+const PRODUCTS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/products` : 'http://localhost:7050/api/products';
+const ORDERS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/orders` : 'http://localhost:7050/api/orders';
+const REPORTS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/reports` : 'http://localhost:7050/api/reports';
+const REFUNDS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/refunds` : 'http://localhost:7050/api/refunds';
 
 axios.defaults.withCredentials = true;
 

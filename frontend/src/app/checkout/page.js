@@ -65,7 +65,7 @@ export default function CheckoutPage() {
     if (!isMounted) return;
     // Redirect if cart is empty
     if (items.length === 0) {
-      router.push('/cart');
+      router.push('/shop');
     }
     // Redirect if user not logged in
     if (!user) {
@@ -119,7 +119,7 @@ export default function CheckoutPage() {
 
       // 2. Configure Razorpay SDK
       const options = {
-        key: 'rzp_test_T5pGWPZ0XxeNCx', // Public Razorpay Key ID
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_T5pGWPZ0XxeNCx', // Public Razorpay Key ID
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
         name: 'Sweettree Enterprises',
@@ -467,40 +467,45 @@ export default function CheckoutPage() {
               <h5 className="fw-bold mb-3 fs-6 d-flex align-items-center gap-2">
                 <ShoppingBag size={16} /> You May Also Like
               </h5>
-              <div className="d-flex flex-column gap-3">
+              <div className="row g-3">
                 {recommendedProducts.map(product => {
                   const activePrice = product.discount > 0 
                     ? Math.round(product.price * (1 - product.discount / 100))
                     : product.price;
 
+                  let imageSrc = '/placeholder.png';
+                  if (product.images && product.images.length > 0) {
+                    imageSrc = product.images[0].replace('/assets/images/', '/');
+                  } else if (product.image) {
+                    imageSrc = product.image.replace('/assets/images/', '/');
+                  }
+
                   return (
-                    <div key={product._id} className="d-flex align-items-center gap-3 p-3 bg-white border rounded shadow-sm">
-                      <div style={{ width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, backgroundColor: '#f8f9fa' }}>
-                        {product.images?.[0] && (
+                    <div key={product._id} className="col-6 col-md-4">
+                      <div className="p-2 bg-white border rounded shadow-sm h-100 d-flex flex-column align-items-center text-center">
+                        <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#f8f9fa', marginBottom: '8px' }}>
                           <img 
-                            src={`${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:7050'}${product.images[0]}`} 
+                            src={imageSrc} 
                             alt={product.name}
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             onError={(e) => { e.target.src = 'https://via.placeholder.com/60?text=No+Image'; }}
                           />
-                        )}
-                      </div>
-                      <div className="flex-grow-1 min-w-0">
-                        <h6 className="fw-semibold fs-7 mb-1 text-truncate">{product.name}</h6>
-                        <div className="d-flex align-items-center gap-2">
+                        </div>
+                        <h6 className="fw-semibold fs-8 mb-1 text-truncate w-100" title={product.name}>{product.name}</h6>
+                        <div className="mb-2">
                           <span className="fw-bold fs-7 text-dark">₹{activePrice}</span>
                           {product.discount > 0 && (
-                            <span className="text-muted text-decoration-line-through fs-8">₹{product.price}</span>
+                            <span className="text-muted text-decoration-line-through fs-8 ms-1">₹{product.price}</span>
                           )}
                         </div>
+                        <button 
+                          onClick={() => handleAddRecommended(product)}
+                          className="btn btn-outline-brand btn-sm w-100 mt-auto"
+                          style={{ borderRadius: '20px', fontSize: '12px' }}
+                        >
+                          Add
+                        </button>
                       </div>
-                      <button 
-                        onClick={() => handleAddRecommended(product)}
-                        className="btn btn-outline-brand btn-sm px-3 flex-shrink-0"
-                        style={{ borderRadius: '20px' }}
-                      >
-                        Add
-                      </button>
                     </div>
                   );
                 })}

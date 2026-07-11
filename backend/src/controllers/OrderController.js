@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import Order from '../models/Order.js';
@@ -18,6 +19,11 @@ const calculateOrderTotals = async (items, couponCode) => {
   let subtotal = 0;
   
   for (const item of items) {
+    if (!mongoose.isValidObjectId(item.product)) {
+      const err = new Error(`Invalid product ID format for: ${item.name}`);
+      err.statusCode = 400;
+      throw err;
+    }
     const product = await Product.findById(item.product);
     if (!product) {
       throw new Error(`Product not found: ${item.name}`);

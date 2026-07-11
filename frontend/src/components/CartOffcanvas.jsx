@@ -9,21 +9,21 @@ const CartOffcanvas = () => {
   const dispatch = useDispatch();
   const { items, subtotal, discount, total } = useSelector((state) => state.cart);
 
-  const handleIncrement = (product) => {
-    dispatch(addToCart({ product, quantity: 1, size: 'Default' }));
+  const handleIncrement = (product, size) => {
+    dispatch(addToCart({ product, quantity: 1, size }));
   };
 
-  const handleDecrement = (product) => {
-    const item = items.find(i => i.product === product._id);
+  const handleDecrement = (product, size) => {
+    const item = items.find(i => i.product === product._id && i.size === size);
     if (item && item.quantity > 1) {
-      dispatch(addToCart({ product, quantity: -1, size: 'Default' }));
+      dispatch(addToCart({ product, quantity: -1, size }));
     } else {
-      dispatch(removeFromCart({ product: product._id, size: 'Default' }));
+      dispatch(removeFromCart({ product: product._id, size }));
     }
   };
 
-  const handleRemove = (productId) => {
-    dispatch(removeFromCart({ product: productId, size: 'Default' }));
+  const handleRemove = (productId, size) => {
+    dispatch(removeFromCart({ product: productId, size }));
   };
 
   // Sweettree free shipping threshold is usually 1000 for this layout
@@ -73,10 +73,10 @@ const CartOffcanvas = () => {
               <p>Your cart is empty.</p>
             </div>
           ) : (
-            items.map(item => (
-              <div key={item.product} className="card border-0 shadow-sm rounded-3 mb-3 p-3">
+            items.map((item, index) => (
+              <div key={`${item.product}-${item.size}-${index}`} className="card border-0 shadow-sm rounded-3 mb-3 p-3">
                 <div className="d-flex position-relative">
-                  <button onClick={() => handleRemove(item.product)} className="position-absolute top-0 end-0 bg-transparent border-0 text-muted p-0" style={{ right: '-5px' }}>
+                  <button onClick={() => handleRemove(item.product, item.size)} className="position-absolute top-0 end-0 bg-transparent border-0 text-muted p-0" style={{ right: '-5px' }}>
                     <Trash2 size={16} />
                   </button>
                   <img src={item.image || '/placeholder.png'} alt={item.name} className="rounded" style={{ width: '60px', height: '60px', objectFit: 'cover' }} />
@@ -86,9 +86,9 @@ const CartOffcanvas = () => {
                     
                     <div className="d-flex justify-content-between align-items-center mt-3">
                       <div className="input-group border rounded" style={{ width: '80px', height: '30px' }}>
-                        <button className="btn btn-sm btn-light border-0 px-2" onClick={() => handleDecrement({ _id: item.product })}>-</button>
+                        <button className="btn btn-sm btn-light border-0 px-2" onClick={() => handleDecrement({ _id: item.product }, item.size)}>-</button>
                         <input type="text" className="form-control form-control-sm text-center border-0 p-0 fw-bold bg-white" value={item.quantity} readOnly />
-                        <button className="btn btn-sm btn-light border-0 px-2" onClick={() => handleIncrement({ _id: item.product, price: item.price, name: item.name, images: [item.image] })}>+</button>
+                        <button className="btn btn-sm btn-light border-0 px-2" onClick={() => handleIncrement({ _id: item.product, price: item.price, name: item.name, images: [item.image] }, item.size)}>+</button>
                       </div>
                       <div className="text-end">
                         <div className="fw-bold fs-6">₹{(item.price * item.quantity).toFixed(2)}</div>

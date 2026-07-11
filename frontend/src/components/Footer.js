@@ -37,7 +37,7 @@ export default function Footer() {
             <ul className="list-unstyled d-flex flex-column gap-3">
               <li><Link href="/user/profile" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>My Account</Link></li>
               <li><Link href="/user/orders" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>Order History</Link></li>
-              <li><Link href="/cart" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>Shopping Cart</Link></li>
+              <li><a href="#" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }} onClick={(e) => e.preventDefault()}>Shopping Cart</a></li>
               <li><Link href="/wishlist" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>Wishlist</Link></li>
             </ul>
           </div>

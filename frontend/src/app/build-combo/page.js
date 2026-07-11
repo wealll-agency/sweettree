@@ -50,7 +50,13 @@ function BuildComboContent() {
       }));
     });
 
-    router.push('/cart');
+    if (typeof window !== 'undefined' && window.bootstrap) {
+      const offcanvas = document.getElementById('cartOffcanvas');
+      if (offcanvas) {
+        const bsOffcanvas = window.bootstrap.Offcanvas.getOrCreateInstance(offcanvas);
+        bsOffcanvas.show();
+      }
+    }
   };
 
   // Calculate Combo Subtotal

@@ -77,5 +77,6 @@ export const uploadFile = async (file) => {
 
   // Return local server URL (Express will serve public statically)
   const port = process.env.PORT || 5000;
-  return `http://localhost:${port}/uploads/${fileName}`;
+  const baseUrl = process.env.BACKEND_URL || `http://localhost:${port}`;
+  return `${baseUrl}/uploads/${fileName}`;
 };

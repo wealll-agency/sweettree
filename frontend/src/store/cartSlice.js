@@ -69,7 +69,7 @@ const cartSlice = createSlice({
           product: product._id,
           name: product.name,
           price: activePrice,
-          image: product.images[0] || '',
+          image: product.image || (product.images && product.images[0]) || '',
           quantity,
           size,
           maxStock: product.stock

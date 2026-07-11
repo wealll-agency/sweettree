@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 
 const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { user } = useSelector((state) => state.auth);
   const wishlistItems = useSelector((state) => state.wishlist?.items || []);
   const wishlistCount = wishlistItems.length;
@@ -23,111 +24,184 @@ const Header = () => {
     router.push('/login');
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/shop?keyword=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false);
+    }
+  };
+
   return (
     <header className="main-header">
       <div className="container">
         <div className="row align-items-center">
-          <div className="col-lg-3 col-6">
+          {/* Logo */}
+          <div className="col-lg-2 col-5">
             <Link href="/">
               <img src="/logo.png" alt="Sweettree Logo" className="brand-logo" />
             </Link>
           </div>
 
-          <div className="col-lg-6 d-none d-lg-block">
-            <ul className="d-flex justify-content-center align-items-center m-0 p-0" style={{ listStyle: 'none', gap: '30px', fontSize: '14px', whiteSpace: 'nowrap' }}>
-              <li><Link href="/" className="premium-nav-link">HOME</Link></li>
-              <li><Link href="/shop" className="premium-nav-link">SHOP</Link></li>
-              <li><Link href="/build-combo" className="premium-nav-link">COMBO GIFT BOX</Link></li>
-              <li><Link href="/about" className="premium-nav-link">ABOUT</Link></li>
-              <li><Link href="/blog" className="premium-nav-link">BLOG</Link></li>
-              <li><Link href="/contact" className="premium-nav-link">CONTACT</Link></li>
+          {/* Desktop Nav Links */}
+          <div className="col-lg-7 d-none d-lg-block">
+            <ul className="d-flex justify-content-center align-items-center m-0 p-0" style={{ listStyle: 'none', gap: '6px' }}>
+              <li>
+                <Link href="/" className="premium-nav-link">
+                  <span className="nav-icon"><i className="fas fa-home"></i></span>
+                  <span className="nav-text">HOME</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/shop" className="premium-nav-link">
+                  <span className="nav-icon"><i className="fas fa-store"></i></span>
+                  <span className="nav-text">SHOP</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/build-combo" className="premium-nav-link nav-highlight">
+                  <span className="nav-icon"><i className="fas fa-gift"></i></span>
+                  <span className="nav-text">COMBO BOX</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="premium-nav-link">
+                  <span className="nav-icon"><i className="fas fa-leaf"></i></span>
+                  <span className="nav-text">ABOUT</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog" className="premium-nav-link">
+                  <span className="nav-icon"><i className="fas fa-book-open"></i></span>
+                  <span className="nav-text">BLOG</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="premium-nav-link">
+                  <span className="nav-icon"><i className="fas fa-envelope"></i></span>
+                  <span className="nav-text">CONTACT</span>
+                </Link>
+              </li>
             </ul>
           </div>
 
-          <div className="col-lg-3 col-6 d-flex justify-content-end header-icons gap-4">
-            <Link href="#" className="header-icon-box d-none d-md-flex text-decoration-none" onClick={(e) => { e.preventDefault(); setIsSearchOpen(!isSearchOpen); }}>
+          {/* Right Action Icons */}
+          <div className="col-lg-3 col-7 d-flex justify-content-end align-items-center" style={{ gap: '8px' }}>
+            {/* Search */}
+            <button
+              className="header-action-btn d-none d-md-flex"
+              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              title="Search"
+            >
               <i className="fas fa-search"></i>
-            </Link>
+            </button>
+
+            {/* User Dropdown */}
             <div className="dropdown d-none d-md-flex">
-              <Link href="#" className="header-icon-box text-decoration-none" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <button className="header-action-btn" data-bs-toggle="dropdown" aria-expanded="false" title="Account">
                 <i className="far fa-user"></i>
-              </Link>
+              </button>
               {user ? (
-                <ul className="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2" style={{ minWidth: '150px', borderRadius: '8px' }}>
-                  {user?.role === 'Super Admin' || user?.role === 'admin' ? (
+                <ul className="dropdown-menu dropdown-menu-end premium-dropdown" aria-label="user menu">
+                  <li className="dropdown-header-item">
+                    <span className="d-block fw-bold text-dark" style={{ fontSize: '13px' }}>Hi, {user.name?.split(' ')[0] || 'User'}</span>
+                    <span className="text-muted" style={{ fontSize: '11px' }}>{user.email}</span>
+                  </li>
+                  <li><hr className="dropdown-divider my-1" /></li>
+                  {(user?.role === 'Super Admin' || user?.role === 'Manager' || user?.role === 'Staff') && (
                     <li>
-                      <Link href="/admin/dashboard" className="dropdown-item d-flex align-items-center gap-2 py-2" style={{ fontSize: '14px', color: '#333' }}>
-                        <i className="fas fa-tachometer-alt text-muted" style={{ width: '16px' }}></i> Admin Panel
+                      <Link href="/admin/dashboard" className="dropdown-item premium-dropdown-item">
+                        <i className="fas fa-tachometer-alt me-2 text-success"></i> Admin Panel
                       </Link>
                     </li>
-                  ) : null}
+                  )}
                   <li>
-                    <Link href="/user/profile" className="dropdown-item d-flex align-items-center gap-2 py-2" style={{ fontSize: '14px', color: '#333' }}>
-                      <i className="far fa-user-circle text-muted" style={{ width: '16px' }}></i> Profile Settings
+                    <Link href="/user/profile" className="dropdown-item premium-dropdown-item">
+                      <i className="far fa-user-circle me-2 text-primary"></i> My Profile
                     </Link>
                   </li>
                   <li>
-                    <Link href="/user/orders" className="dropdown-item d-flex align-items-center gap-2 py-2" style={{ fontSize: '14px', color: '#333' }}>
-                      <i className="fas fa-box text-muted" style={{ width: '16px' }}></i> My Orders
+                    <Link href="/user/orders" className="dropdown-item premium-dropdown-item">
+                      <i className="fas fa-box me-2 text-warning"></i> My Orders
                     </Link>
                   </li>
-                  <li><hr className="dropdown-divider" /></li>
+                  <li><hr className="dropdown-divider my-1" /></li>
                   <li>
-                    <Link href="#" onClick={handleLogout} className="dropdown-item d-flex align-items-center gap-2 py-2" style={{ fontSize: '14px', color: '#dc3545' }}>
-                      <i className="fas fa-sign-out-alt text-danger" style={{ width: '16px' }}></i> Log Out
-                    </Link>
+                    <button onClick={handleLogout} className="dropdown-item premium-dropdown-item text-danger">
+                      <i className="fas fa-sign-out-alt me-2"></i> Log Out
+                    </button>
                   </li>
                 </ul>
               ) : (
-                <ul className="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2" style={{ minWidth: '150px', borderRadius: '8px' }}>
+                <ul className="dropdown-menu dropdown-menu-end premium-dropdown" aria-label="user menu">
                   <li>
-                    <Link href="/login" className="dropdown-item d-flex align-items-center gap-2 py-2" style={{ fontSize: '14px', color: '#333' }}>
-                      <i className="fas fa-sign-in-alt text-muted" style={{ width: '16px' }}></i> Sign in
+                    <Link href="/login" className="dropdown-item premium-dropdown-item">
+                      <i className="fas fa-sign-in-alt me-2 text-success"></i> Sign In
                     </Link>
                   </li>
                   <li>
-                    <Link href="/register" className="dropdown-item d-flex align-items-center gap-2 py-2" style={{ fontSize: '14px', color: '#333' }}>
-                      <i className="far fa-user-circle text-muted" style={{ width: '16px' }}></i> Sign up
+                    <Link href="/register" className="dropdown-item premium-dropdown-item">
+                      <i className="far fa-user-circle me-2 text-primary"></i> Sign Up
                     </Link>
                   </li>
                 </ul>
               )}
             </div>
-            <Link href="/wishlist" className="header-icon-box d-none d-md-flex text-decoration-none">
-              <div className="position-relative">
-                <i className="far fa-heart"></i>
-                {wishlistCount > 0 && <span className="cart-badge bg-danger">{wishlistCount}</span>}
-              </div>
+
+            {/* Wishlist */}
+            <Link href="/wishlist" className="header-action-btn d-none d-md-flex text-decoration-none position-relative" title="Wishlist">
+              <i className="far fa-heart"></i>
+              {wishlistCount > 0 && (
+                <span className="header-badge">{wishlistCount}</span>
+              )}
             </Link>
-            <Link href="#" className="header-icon-box text-decoration-none position-relative d-flex align-items-center" onClick={(e) => e.preventDefault()} data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas">
-              <div className="position-relative">
+
+            {/* Cart */}
+            <a
+              href="#"
+              className="header-cart-btn text-decoration-none position-relative"
+              onClick={(e) => e.preventDefault()}
+              data-bs-toggle="offcanvas"
+              data-bs-target="#cartOffcanvas"
+              title="Cart"
+            >
+              <div className="cart-icon-wrap">
                 <i className="fas fa-shopping-basket"></i>
-                <span className="cart-badge">{cartCount}</span>
+                <span className="header-badge">{cartCount}</span>
               </div>
-              <div className="ms-2 d-none d-xl-block">
-                <span className="d-block text-white" style={{ fontSize: '11px', lineHeight: '1', opacity: 0.8 }}>Shopping cart:</span>
-                <span className="cart-amount text-white fw-bold">₹{cartTotal ? cartTotal.toFixed(2) : '0.00'}</span>
+              <div className="cart-info d-none d-xl-block">
+                <span className="cart-label">Shopping cart</span>
+                <span className="cart-value">₹{cartTotal ? cartTotal.toFixed(2) : '0.00'}</span>
               </div>
-            </Link>
-            <Link href="#" className="header-icon-box d-lg-none text-decoration-none" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
+            </a>
+
+            {/* Mobile Hamburger */}
+            <Link href="#" className="header-action-btn d-lg-none text-decoration-none" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
               <i className="fas fa-bars"></i>
             </Link>
           </div>
         </div>
       </div>
 
+      {/* Sliding Search Bar */}
       {isSearchOpen && (
-        <div className="position-absolute w-100 bg-white shadow-sm border-top" style={{ top: '100%', left: 0, zIndex: 1000, padding: '15px 0' }}>
+        <div className="header-search-overlay">
           <div className="container">
-            <form className="header-search-form mx-auto" style={{ maxWidth: '600px' }}>
-              <select defaultValue="All Categories">
-                <option value="All Categories">All Categories</option>
-                <option value="Nuts">Nuts</option>
-                <option value="Seeds">Seeds</option>
-                <option value="Dates">Dates</option>
-              </select>
-              <input type="text" placeholder="Search products" />
-              <button type="submit">SEARCH</button>
+            <form onSubmit={handleSearch} className="header-search-form">
+              <div className="search-input-group">
+                <i className="fas fa-search search-icon"></i>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search for nuts, dates, dry fruits..."
+                  autoFocus
+                />
+                <button type="submit">SEARCH</button>
+                <button type="button" onClick={() => setIsSearchOpen(false)} className="close-search">
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
             </form>
           </div>
         </div>

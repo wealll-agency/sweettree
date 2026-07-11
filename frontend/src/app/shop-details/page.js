@@ -1,11 +1,17 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useDispatch, useSelector } from 'react-redux';
+import { addToCart } from '../../store/cartSlice';
+import { fetchAdminProducts } from '../../store/adminSlice';
 
 function ShopDetailsContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const { products } = useSelector((state) => state.admin);
   const [productName, setProductName] = useState('Loading...');
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
@@ -20,6 +26,47 @@ function ShopDetailsContent() {
       setProductName('Sweettree For Good Daily Nutrition Protein Energy Nut Bar 100g (25g x 4)');
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!products || products.length === 0) {
+      dispatch(fetchAdminProducts());
+    }
+  }, [dispatch, products]);
+
+  const handleAddToCart = () => {
+    // Find the real product from Redux to get its valid MongoDB _id so checkout works
+    const realProduct = products?.find(p => p.name === productName) || products?.[0];
+    const validId = realProduct ? realProduct._id : '60d5ecb8b392d700153528b8'; // Fallback to a valid hex string if store is empty
+
+    const mockProduct = {
+      _id: validId,
+      name: productName,
+      price: selectedPack === '100g' ? 856 : 1649,
+      discount: 0,
+      image: realProduct?.images?.[0] || '/top_product1.png'
+    };
+    
+    dispatch(addToCart({
+      product: mockProduct,
+      quantity,
+      size: selectedPack
+    }));
+
+    // Open side cart
+    if (typeof window !== 'undefined' && window.bootstrap) {
+      const offcanvas = document.getElementById('cartOffcanvas');
+      if (offcanvas) {
+        window.bootstrap.Offcanvas.getOrCreateInstance(offcanvas).show();
+      }
+    }
+  };
+
+  const handleBuyNow = () => {
+    handleAddToCart();
+    setTimeout(() => {
+      router.push('/checkout');
+    }, 100);
+  };
 
   return (
     <div className="container py-4 mt-2 bg-white">
@@ -121,8 +168,8 @@ function ShopDetailsContent() {
           </div>
 
           <div className="d-flex gap-3 mb-4">
-             <button className="btn w-50 py-3 fw-bold" style={{ backgroundColor: '#005B6E', color: 'white' }}>Add To Cart</button>
-             <button className="btn btn-outline-dark w-50 py-3 fw-bold">Buy It Now</button>
+             <button onClick={handleAddToCart} className="btn w-50 py-3 fw-bold" style={{ backgroundColor: '#005B6E', color: 'white' }}>Add To Cart</button>
+             <button onClick={handleBuyNow} className="btn btn-outline-dark w-50 py-3 fw-bold">Buy It Now</button>
           </div>
 
           <div className="mb-4 pt-2">

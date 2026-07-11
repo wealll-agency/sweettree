@@ -469,17 +469,17 @@ export default function AdminProductsPage() {
             <div className="card shadow-sm border-0 rounded-4 bg-white mb-4">
               <div className="card-header bg-white border-bottom-0 pt-4 pb-0">
                 <h6 className="fw-bold m-0 text-dark d-flex align-items-center gap-2">
-                  <i className="fas fa-dollar-sign text-muted"></i> Pricing & others
+                  <i className="fas fa-rupee-sign text-muted"></i> Pricing & others
                 </h6>
               </div>
               <div className="card-body">
                 <div className="row g-4">
                   <div className="col-md-3">
-                    <label className="fw-medium mb-1 fs-7">Purchase Price ($)</label>
+                    <label className="fw-medium mb-1 fs-7">Purchase Price (₹)</label>
                     <input type="number" className="form-control" placeholder="Purchase price" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} />
                   </div>
                   <div className="col-md-3">
-                    <label className="fw-medium mb-1 fs-7">Unit Price ($)</label>
+                    <label className="fw-medium mb-1 fs-7">Unit Price (₹)</label>
                     <input type="number" required className="form-control" placeholder="Unit price" value={price} onChange={(e) => setPrice(e.target.value)} />
                   </div>
                   <div className="col-md-3">
@@ -515,7 +515,7 @@ export default function AdminProductsPage() {
                   </div>
 
                   <div className="col-md-3">
-                    <label className="fw-medium mb-1 fs-7">Shipping Cost ($)</label>
+                    <label className="fw-medium mb-1 fs-7">Shipping Cost (₹)</label>
                     <input type="number" className="form-control" value={shippingCost} onChange={(e) => setShippingCost(e.target.value)} />
                   </div>
                   <div className="col-md-6 d-flex align-items-end pb-2">

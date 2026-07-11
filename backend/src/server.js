@@ -36,8 +36,13 @@ connectDB();
 app.use(helmet({
   crossOriginResourcePolicy: false // Allows loading local static upload files in local frontend/admin images
 }));
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:7051'];
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(...process.env.FRONTEND_URL.split(',').map(url => url.trim()));
+}
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:7051'], // 3000 customer frontend, 3001 admin panel, 7051 new port
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(express.json());

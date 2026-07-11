@@ -100,14 +100,14 @@ export default function Header() {
               </Link>
 
               {/* Cart */}
-              <Link href="/cart" className="position-relative text-dark hover-green-icon">
+              <a href="#" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas" className="position-relative text-dark hover-green-icon" onClick={(e) => e.preventDefault()}>
                 <ShoppingBag size={22} />
                 {cartCount > 0 && (
                   <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill" style={{ fontSize: '0.7rem', backgroundColor: 'var(--accent-color)' }}>
                     {cartCount}
                   </span>
                 )}
-              </Link>
+              </a>
 
               {/* User auth */}
               {user ? (

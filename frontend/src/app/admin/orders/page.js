@@ -278,8 +278,35 @@ function AdminOrdersContent() {
                   )}
                 </div>
 
-                <div className="fs-8 text-muted">
-                  Current Status: <strong className="text-dark">{selectedOrder.orderStatus}</strong> | Payment Status: <strong className="text-dark">{selectedOrder.paymentStatus}</strong>
+                <div className="fs-8 text-muted border-top pt-3 mt-3">
+                  <div className="mb-2">
+                    Current Status: <strong className="text-dark">{selectedOrder.orderStatus}</strong> | Payment Status: <strong className="text-dark">{selectedOrder.paymentStatus}</strong>
+                  </div>
+                  {(selectedOrder.razorpayOrderId || selectedOrder.razorpayPaymentId) && (
+                    <div className="bg-light p-3 rounded border">
+                      <h6 className="fw-bold text-dark fs-8 mb-2 text-uppercase">Transaction Details</h6>
+                      <div className="d-flex flex-column gap-1">
+                        {selectedOrder.razorpayPaymentId && (
+                          <div className="d-flex justify-content-between">
+                            <span>Payment ID / TXN ID:</span>
+                            <span className="text-dark fw-medium font-monospace">{selectedOrder.razorpayPaymentId}</span>
+                          </div>
+                        )}
+                        {selectedOrder.razorpayOrderId && (
+                          <div className="d-flex justify-content-between">
+                            <span>Gateway Order ID:</span>
+                            <span className="text-dark fw-medium font-monospace">{selectedOrder.razorpayOrderId}</span>
+                          </div>
+                        )}
+                        {selectedOrder.paymentStatus === 'Paid' && (
+                          <div className="d-flex justify-content-between">
+                            <span>Payment Processed (Approx):</span>
+                            <span className="text-dark fw-medium">{new Date(selectedOrder.createdAt).toLocaleString()}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               
