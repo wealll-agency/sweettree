@@ -43,7 +43,7 @@ export default function Header() {
           {/* Logo */}
           {(!pathname || !pathname.startsWith('/admin')) && (
             <Link href="/" className="navbar-brand d-flex align-items-center">
-              <span className="fs-3 fw-bold display-font" style={{ color: 'var(--primary-color)' }}>Maxglow</span>
+              <span className="fs-3 fw-bold display-font" style={{ color: 'var(--primary-color)' }}>Sweettree</span>
             </Link>
           )}
 
