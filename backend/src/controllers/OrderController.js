@@ -167,7 +167,7 @@ export const verifyPayment = async (req, res, next) => {
   const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
 
   try {
-    const shasum = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || '6SoTQA3cils25UsbCS6r0FoK');
+    const shasum = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'hqPKmC832Z20q2lfgwVowWoh');
     shasum.update(`${razorpayOrderId}|${razorpayPaymentId}`);
     const digest = shasum.digest('hex');
 

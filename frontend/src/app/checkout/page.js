@@ -67,13 +67,9 @@ export default function CheckoutPage() {
     if (items.length === 0) {
       router.push('/shop');
     }
-    // Redirect if user not logged in
-    if (!user) {
-      router.push('/login?redirect=checkout');
-    }
-  }, [items, user, router, isMounted]);
+  }, [items, router, isMounted]);
 
-  if (!isMounted || !user || items.length === 0) {
+  if (!isMounted || items.length === 0) {
     return null;
   }
 
@@ -84,6 +80,13 @@ export default function CheckoutPage() {
       return;
     }
     setAddressError('');
+    
+    if (!user) {
+      // For guest users, just save locally for now. They will be asked to login upon payment.
+      setShowNewAddressForm(false);
+      return;
+    }
+
     dispatch(addAddress({ street, city, state: stateName, zipCode, country, isDefault: user.addresses.length === 0 }))
       .unwrap()
       .then((addresses) => {
@@ -94,9 +97,14 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
-    const address = user.addresses[selectedAddressIndex];
+    if (!user) {
+      router.push('/register?redirect=checkout');
+      return;
+    }
+
+    const address = user.addresses ? user.addresses[selectedAddressIndex] : null;
     if (!address) {
-      alert('Please select a shipping address');
+      alert('Please select or add a shipping address');
       return;
     }
 
@@ -252,13 +260,15 @@ export default function CheckoutPage() {
               <MapPin size={20} color="var(--primary-color)" /> Shipping Address
             </h5>
 
-            {user.addresses.length === 0 ? (
+            {!user ? (
+              <p className="text-muted fs-7">Please fill in your shipping details. You will be asked to login before payment.</p>
+            ) : user.addresses?.length === 0 ? (
               <p className="text-muted fs-7">No shipping addresses saved yet. Please add a new shipping address below.</p>
             ) : (
               <div className="d-flex flex-column gap-3 mb-4">
-                {user.addresses.map((addr, idx) => (
+                {user.addresses?.map((addr, idx) => (
                   <div 
-                    key={addr._id}
+                    key={addr._id || idx}
                     onClick={() => setSelectedAddressIndex(idx)}
                     className={`p-3 rounded border cursor-pointer d-flex justify-content-between align-items-start ${selectedAddressIndex === idx ? 'border-success bg-light' : ''}`}
                     style={{ cursor: 'pointer' }}
@@ -278,9 +288,9 @@ export default function CheckoutPage() {
             {!showNewAddressForm ? (
               <button 
                 onClick={() => setShowNewAddressForm(true)} 
-                className="btn btn-brand-outline btn-sm d-flex align-items-center gap-1"
+                className="btn btn-brand-outline btn-sm d-flex align-items-center gap-1 mt-3"
               >
-                <Plus size={16} /> Add New Address
+                <Plus size={16} /> {(user?.addresses?.length > 0) || (street && city) ? 'Add / Change Address' : 'Add Shipping Address'}
               </button>
             ) : (
               <form onSubmit={handleAddAddressSubmit} className="mt-3 border-top pt-3">
@@ -351,6 +361,18 @@ export default function CheckoutPage() {
                   </button>
                 </div>
               </form>
+            )}
+
+            {/* Display locally saved guest address if filled */}
+            {!user && street && city && !showNewAddressForm && (
+              <div className="mt-3 p-3 rounded border border-success bg-light d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 className="fw-bold mb-1">Guest Details</h6>
+                  <p className="m-0 text-muted fs-7">{street}, {city}</p>
+                  <p className="m-0 text-muted fs-7">{stateName} - {zipCode}, {country}</p>
+                </div>
+                <span className="badge bg-success">Ready for Checkout</span>
+              </div>
             )}
           </div>
 
@@ -454,10 +476,10 @@ export default function CheckoutPage() {
 
             <button
               onClick={handlePlaceOrder}
-              disabled={loading || user.addresses.length === 0}
+              disabled={loading || (user && user.addresses?.length === 0) || (!user && (!street || !city))}
               className="btn btn-brand w-100 py-3 mt-4 fw-bold fs-6 d-flex align-items-center justify-content-center gap-2"
             >
-              {loading ? 'Processing Order...' : 'Pay with Razorpay'}
+              {loading ? 'Processing Order...' : 'Pay Now'}
             </button>
           </div>
 

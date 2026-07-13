@@ -22,7 +22,18 @@ function StateHydrator() {
     // Cart Hydration
     const cart = localStorage.getItem('sweettree_cart');
     if (cart) {
-      dispatch(hydrateCart(JSON.parse(cart)));
+      try {
+        const parsedCart = JSON.parse(cart);
+        // Only keep items that have a valid 24-character hex ID for the product
+        const validCart = parsedCart.filter(item => typeof item.product === 'string' && /^[0-9a-fA-F]{24}$/.test(item.product));
+        
+        if (validCart.length !== parsedCart.length) {
+          localStorage.setItem('sweettree_cart', JSON.stringify(validCart));
+        }
+        dispatch(hydrateCart(validCart));
+      } catch (e) {
+        console.error("Failed to parse cart", e);
+      }
     }
     
     // Wishlist Hydration

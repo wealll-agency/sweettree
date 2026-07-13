@@ -59,7 +59,7 @@ const Header = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/build-combo" className="premium-nav-link nav-highlight">
+                <Link href="/build-combo" className="premium-nav-link">
                   <span className="nav-icon"><i className="fas fa-gift"></i></span>
                   <span className="nav-text">COMBO BOX</span>
                 </Link>
@@ -159,20 +159,14 @@ const Header = () => {
             {/* Cart */}
             <a
               href="#"
-              className="header-cart-btn text-decoration-none position-relative"
+              className="header-action-btn text-decoration-none position-relative"
               onClick={(e) => e.preventDefault()}
               data-bs-toggle="offcanvas"
               data-bs-target="#cartOffcanvas"
               title="Cart"
             >
-              <div className="cart-icon-wrap">
-                <i className="fas fa-shopping-basket"></i>
-                <span className="header-badge">{cartCount}</span>
-              </div>
-              <div className="cart-info d-none d-xl-block">
-                <span className="cart-label">Shopping cart</span>
-                <span className="cart-value">₹{cartTotal ? cartTotal.toFixed(2) : '0.00'}</span>
-              </div>
+              <i className="fas fa-shopping-basket"></i>
+              <span className="header-badge">{cartCount}</span>
             </a>
 
             {/* Mobile Hamburger */}
