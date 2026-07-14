@@ -29,7 +29,7 @@ export default function WishlistPage() {
           <Heart size={56} className="text-muted mb-3 mx-auto" />
           <h2 className="fw-bold mb-2">Your Wishlist is Empty</h2>
           <p className="text-muted mb-4">Save products you like to purchase them later.</p>
-          <Link href="/products" className="btn btn-brand">Explore Products</Link>
+          <Link href="/shop" className="btn btn-brand">Explore Products</Link>
         </div>
       </div>
     );
@@ -46,7 +46,7 @@ export default function WishlistPage() {
               product={{
                 ...product,
                 image: product.images?.[0] || product.image,
-                mrp: product.mrp || Math.round(product.price / (1 - (product.discount || 0) / 100)),
+                mrp: product.purchasePrice || product.price,
                 brand: 'Sweettree'
               }} 
             />

@@ -1,6 +1,7 @@
 'use client';
-import React from 'react';
+import React, { memo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const ShopByPurpose = () => {
   return (
@@ -16,7 +17,7 @@ const ShopByPurpose = () => {
             <div className="purpose-card card-bg-gifting">
               <div className="purpose-default">
                 <div className="purpose-circle">
-                  <img src="/shop-by-purpose1.svg" alt="Gifting" />
+                  <Image src="/shop-by-purpose1.svg" alt="Gifting" width={60} height={60} style={{ width: '100%', height: 'auto' }} />
                 </div>
                 <h4 className="purpose-title">Gifting</h4>
               </div>
@@ -30,7 +31,7 @@ const ShopByPurpose = () => {
             <div className="purpose-card card-bg-cooking">
               <div className="purpose-default">
                 <div className="purpose-circle">
-                  <img src="/shop-by-purpose2.svg" alt="Cooking" />
+                  <Image src="/shop-by-purpose2.svg" alt="Cooking" width={60} height={60} style={{ width: '100%', height: 'auto' }} />
                 </div>
                 <h4 className="purpose-title">Cooking</h4>
               </div>
@@ -44,7 +45,7 @@ const ShopByPurpose = () => {
             <div className="purpose-card card-bg-snacking">
               <div className="purpose-default">
                 <div className="purpose-circle">
-                  <img src="/shop-by-purpose3.svg" alt="Snacking" />
+                  <Image src="/shop-by-purpose3.svg" alt="Snacking" width={60} height={60} style={{ width: '100%', height: 'auto' }} />
                 </div>
                 <h4 className="purpose-title">Snacking</h4>
               </div>
@@ -58,7 +59,7 @@ const ShopByPurpose = () => {
             <div className="purpose-card card-bg-nutrition">
               <div className="purpose-default">
                 <div className="purpose-circle">
-                  <img src="/shop-by-purpose4.svg" alt="Daily Nutrition" />
+                  <Image src="/shop-by-purpose4.svg" alt="Daily Nutrition" width={60} height={60} style={{ width: '100%', height: 'auto' }} />
                 </div>
                 <h4 className="purpose-title">Daily Nutrition</h4>
               </div>
@@ -73,4 +74,4 @@ const ShopByPurpose = () => {
   );
 };
 
-export default ShopByPurpose;
+export default memo(ShopByPurpose);

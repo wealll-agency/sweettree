@@ -1,5 +1,6 @@
 'use client';
-import React from 'react';
+import React, { memo } from 'react';
+import Image from 'next/image';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Pagination, Navigation } from 'swiper/modules';
 
@@ -28,22 +29,22 @@ const HeroSlider = () => {
         >
           <SwiperSlide>
             <div className="item">
-              <img src="/banner_slider_image1.jpeg" alt="Banner 1" />
+              <Image src="/banner_slider_image1.jpeg" alt="Banner 1" width={1200} height={400} priority={true} style={{ width: '100%', height: 'auto' }} />
             </div>
           </SwiperSlide>
           <SwiperSlide>
             <div className="item">
-              <img src="/banner_slider_image2.jpeg" alt="Banner 2" />
+              <Image src="/banner_slider_image2.jpeg" alt="Banner 2" width={1200} height={400} style={{ width: '100%', height: 'auto' }} />
             </div>
           </SwiperSlide>
           <SwiperSlide>
             <div className="item">
-              <img src="/banner_slider_image1.jpeg" alt="Banner 1" />
+              <Image src="/banner_slider_image1.jpeg" alt="Banner 1" width={1200} height={400} style={{ width: '100%', height: 'auto' }} />
             </div>
           </SwiperSlide>
           <SwiperSlide>
             <div className="item">
-              <img src="/banner_slider_image2.jpeg" alt="Banner 2" />
+              <Image src="/banner_slider_image2.jpeg" alt="Banner 2" width={1200} height={400} style={{ width: '100%', height: 'auto' }} />
             </div>
           </SwiperSlide>
         </Swiper>
@@ -52,4 +53,4 @@ const HeroSlider = () => {
   );
 };
 
-export default HeroSlider;
+export default memo(HeroSlider);

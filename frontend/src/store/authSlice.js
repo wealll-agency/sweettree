@@ -7,16 +7,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API
 axios.defaults.withCredentials = true;
 
 const getConfig = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
   return {
-    headers: {
-      Authorization: token ? `Bearer ${token}` : ''
-    },
     withCredentials: true
   };
 };
 
-// Load user from localStorage if available
 const getInitialUser = () => {
   return null;
 };
@@ -26,12 +21,6 @@ export const registerUser = createAsyncThunk(
   async ({ name, email, password, phone }, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${API_URL}/register`, { name, email, password, phone });
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('sweettree_user', JSON.stringify(response.data.user));
-        if (response.data.token) {
-          localStorage.setItem('sweettree_token', response.data.token);
-        }
-      }
       return response.data.user;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Registration failed');
@@ -44,12 +33,6 @@ export const loginUser = createAsyncThunk(
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${API_URL}/login`, { email, password });
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('sweettree_user', JSON.stringify(response.data.user));
-        if (response.data.token) {
-          localStorage.setItem('sweettree_token', response.data.token);
-        }
-      }
       return response.data.user;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Login failed');
@@ -62,10 +45,6 @@ export const logoutUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await axios.post(`${API_URL}/logout`);
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('sweettree_user');
-        localStorage.removeItem('sweettree_token');
-      }
       return null;
     } catch (error) {
       return rejectWithValue('Logout failed');
@@ -78,9 +57,6 @@ export const updateUserProfile = createAsyncThunk(
   async (profileData, { rejectWithValue }) => {
     try {
       const response = await axios.put(`${API_URL}/profile`, profileData, getConfig());
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('sweettree_user', JSON.stringify(response.data.user));
-      }
       return response.data.user;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update profile');
@@ -112,11 +88,23 @@ export const deleteAddress = createAsyncThunk(
   }
 );
 
+export const updateAddress = createAsyncThunk(
+  'auth/updateAddress',
+  async ({ addressId, addressData }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${API_URL}/addresses/${addressId}`, addressData, getConfig());
+      return response.data.addresses;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update address');
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
     user: getInitialUser(),
-    loading: false,
+    loading: true, // Start as true to prevent premature redirects during hydration
     error: null
   },
   reducers: {
@@ -125,6 +113,7 @@ const authSlice = createSlice({
     },
     setCredentials: (state, action) => {
       state.user = action.payload;
+      state.loading = false; // Hydration complete
     }
   },
   extraReducers: (builder) => {
@@ -176,14 +165,18 @@ const authSlice = createSlice({
       .addCase(addAddress.fulfilled, (state, action) => {
         if (state.user) {
           state.user.addresses = action.payload;
-          localStorage.setItem('sweettree_user', JSON.stringify(state.user));
         }
       })
       // Delete Address
       .addCase(deleteAddress.fulfilled, (state, action) => {
         if (state.user) {
           state.user.addresses = action.payload;
-          localStorage.setItem('sweettree_user', JSON.stringify(state.user));
+        }
+      })
+      // Update Address
+      .addCase(updateAddress.fulfilled, (state, action) => {
+        if (state.user) {
+          state.user.addresses = action.payload;
         }
       });
   }

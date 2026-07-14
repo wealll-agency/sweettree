@@ -1,5 +1,6 @@
 'use client';
-import React, from 'react';
+import React, { memo } from 'react';
+import Image from 'next/image';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation } from 'swiper/modules';
 
@@ -32,7 +33,7 @@ const Testimonials = () => {
               </p>
               <div className="d-flex justify-content-between align-items-center mt-auto">
                 <div className="d-flex align-items-center gap-2">
-                  <img src="/testimonial_image1.png" alt="Siddhartha Nandi" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
+                  <Image src="/testimonial_image1.png" alt="Siddhartha Nandi" width={40} height={40} style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
                   <div>
                     <h6 className="mb-0 fw-bold" style={{ fontSize: '14px', color: '#333' }}>Siddhartha Nandi</h6>
                     <small style={{ fontSize: '12px', color: '#aaa' }}>Customer</small>
@@ -53,7 +54,7 @@ const Testimonials = () => {
               </p>
               <div className="d-flex justify-content-between align-items-center mt-auto">
                 <div className="d-flex align-items-center gap-2">
-                  <img src="/testimonial_image2.png" alt="Dianne Russell" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
+                  <Image src="/testimonial_image2.png" alt="Dianne Russell" width={40} height={40} style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
                   <div>
                     <h6 className="mb-0 fw-bold" style={{ fontSize: '14px', color: '#333' }}>Dianne Russell</h6>
                     <small style={{ fontSize: '12px', color: '#aaa' }}>Customer</small>
@@ -74,7 +75,7 @@ const Testimonials = () => {
               </p>
               <div className="d-flex justify-content-between align-items-center mt-auto">
                 <div className="d-flex align-items-center gap-2">
-                  <img src="/testimonial_image3.png" alt="Md. Dilsad Ali" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
+                  <Image src="/testimonial_image3.png" alt="Md. Dilsad Ali" width={40} height={40} style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
                   <div>
                     <h6 className="mb-0 fw-bold" style={{ fontSize: '14px', color: '#333' }}>Md. Dilsad Ali</h6>
                     <small style={{ fontSize: '12px', color: '#aaa' }}>Customer</small>
@@ -92,4 +93,4 @@ const Testimonials = () => {
   );
 };
 
-export default Testimonials;
+export default memo(Testimonials);

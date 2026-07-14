@@ -14,10 +14,7 @@ function StateHydrator() {
 
   useEffect(() => {
     // Auth Hydration
-    const user = localStorage.getItem('sweettree_user');
-    if (user) {
-      dispatch(setCredentials(JSON.parse(user)));
-    }
+    // Handled purely by initAuth() now via HttpOnly cookies
     
     // Cart Hydration
     const cart = localStorage.getItem('sweettree_cart');
@@ -42,27 +39,39 @@ function StateHydrator() {
       dispatch(hydrateWishlist(JSON.parse(wishlist)));
     }
 
-    // Global Axios Request Interceptor for Bearer Token
-    const reqInterceptor = axios.interceptors.request.use((config) => {
-      const token = localStorage.getItem('sweettree_token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    // Session Restoration on Startup
+    const initAuth = async () => {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api';
+      try {
+        const profileRes = await axios.get(`${apiUrl}/auth/profile`, { withCredentials: true });
+        dispatch(setCredentials(profileRes.data.user));
+      } catch (e) {
+        // No valid session or guest user
+        dispatch(setCredentials(null));
       }
-      return config;
-    });
+    };
+    initAuth();
 
     // Global Axios 401 Interceptor
     const interceptor = axios.interceptors.response.use(
       (response) => response,
-      (error) => {
-        if (error.response && error.response.status === 401) {
-          // Clear local storage and redux state if unauthorized and from our API
+      async (error) => {
+        const originalRequest = error.config;
+        if (error.response && error.response.status === 401 && !originalRequest._retry) {
           const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api';
-          if (error.config.url && error.config.url.includes(apiUrl) && !error.config.url.includes('/login')) {
-            localStorage.removeItem('sweettree_user');
-            localStorage.removeItem('sweettree_token');
-            dispatch(setCredentials(null));
-            window.location.href = '/login?session=expired';
+          // Don't retry if it's the login or refresh endpoint itself
+          if (originalRequest.url && (originalRequest.url.includes('/login') || originalRequest.url.includes('/refresh'))) {
+            return Promise.reject(error);
+          }
+          
+          originalRequest._retry = true;
+          try {
+             await axios.post(`${apiUrl}/auth/refresh`, {}, { withCredentials: true });
+             // The backend set a new HttpOnly access token cookie, so retry the original request
+             return axios(originalRequest);
+          } catch(err) {
+             // Refresh failed, user is definitely logged out
+             dispatch(setCredentials(null));
           }
         }
         return Promise.reject(error);
@@ -70,7 +79,6 @@ function StateHydrator() {
     );
 
     return () => {
-      axios.interceptors.request.eject(reqInterceptor);
       axios.interceptors.response.eject(interceptor);
     };
   }, [dispatch]);

@@ -95,7 +95,7 @@ export default function AdminHeader() {
     }}>
 
       {/* Home */}
-      <Link href="/" title="Go to Store"
+      <Link href="/" title="Go to Store" aria-label="Go to Store"
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: '50%', color: '#374151', textDecoration: 'none' }}
         className="admin-header-icon-btn"
       >
@@ -107,6 +107,7 @@ export default function AdminHeader() {
         <button
           onClick={() => { setShowBell(!showBell); setShowProfile(false); fetchNotifs(); }}
           title="Notifications"
+          aria-label="Notifications"
           style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: '50%', border: 'none', background: 'transparent', color: '#374151', cursor: 'pointer' }}
           className="admin-header-icon-btn"
         >
@@ -181,6 +182,7 @@ export default function AdminHeader() {
         <button
           onClick={() => { setShowProfile(!showProfile); setShowBell(false); }}
           title="Profile"
+          aria-label="Profile"
           style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 24, border: '1px solid #e5e7eb', background: 'transparent', cursor: 'pointer', color: '#374151' }}
           className="admin-header-icon-btn"
         >

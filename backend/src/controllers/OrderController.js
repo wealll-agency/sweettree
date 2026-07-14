@@ -50,9 +50,9 @@ const calculateOrderTotals = async (items, couponCode) => {
     }
   }
 
-  // Tax = 18% of discounted price
+  // Tax = 5% of discounted price
   const taxableAmount = subtotal - discount;
-  const tax = Math.round(taxableAmount * 0.18);
+  const tax = Math.round(taxableAmount * 0.05);
   
   // Shipping: Free above 500, else 40 INR
   const shippingFee = taxableAmount > 500 ? 0 : 40;
@@ -93,10 +93,23 @@ export const createOrder = async (req, res, next) => {
     }
 
     // 2. Create Local Order (Pending Payment)
+    const mappedDeliveryAddress = {
+      name: deliveryAddress?.name || req.user?.name || 'Customer',
+      phone: deliveryAddress?.phone || req.user?.phone || '9999999999',
+      pincode: deliveryAddress?.pincode || deliveryAddress?.zipCode || '',
+      locality: deliveryAddress?.locality || deliveryAddress?.street || deliveryAddress?.address || deliveryAddress?.city || '',
+      address: deliveryAddress?.address || deliveryAddress?.street || deliveryAddress?.locality || '',
+      city: deliveryAddress?.city || '',
+      state: deliveryAddress?.state || '',
+      landmark: deliveryAddress?.landmark || '',
+      alternatePhone: deliveryAddress?.alternatePhone || deliveryAddress?.phone || req.user?.phone || '',
+      addressType: deliveryAddress?.addressType || 'Home'
+    };
+
     const order = new Order({
       user: req.user._id,
       items: validatedItems,
-      deliveryAddress,
+      deliveryAddress: mappedDeliveryAddress,
       couponCode,
       couponDiscount: discount,
       subtotal,
@@ -179,6 +192,7 @@ export const verifyPayment = async (req, res, next) => {
           $set: { 
             paymentStatus: 'Paid',
             orderStatus: 'Confirmed',
+            confirmedAt: Date.now(),
             razorpayPaymentId
           } 
         },
@@ -249,7 +263,9 @@ export const verifyPayment = async (req, res, next) => {
 // @access  Private
 export const getMyOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const orders = await Order.find({ user: req.user._id })
+      .populate('items.product', 'images name')
+      .sort({ createdAt: -1 });
     res.json({ success: true, orders });
   } catch (error) {
     next(error);
@@ -261,7 +277,9 @@ export const getMyOrders = async (req, res, next) => {
 // @access  Private
 export const getOrderById = async (req, res, next) => {
   try {
-    const order = await Order.findById(req.params.id).populate('user', 'name email phone');
+    const order = await Order.findById(req.params.id)
+      .populate('user', 'name email phone')
+      .populate('items.product', 'images name');
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
@@ -308,16 +326,19 @@ export const updateOrderStatus = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Cannot cancel order that has already been shipped or delivered' });
     }
 
-    order.orderStatus = status || order.orderStatus;
+    const updateQuery = { $set: {} };
+    updateQuery.$set.orderStatus = status || order.orderStatus;
     
-    if (trackingNumber) order.trackingNumber = trackingNumber;
+    if (trackingNumber) updateQuery.$set.trackingNumber = trackingNumber;
     
-    if (status === 'Shipped') order.shippedAt = Date.now();
-    if (status === 'Delivered') order.deliveredAt = Date.now();
+    if (status === 'Confirmed') updateQuery.$set.confirmedAt = Date.now();
+    if (status === 'Packed') updateQuery.$set.packedAt = Date.now();
+    if (status === 'Shipped') updateQuery.$set.shippedAt = Date.now();
+    if (status === 'Delivered') updateQuery.$set.deliveredAt = Date.now();
 
     // If Order is Cancelled, restore items to stock
     if (status === 'Cancelled') {
-      order.paymentStatus = 'Refunded';
+      updateQuery.$set.paymentStatus = 'Refunded';
       
       for (const item of order.items) {
         await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
@@ -338,7 +359,7 @@ export const updateOrderStatus = async (req, res, next) => {
       }
     }
 
-    const updatedOrder = await order.save();
+    const updatedOrder = await Order.findByIdAndUpdate(req.params.id, updateQuery, { new: true });
     await logActivity(req.user._id, 'UPDATE_ORDER_STATUS', `Updated order ID ${order._id} status to: ${status}`, req);
 
     res.json({ success: true, order: updatedOrder });
@@ -383,9 +404,13 @@ export const processRefund = async (req, res, next) => {
     };
     await payment.save();
 
-    order.paymentStatus = 'Refunded';
-    order.orderStatus = 'Cancelled';
-    await order.save();
+    const updateQuery = {
+      $set: {
+        paymentStatus: 'Refunded',
+        orderStatus: 'Cancelled'
+      }
+    };
+    await Order.findByIdAndUpdate(order._id, updateQuery);
 
     await logActivity(req.user._id, 'PROCESS_REFUND', `Processed refund for Order ID ${order._id}`, req);
 

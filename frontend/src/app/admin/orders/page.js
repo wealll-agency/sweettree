@@ -7,6 +7,77 @@ import { ShoppingBag, Eye, MapPin, Check, Filter, X, Printer } from 'lucide-reac
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+const getStateCode = (stateName) => {
+  const states = {
+    'jammu': '01', 'himachal': '02', 'punjab': '03', 'chandigarh': '04',
+    'uttarakhand': '05', 'haryana': '06', 'delhi': '07', 'rajasthan': '08',
+    'uttar pradesh': '09', 'up': '09', 'bihar': '10', 'sikkim': '11',
+    'arunachal': '12', 'nagaland': '13', 'manipur': '14', 'mizoram': '15',
+    'tripura': '16', 'meghalaya': '17', 'assam': '18', 'west bengal': '19',
+    'wb': '19', 'jharkhand': '20', 'odisha': '21', 'orissa': '21',
+    'chhattisgarh': '22', 'madhya pradesh': '23', 'mp': '23', 'gujarat': '24',
+    'maharashtra': '27', 'karnataka': '29', 'goa': '30', 'kerala': '32',
+    'tamil nadu': '33', 'telangana': '36', 'andhra pradesh': '37', 'ap': '37'
+  };
+  const key = (stateName || '').toLowerCase().trim();
+  for (const s in states) {
+    if (key.includes(s)) return states[s];
+  }
+  return '19'; // Default to West Bengal GST state code
+};
+
+const numberToWords = (num) => {
+  const a = [
+    '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+    'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
+  ];
+  const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  if (num === 0) return 'Zero';
+  const makeGroup = (n) => {
+    let str = '';
+    if (n >= 100) {
+      str += a[Math.floor(n / 100)] + ' Hundred ';
+      n %= 100;
+    }
+    if (n >= 20) {
+      str += b[Math.floor(n / 10)] + ' ';
+      n %= 10;
+    }
+    if (n > 0) {
+      str += a[n] + ' ';
+    }
+    return str.trim();
+  };
+  let cleanNum = Math.floor(num);
+  let words = '';
+  if (cleanNum >= 10000000) {
+    words += makeGroup(Math.floor(cleanNum / 10000000)) + ' Crore ';
+    cleanNum %= 10000000;
+  }
+  if (cleanNum >= 100000) {
+    words += makeGroup(Math.floor(cleanNum / 100000)) + ' Lakh ';
+    cleanNum %= 100000;
+  }
+  if (cleanNum >= 1000) {
+    words += makeGroup(Math.floor(cleanNum / 1000)) + ' Thousand ';
+    cleanNum %= 1000;
+  }
+  if (cleanNum > 0) {
+    words += makeGroup(cleanNum);
+  }
+  let paise = Math.round((num - Math.floor(num)) * 100);
+  let paiseWords = '';
+  if (paise > 0) {
+    if (paise >= 20) {
+      paiseWords = b[Math.floor(paise / 10)] + ' ' + a[paise % 10];
+    } else {
+      paiseWords = a[paise];
+    }
+    paiseWords = ' and ' + paiseWords.trim() + ' Paise';
+  }
+  return 'INR ' + words.trim() + paiseWords + ' Only';
+};
+
 function AdminOrdersContent() {
   const dispatch = useDispatch();
   const searchParams = useSearchParams();
@@ -19,6 +90,41 @@ function AdminOrdersContent() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [trackingNumber, setTrackingNumber] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
+
+  let totalQty = 0;
+  let totalTaxable = 0;
+  let totalCGST = 0;
+  let totalSGST = 0;
+  let shippingFee = 0;
+  let shippingTaxable = 0;
+  let shippingCGST = 0;
+  let shippingSGST = 0;
+  let couponDiscount = 0;
+  let grandTotal = 0;
+  let roundOff = 0;
+
+  if (selectedOrder) {
+    selectedOrder.items.forEach(item => {
+      const basePrice = Math.round((item.price / 1.05) * 100) / 100;
+      const taxAmt = Math.round((item.price - basePrice) * 100) / 100;
+      totalQty += item.quantity;
+      totalTaxable += basePrice * item.quantity;
+      totalCGST += (taxAmt / 2) * item.quantity;
+      totalSGST += (taxAmt / 2) * item.quantity;
+    });
+
+    shippingFee = selectedOrder.shippingFee || 0;
+    if (shippingFee > 0) {
+      shippingTaxable = Math.round((shippingFee / 1.05) * 100) / 100;
+      const shippingTax = Math.round((shippingFee - shippingTaxable) * 100) / 100;
+      shippingCGST = shippingTax / 2;
+      shippingSGST = shippingTax / 2;
+    }
+
+    couponDiscount = selectedOrder.couponDiscount || 0;
+    grandTotal = selectedOrder.totalAmount || 0;
+    roundOff = grandTotal - (totalTaxable + totalCGST + totalSGST + shippingTaxable + shippingCGST + shippingSGST - couponDiscount);
+  }
 
   useEffect(() => {
     dispatch(fetchAdminOrders());
@@ -66,14 +172,45 @@ function AdminOrdersContent() {
 
   const handlePrint = () => {
     const printContent = document.getElementById('printable-invoice').innerHTML;
-    const printWindow = window.open('', '_blank', 'width=800,height=900');
+    const printWindow = window.open('', '_blank', 'width=850,height=950');
     printWindow.document.write(`
       <html>
         <head>
           <title>Tax Invoice - ${selectedOrder._id.substring(0, 10).toUpperCase()}</title>
           <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
           <style>
-            body { font-family: sans-serif; font-size: 12px; color: #000; padding: 20px; }
+            body { font-family: Arial, sans-serif; font-size: 11px; color: #000; padding: 10px; }
+            .invoice-box {
+              border: 1.5px solid #000;
+              width: 100%;
+              max-width: 800px;
+              margin: 0 auto;
+              padding: 0;
+            }
+            .invoice-table {
+              border-collapse: collapse;
+              width: 100%;
+              margin-bottom: 0;
+            }
+            .invoice-table th, .invoice-table td {
+              border: 1px solid #000;
+              padding: 4px 6px;
+              font-size: 11px;
+              vertical-align: top;
+            }
+            .invoice-table th {
+              background-color: #f2f2f2;
+              text-align: center;
+              font-weight: bold;
+            }
+            .text-center { text-align: center; }
+            .text-end { text-align: right; }
+            .text-start { text-align: left; }
+            .fw-bold { font-weight: bold; }
+            .border-bottom { border-bottom: 1px solid #000; }
+            .border-top { border-top: 1px solid #000; }
+            .border-right { border-right: 1px solid #000; }
+            .no-border { border: none !important; }
             @media print {
               body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             }
@@ -206,7 +343,7 @@ function AdminOrdersContent() {
                     <h6 className="fw-bold text-muted uppercase fs-8 mb-2">Customer Profile</h6>
                     <p className="m-0 fw-semibold text-dark">{selectedOrder.user?.name || 'Guest'}</p>
                     <p className="m-0 text-muted fs-7">Email: {selectedOrder.user?.email || 'N/A'}</p>
-                    <p className="m-0 text-muted fs-7">Phone: {selectedOrder.user?.phone || 'N/A'}</p>
+                    <p className="m-0 text-muted fs-7">Phone: {selectedOrder.deliveryAddress?.phone || selectedOrder.user?.phone || 'N/A'}</p>
                   </div>
                   {/* Address */}
                   <div className="col-md-6">
@@ -214,8 +351,8 @@ function AdminOrdersContent() {
                     <div className="d-flex align-items-start gap-1">
                       <MapPin size={16} className="text-muted mt-1" />
                       <div>
-                        <p className="m-0 text-dark fs-7">{selectedOrder.deliveryAddress.street}, {selectedOrder.deliveryAddress.city}</p>
-                        <p className="m-0 text-muted fs-7">{selectedOrder.deliveryAddress.state} - {selectedOrder.deliveryAddress.zipCode}, {selectedOrder.deliveryAddress.country}</p>
+                        <p className="m-0 text-dark fs-7">{selectedOrder.deliveryAddress.street || selectedOrder.deliveryAddress.address || selectedOrder.deliveryAddress.locality}, {selectedOrder.deliveryAddress.city}</p>
+                        <p className="m-0 text-muted fs-7">{selectedOrder.deliveryAddress.state} - {selectedOrder.deliveryAddress.zipCode || selectedOrder.deliveryAddress.pincode}, {selectedOrder.deliveryAddress.country || 'India'}</p>
                       </div>
                     </div>
                   </div>
@@ -321,136 +458,331 @@ function AdminOrdersContent() {
       {/* Hidden Printable Invoice - Flipkart Style */}
       {selectedOrder && (
         <div id="printable-invoice" className="d-none">
-          
-          <div className="d-flex justify-content-between align-items-center border-bottom border-dark pb-2 mb-3">
-            <div>
-              <h2 className="fw-bold m-0" style={{ fontSize: '24px' }}>Sweettree</h2>
-              <div style={{ fontSize: '10px' }}>www.sweettreeon.com</div>
-            </div>
-            <div className="text-end">
-              <h4 className="fw-bold m-0 text-uppercase" style={{ fontSize: '18px' }}>Tax Invoice</h4>
-            </div>
-          </div>
-
-          <div className="row g-0 border border-dark mb-3">
-            {/* Seller Details */}
-            <div className="col-6 p-2 border-end border-dark">
-              <div className="fw-bold text-uppercase mb-1" style={{ fontSize: '10px' }}>Sold By:</div>
-              <div className="fw-bold">Sweettree Enterprises</div>
-              <div>123 Herbal Avenue, Sector 5</div>
-              <div>Kolkata, West Bengal - 700091, India</div>
-              <div className="mt-2"><strong>GSTIN:</strong> 19AAACC1234D1Z5</div>
-              <div><strong>PAN:</strong> AAACC1234D</div>
+          <div className="invoice-box">
+            {/* Title */}
+            <div className="text-center fw-bold border-bottom py-2" style={{ fontSize: '14px', textTransform: 'uppercase' }}>
+              Tax Invoice
             </div>
             
-            {/* Buyer Details */}
-            <div className="col-6 p-2">
-              <div className="fw-bold text-uppercase mb-1" style={{ fontSize: '10px' }}>Billing/Shipping Address:</div>
-              <div className="fw-bold">{selectedOrder.user?.name || 'Guest Customer'}</div>
-              <div>{selectedOrder.deliveryAddress.street}</div>
-              <div>{selectedOrder.deliveryAddress.city}, {selectedOrder.deliveryAddress.state} - {selectedOrder.deliveryAddress.zipCode}</div>
-              <div>{selectedOrder.deliveryAddress.country}</div>
-              <div className="mt-2"><strong>Phone:</strong> {selectedOrder.user?.phone || 'N/A'}</div>
+            {/* IRN Block */}
+            <div className="row g-0 border-bottom p-2">
+              <div className="col-8">
+                <div><strong>IRN:</strong> 4ecf1455f213378bf{selectedOrder._id.substring(0, 6)}a0db3dd8fd9e{selectedOrder._id.substring(6, 12)}59bed15e10d4c6f86eee4add3</div>
+                <div><strong>Ack No.:</strong> 18262310{selectedOrder._id.substring(0, 6).replace(/[^0-9]/g, '8')}84</div>
+                <div><strong>Ack Date:</strong> {new Date(selectedOrder.createdAt).toLocaleDateString()}</div>
+              </div>
+              <div className="col-4 text-end d-flex align-items-center justify-content-end gap-2">
+                <div style={{ fontSize: '9px', fontWeight: 'bold' }}>e-Invoice</div>
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent('https://sweettreeon.com/invoice/' + selectedOrder._id)}`} 
+                  alt="e-invoice QR" 
+                  style={{ width: '60px', height: '60px' }} 
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="row g-0 border border-dark border-bottom-0">
-            <div className="col-3 p-2 border-end border-dark">
-              <div className="text-uppercase" style={{ fontSize: '10px' }}>Order No:</div>
-              <div className="fw-bold">{selectedOrder._id.substring(0, 14).toUpperCase()}</div>
-            </div>
-            <div className="col-3 p-2 border-end border-dark">
-              <div className="text-uppercase" style={{ fontSize: '10px' }}>Order Date:</div>
-              <div className="fw-bold">{new Date(selectedOrder.createdAt).toLocaleDateString()}</div>
-            </div>
-            <div className="col-3 p-2 border-end border-dark">
-              <div className="text-uppercase" style={{ fontSize: '10px' }}>Invoice Date:</div>
-              <div className="fw-bold">{new Date().toLocaleDateString()}</div>
-            </div>
-            <div className="col-3 p-2">
-              <div className="text-uppercase" style={{ fontSize: '10px' }}>Payment Mode:</div>
-              <div className="fw-bold">{selectedOrder.paymentStatus === 'Paid' ? 'Prepaid' : 'COD'}</div>
-            </div>
-          </div>
-
-          <table className="table table-bordered border-dark mb-0" style={{ borderColor: '#000' }}>
-            <thead>
-              <tr className="text-center bg-light" style={{ fontSize: '11px' }}>
-                <th style={{ width: '5%' }}>Sl.</th>
-                <th className="text-start" style={{ width: '35%' }}>Description</th>
-                <th style={{ width: '10%' }}>Unit Price</th>
-                <th style={{ width: '5%' }}>Qty</th>
-                <th style={{ width: '10%' }}>Net Amt</th>
-                <th style={{ width: '8%' }}>Tax Rate</th>
-                <th style={{ width: '12%' }}>Tax Amt</th>
-                <th style={{ width: '15%' }}>Total Amt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedOrder.items.map((item, idx) => {
-                const basePrice = Math.round((item.price / 1.18) * 100) / 100;
-                const taxAmt = Math.round((item.price - basePrice) * 100) / 100;
-                
-                return (
-                  <tr key={item._id} className="text-center" style={{ fontSize: '11px' }}>
-                    <td>{idx + 1}</td>
-                    <td className="text-start fw-bold">{item.name}</td>
-                    <td>₹{basePrice.toFixed(2)}</td>
-                    <td>{item.quantity}</td>
-                    <td>₹{(basePrice * item.quantity).toFixed(2)}</td>
-                    <td>18%</td>
-                    <td>₹{(taxAmt * item.quantity).toFixed(2)}</td>
-                    <td className="fw-bold text-end">₹{(item.price * item.quantity).toFixed(2)}</td>
-                  </tr>
-                );
-              })}
-              
-              {/* Shipping Row */}
-              <tr className="text-center" style={{ fontSize: '11px' }}>
-                <td></td>
-                <td className="text-start">Shipping Charges</td>
-                <td>-</td>
-                <td>-</td>
-                <td>-</td>
-                <td>-</td>
-                <td>-</td>
-                <td className="text-end">₹{selectedOrder.items.reduce((acc, item) => acc + (item.price * item.quantity), 0) > 500 ? '0.00' : '40.00'}</td>
-              </tr>
-
-              {/* Coupon Row */}
-              {selectedOrder.couponCode && (
-                <tr className="text-center" style={{ fontSize: '11px' }}>
-                  <td></td>
-                  <td className="text-start text-success">Coupon Discount ({selectedOrder.couponCode})</td>
-                  <td>-</td>
-                  <td>-</td>
-                  <td>-</td>
-                  <td>-</td>
-                  <td>-</td>
-                  <td className="text-end text-success">-₹{(selectedOrder.items.reduce((acc, item) => acc + (item.price * item.quantity), 0) + (selectedOrder.items.reduce((acc, item) => acc + (item.price * item.quantity), 0) > 500 ? 0 : 40) - selectedOrder.totalAmount).toFixed(2)}</td>
+            {/* Seller & Invoice Metadata */}
+            <table className="invoice-table" style={{ borderTop: 'none', borderBottom: 'none' }}>
+              <tbody>
+                <tr>
+                  <td style={{ width: '55%', borderTop: 'none', borderLeft: 'none' }} className="border-right">
+                    <div className="fw-bold" style={{ fontSize: '12px' }}>Sweettree Enterprises - FY 2026-27 - (from 1-Apr-26)</div>
+                    <div>33, Maharshi Devendra Road, Kolkata - 700006</div>
+                    <div>FSSAI NO: 12819019002064</div>
+                    <div>UDYAM REGN: UDYAM-WB-10-0002145 (MICRO)</div>
+                    <div><strong>GSTIN/UIN:</strong> 19AAACC1234D1Z5</div>
+                    <div><strong>State Name:</strong> West Bengal, Code : 19</div>
+                  </td>
+                  <td style={{ width: '45%', padding: '0', borderTop: 'none', borderRight: 'none' }}>
+                    <table style={{ width: '100%', height: '100%', border: 'none' }}>
+                      <tbody>
+                        <tr style={{ borderBottom: '1px solid #000' }}>
+                          <td style={{ width: '50%', border: 'none', borderRight: '1px solid #000', padding: '4px' }}>
+                            <div style={{ fontSize: '8px', textTransform: 'uppercase', color: '#666' }}>Invoice No.</div>
+                            <div className="fw-bold">ST-{selectedOrder._id.substring(0, 10).toUpperCase()}</div>
+                          </td>
+                          <td style={{ width: '50%', border: 'none', padding: '4px' }}>
+                            <div style={{ fontSize: '8px', textTransform: 'uppercase', color: '#666' }}>Dated</div>
+                            <div className="fw-bold">{new Date(selectedOrder.createdAt).toLocaleDateString()}</div>
+                          </td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px solid #000' }}>
+                          <td style={{ border: 'none', borderRight: '1px solid #000', padding: '4px' }}>
+                            <div style={{ fontSize: '8px', textTransform: 'uppercase', color: '#666' }}>Delivery Note</div>
+                            <div className="fw-bold">-</div>
+                          </td>
+                          <td style={{ border: 'none', padding: '4px' }}>
+                            <div style={{ fontSize: '8px', textTransform: 'uppercase', color: '#666' }}>Mode/Terms of Payment</div>
+                            <div className="fw-bold">{selectedOrder.paymentStatus === 'Paid' ? 'Prepaid' : 'COD'}</div>
+                          </td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px solid #000' }}>
+                          <td style={{ border: 'none', borderRight: '1px solid #000', padding: '4px' }}>
+                            <div style={{ fontSize: '8px', textTransform: 'uppercase', color: '#666' }}>Reference No. and Date</div>
+                            <div className="fw-bold">-</div>
+                          </td>
+                          <td style={{ border: 'none', padding: '4px' }}>
+                            <div style={{ fontSize: '8px', textTransform: 'uppercase', color: '#666' }}>Other References</div>
+                            <div className="fw-bold">-</div>
+                          </td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px solid #000' }}>
+                          <td style={{ border: 'none', borderRight: '1px solid #000', padding: '4px' }}>
+                            <div style={{ fontSize: '8px', textTransform: 'uppercase', color: '#666' }}>Buyer's Order No.</div>
+                            <div className="fw-bold">-</div>
+                          </td>
+                          <td style={{ border: 'none', padding: '4px' }}>
+                            <div style={{ fontSize: '8px', textTransform: 'uppercase', color: '#666' }}>Dated</div>
+                            <div className="fw-bold">-</div>
+                          </td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px solid #000' }}>
+                          <td style={{ border: 'none', borderRight: '1px solid #000', padding: '4px' }}>
+                            <div style={{ fontSize: '8px', textTransform: 'uppercase', color: '#666' }}>Dispatch Doc No.</div>
+                            <div className="fw-bold">-</div>
+                          </td>
+                          <td style={{ border: 'none', padding: '4px' }}>
+                            <div style={{ fontSize: '8px', textTransform: 'uppercase', color: '#666' }}>Delivery Note Date</div>
+                            <div className="fw-bold">-</div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style={{ border: 'none', borderRight: '1px solid #000', padding: '4px' }}>
+                            <div style={{ fontSize: '8px', textTransform: 'uppercase', color: '#666' }}>Dispatched through</div>
+                            <div className="fw-bold">Courier</div>
+                          </td>
+                          <td style={{ border: 'none', padding: '4px' }}>
+                            <div style={{ fontSize: '8px', textTransform: 'uppercase', color: '#666' }}>Destination</div>
+                            <div className="fw-bold">{selectedOrder.deliveryAddress.city}</div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
                 </tr>
-              )}
+                {/* Buyer row */}
+                <tr style={{ borderTop: '1px solid #000' }}>
+                  <td style={{ width: '55%', borderLeft: 'none' }} className="border-right">
+                    <div style={{ fontSize: '8px', textTransform: 'uppercase', color: '#666' }}>Buyer (Bill to)</div>
+                    <div className="fw-bold" style={{ fontSize: '12px' }}>{selectedOrder.user?.name || 'Guest Customer'}</div>
+                    <div>{selectedOrder.deliveryAddress.street || selectedOrder.deliveryAddress.address || selectedOrder.deliveryAddress.locality}</div>
+                    <div>{selectedOrder.deliveryAddress.city}, {selectedOrder.deliveryAddress.state} - {selectedOrder.deliveryAddress.zipCode || selectedOrder.deliveryAddress.pincode}</div>
+                    <div><strong>Phone:</strong> {selectedOrder.deliveryAddress?.phone || selectedOrder.user?.phone || 'N/A'}</div>
+                    <div><strong>State Name:</strong> {selectedOrder.deliveryAddress.state}, Code : {getStateCode(selectedOrder.deliveryAddress.state)}</div>
+                    <div><strong>Place of Supply:</strong> {selectedOrder.deliveryAddress.state}</div>
+                  </td>
+                  <td style={{ width: '45%', borderRight: 'none' }}>
+                    <div style={{ fontSize: '8px', textTransform: 'uppercase', color: '#666' }}>Terms of Delivery</div>
+                    <div style={{ marginTop: '5px' }}>Standard door-step delivery within 3-5 business days.</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
 
-              {/* Grand Total */}
-              <tr className="fw-bold" style={{ fontSize: '13px' }}>
-                <td colSpan="7" className="text-end">Grand Total:</td>
-                <td className="text-end">₹{selectedOrder.totalAmount.toFixed(2)}</td>
-              </tr>
-            </tbody>
-          </table>
+            {/* Product Table */}
+            <table className="invoice-table" style={{ borderTop: '1px solid #000', borderBottom: '1px solid #000' }}>
+              <thead>
+                <tr className="text-center" style={{ backgroundColor: '#f2f2f2' }}>
+                  <th style={{ width: '5%', borderLeft: 'none' }}>SI No.</th>
+                  <th style={{ width: '40%' }}>Description of Goods</th>
+                  <th style={{ width: '10%' }}>HSN/SAC</th>
+                  <th style={{ width: '10%' }}>Quantity</th>
+                  <th style={{ width: '10%' }}>Rate (incl. of Tax)</th>
+                  <th style={{ width: '10%' }}>Rate</th>
+                  <th style={{ width: '5%' }}>per</th>
+                  <th style={{ width: '10%', borderRight: 'none' }}>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedOrder.items.map((item, idx) => {
+                  const basePrice = Math.round((item.price / 1.05) * 100) / 100;
+                  const taxAmt = Math.round((item.price - basePrice) * 100) / 100;
+                  
+                  return (
+                    <tr key={item._id} style={{ borderBottom: 'none' }}>
+                      <td className="text-center" style={{ borderLeft: 'none' }}>{idx + 1}</td>
+                      <td>
+                        <div className="fw-bold">{item.name}</div>
+                        <div style={{ fontSize: '9px', textIndent: '10px', color: '#555' }}>CGST 2.5%</div>
+                        <div style={{ fontSize: '9px', textIndent: '10px', color: '#555' }}>SGST 2.5%</div>
+                      </td>
+                      <td className="text-center">08013220</td>
+                      <td className="text-center">{item.quantity}.0000 Pcs</td>
+                      <td className="text-center">₹{item.price.toFixed(2)}</td>
+                      <td className="text-center">₹{basePrice.toFixed(2)}</td>
+                      <td className="text-center">Pcs</td>
+                      <td className="text-end fw-bold" style={{ borderRight: 'none' }}>
+                        <div>₹{(basePrice * item.quantity).toFixed(2)}</div>
+                        <div style={{ fontSize: '9px', fontWeight: 'normal', color: '#555' }}>₹{(taxAmt / 2 * item.quantity).toFixed(2)}</div>
+                        <div style={{ fontSize: '9px', fontWeight: 'normal', color: '#555' }}>₹{(taxAmt / 2 * item.quantity).toFixed(2)}</div>
+                      </td>
+                    </tr>
+                  );
+                })}
 
-          <div className="d-flex justify-content-between align-items-end mt-4">
-            <div style={{ fontSize: '10px' }}>
-              <div><strong>Declaration:</strong></div>
-              <div>The goods sold are intended for end user consumption and not for resale.</div>
-              <div>Returns are accepted within 7 days in original packaging.</div>
+                {/* Shipping Fee Rows */}
+                {shippingFee > 0 && (
+                  <tr>
+                    <td className="text-center" style={{ borderLeft: 'none' }}></td>
+                    <td>
+                      <div className="fw-bold">Shipping Charges</div>
+                      <div style={{ fontSize: '9px', textIndent: '10px', color: '#555' }}>CGST 2.5%</div>
+                      <div style={{ fontSize: '9px', textIndent: '10px', color: '#555' }}>SGST 2.5%</div>
+                    </td>
+                    <td className="text-center">996511</td>
+                    <td className="text-center">1.0000 Pcs</td>
+                    <td className="text-center">₹{shippingFee.toFixed(2)}</td>
+                    <td className="text-center">₹{shippingTaxable.toFixed(2)}</td>
+                    <td className="text-center">Pcs</td>
+                    <td className="text-end fw-bold" style={{ borderRight: 'none' }}>
+                      <div>₹{shippingTaxable.toFixed(2)}</div>
+                      <div style={{ fontSize: '9px', fontWeight: 'normal', color: '#555' }}>₹{shippingCGST.toFixed(2)}</div>
+                      <div style={{ fontSize: '9px', fontWeight: 'normal', color: '#555' }}>₹{shippingSGST.toFixed(2)}</div>
+                    </td>
+                  </tr>
+                )}
+
+                {/* Coupon discount row */}
+                {couponDiscount > 0 && (
+                  <tr>
+                    <td className="text-center" style={{ borderLeft: 'none' }}></td>
+                    <td>
+                      <div className="fw-bold text-success">Coupon Discount ({selectedOrder.couponCode})</div>
+                    </td>
+                    <td className="text-center">-</td>
+                    <td className="text-center">-</td>
+                    <td className="text-center">-</td>
+                    <td className="text-center">-</td>
+                    <td className="text-center">-</td>
+                    <td className="text-end fw-bold text-success" style={{ borderRight: 'none' }}>-₹{couponDiscount.toFixed(2)}</td>
+                  </tr>
+                )}
+
+                {/* Round Off row */}
+                {Math.abs(roundOff) > 0.01 && (
+                  <tr>
+                    <td className="text-center" style={{ borderLeft: 'none' }}></td>
+                    <td>
+                      <div className="fw-bold">Round Off</div>
+                    </td>
+                    <td className="text-center">-</td>
+                    <td className="text-center">-</td>
+                    <td className="text-center">-</td>
+                    <td className="text-center">-</td>
+                    <td className="text-center">-</td>
+                    <td className="text-end fw-bold" style={{ borderRight: 'none' }}>{roundOff > 0 ? '+' : ''}₹{roundOff.toFixed(2)}</td>
+                  </tr>
+                )}
+
+                {/* Totals row */}
+                <tr className="fw-bold" style={{ backgroundColor: '#f2f2f2' }}>
+                  <td style={{ borderLeft: 'none' }}></td>
+                  <td>Total</td>
+                  <td></td>
+                  <td className="text-center">{totalQty}.0000 Pcs</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td className="text-end" style={{ borderRight: 'none' }}>₹{selectedOrder.totalAmount.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Amount in words */}
+            <div className="p-2 border-bottom">
+              <div>Amount Chargeable (in words):</div>
+              <div className="fw-bold text-uppercase">{numberToWords(selectedOrder.totalAmount)}</div>
             </div>
-            <div className="text-center">
-              <div style={{ borderBottom: '1px solid #000', width: '150px', marginBottom: '5px', height: '40px' }}></div>
-              <div className="fw-bold" style={{ fontSize: '11px' }}>Authorized Signatory</div>
+
+            {/* Tax breakdown & QR Block */}
+            <div className="row g-0 border-bottom">
+              <div className="col-3 p-2 border-end d-flex flex-column align-items-center justify-content-center">
+                <div style={{ fontSize: '9px', fontWeight: 'bold', marginBottom: '4px' }}>Scan to Pay</div>
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent('upi://pay?pa=sweettree2026@icici&pn=Sweettree%20Enterprises&am=' + selectedOrder.totalAmount + '&cu=INR')}`} 
+                  alt="UPI QR Code" 
+                  style={{ width: '80px', height: '80px' }} 
+                />
+              </div>
+              <div className="col-9">
+                <table className="invoice-table" style={{ border: 'none' }}>
+                  <thead>
+                    <tr className="text-center" style={{ backgroundColor: '#f2f2f2' }}>
+                      <th style={{ borderLeft: 'none', borderTop: 'none' }}>HSN/SAC</th>
+                      <th style={{ borderTop: 'none' }}>Taxable Value</th>
+                      <th style={{ borderTop: 'none' }}>CGST Rate/Amt</th>
+                      <th style={{ borderTop: 'none' }}>SGST Rate/Amt</th>
+                      <th style={{ borderRight: 'none', borderTop: 'none' }}>Total Tax Amt</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="text-center">
+                      <td style={{ borderLeft: 'none' }}>08013220</td>
+                      <td>₹{totalTaxable.toFixed(2)}</td>
+                      <td>2.5% / ₹{totalCGST.toFixed(2)}</td>
+                      <td>2.5% / ₹{totalSGST.toFixed(2)}</td>
+                      <td className="fw-bold text-end" style={{ borderRight: 'none' }}>₹{(totalCGST + totalSGST).toFixed(2)}</td>
+                    </tr>
+                    {shippingFee > 0 && (
+                      <tr className="text-center">
+                        <td style={{ borderLeft: 'none' }}>996511</td>
+                        <td>₹{shippingTaxable.toFixed(2)}</td>
+                        <td>2.5% / ₹{shippingCGST.toFixed(2)}</td>
+                        <td>2.5% / ₹{shippingSGST.toFixed(2)}</td>
+                        <td className="fw-bold text-end" style={{ borderRight: 'none' }}>₹{(shippingCGST + shippingSGST).toFixed(2)}</td>
+                      </tr>
+                    )}
+                    <tr className="fw-bold text-center" style={{ backgroundColor: '#f2f2f2' }}>
+                      <td style={{ borderLeft: 'none' }}>Total</td>
+                      <td>₹{(totalTaxable + shippingTaxable).toFixed(2)}</td>
+                      <td>₹{(totalCGST + shippingCGST).toFixed(2)}</td>
+                      <td>₹{(totalSGST + shippingSGST).toFixed(2)}</td>
+                      <td className="text-end" style={{ borderRight: 'none' }}>₹{(totalCGST + totalSGST + shippingCGST + shippingSGST).toFixed(2)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div className="p-2 border-top">
+                  <div>Tax Amount (in words):</div>
+                  <div className="fw-bold text-uppercase">{numberToWords(totalCGST + totalSGST + shippingCGST + shippingSGST)}</div>
+                </div>
+              </div>
             </div>
+
+            {/* Footer Declarations & Signatures */}
+            <table className="invoice-table" style={{ border: 'none' }}>
+              <tbody>
+                <tr style={{ border: 'none' }}>
+                  <td style={{ width: '55%', border: 'none', borderRight: '1px solid #000' }}>
+                    <div className="fw-bold" style={{ fontSize: '9px', textTransform: 'uppercase' }}>Declaration:</div>
+                    <div style={{ fontSize: '10px' }}>We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.</div>
+                    
+                    <div style={{ marginTop: '15px' }} className="fw-bold">Company's Bank Details:</div>
+                    <div>Bank Name: <strong>ICICI Bank</strong></div>
+                    <div>A/c Holder's Name: <strong>Sweettree Enterprises</strong></div>
+                    <div>A/c No.: <strong>339505000253</strong></div>
+                    <div>Branch & IFS Code: <strong>POSTA BRANCH & ICIC0003395</strong></div>
+                    
+                    <div style={{ borderTop: '1px solid #000', marginTop: '30px', paddingTop: '5px', width: '150px' }} className="text-center">
+                      Customer's Seal and Signature
+                    </div>
+                  </td>
+                  <td style={{ width: '45%', border: 'none' }} className="text-end d-flex flex-column align-items-end justify-content-between">
+                    <div className="fw-bold text-end" style={{ width: '100%' }}>for Sweettree Enterprises</div>
+                    <div style={{ marginTop: '60px', borderTop: '1px solid #000', paddingTop: '5px', width: '180px' }} className="text-center fw-bold">
+                      Authorised Signatory
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Bottom centered lines */}
+            <div className="text-center py-2 border-top" style={{ fontSize: '10px' }}>
+              <div className="fw-bold">SUBJECT TO KOLKATA JURISDICTION</div>
+              <div>This is a Computer Generated Invoice</div>
+            </div>
+
           </div>
-          
         </div>
       )}
     </>

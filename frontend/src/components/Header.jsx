@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutUser } from '../store/authSlice';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -39,7 +40,7 @@ const Header = () => {
           {/* Logo */}
           <div className="col-lg-2 col-5">
             <Link href="/">
-              <img src="/logo.png" alt="Sweettree Logo" className="brand-logo" />
+              <Image src="/logo.png" alt="Sweettree Logo" width={180} height={50} priority={true} className="brand-logo" style={{ width: 'auto', height: '100%', objectFit: 'contain' }} />
             </Link>
           </div>
 
@@ -88,13 +89,25 @@ const Header = () => {
           {/* Right Action Icons */}
           <div className="col-lg-3 col-7 d-flex justify-content-end align-items-center" style={{ gap: '8px' }}>
             {/* Search */}
-            <button
-              className="header-action-btn d-none d-md-flex"
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
-              title="Search"
-            >
-              <i className="fas fa-search"></i>
-            </button>
+            <div className={`sliding-search-container d-none d-md-flex ${isSearchOpen ? 'open' : ''}`}>
+              <form onSubmit={handleSearch} className="sliding-search-form mb-0">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search products..."
+                  className="sliding-search-input"
+                />
+                <button
+                  type="button"
+                  className="header-action-btn search-toggle-btn"
+                  onClick={() => setIsSearchOpen(!isSearchOpen)}
+                  title="Search"
+                >
+                  <i className={isSearchOpen ? "fas fa-times" : "fas fa-search"}></i>
+                </button>
+              </form>
+            </div>
 
             {/* User Dropdown */}
             <div className="dropdown d-none d-md-flex">
@@ -177,29 +190,6 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Sliding Search Bar */}
-      {isSearchOpen && (
-        <div className="header-search-overlay">
-          <div className="container">
-            <form onSubmit={handleSearch} className="header-search-form">
-              <div className="search-input-group">
-                <i className="fas fa-search search-icon"></i>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search for nuts, dates, dry fruits..."
-                  autoFocus
-                />
-                <button type="submit">SEARCH</button>
-                <button type="button" onClick={() => setIsSearchOpen(false)} className="close-search">
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </header>
   );
 };

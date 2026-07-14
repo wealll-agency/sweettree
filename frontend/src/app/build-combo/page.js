@@ -6,6 +6,7 @@ import { fetchProducts } from '../../store/productsSlice.js';
 import { addToCart } from '../../store/cartSlice.js';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function BuildComboPage() {
   return (
@@ -99,8 +100,8 @@ function BuildComboContent() {
               {products.map((product) => {
                 const isSelected = selectedProductIds.includes(product._id);
                 // Based on standard Sweettree schema
-                const mrp = product.mrp || product.price;
-                const activePrice = product.price || Math.round(mrp * (1 - (product.discount || 0) / 100));
+                 const mrp = product.purchasePrice || product.price;
+                 const activePrice = product.price;
                 
                 let image = '/placeholder.png';
                 if (product.images && product.images.length > 0) {
@@ -129,11 +130,13 @@ function BuildComboContent() {
                         </div>
                         
                         <div style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-                          <div className="product-img-box">
-                            <img 
+                          <div className="product-img-box position-relative" style={{ minHeight: '200px' }}>
+                            <Image 
                               src={image} 
                               alt={product.name} 
-                              onError={(e) => { e.target.src = 'https://via.placeholder.com/200?text=No+Image'; }}
+                              fill
+                              sizes="(max-width: 768px) 50vw, 33vw"
+                              style={{ objectFit: 'contain' }}
                             />
                           </div>
                           <div className="card-divider"></div>

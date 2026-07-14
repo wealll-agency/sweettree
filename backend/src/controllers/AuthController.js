@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
 import { logActivity } from '../middleware/logger.js';
+import jwt from 'jsonwebtoken';
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -96,9 +97,51 @@ export const logoutUser = async (req, res, next) => {
       httpOnly: true,
       expires: new Date(0)
     });
+    res.cookie('refreshToken', '', {
+      httpOnly: true,
+      expires: new Date(0)
+    });
     res.status(200).json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
     next(error);
+  }
+};
+
+// @desc    Refresh access token
+// @route   POST /api/auth/refresh
+// @access  Public
+export const refreshTokenUser = async (req, res, next) => {
+  const refreshToken = req.cookies?.refreshToken;
+  
+  if (!refreshToken) {
+    return res.status(401).json({ success: false, message: 'Not authorized, no refresh token' });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'super_secret_jwt_key_for_sweettree_2026_enterprise');
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Not authorized, user not found' });
+    }
+
+    const accessToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || 'super_secret_jwt_key_for_sweettree_2026_enterprise',
+      { expiresIn: '15m' }
+    );
+
+    res.cookie('token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000 // 15 minutes
+    });
+
+    res.json({ success: true, token: accessToken });
+  } catch (error) {
+    console.error(`Refresh token error: ${error.message}`);
+    return res.status(401).json({ success: false, message: 'Not authorized, invalid refresh token' });
   }
 };
 
@@ -118,6 +161,20 @@ export const getUserProfile = async (req, res, next) => {
   }
 };
 
+const migrateLegacyAddresses = (user) => {
+  if (user && user.addresses && user.addresses.length > 0) {
+    user.addresses.forEach(addr => {
+      if (!addr.name) addr.name = user.name || 'Resident';
+      if (!addr.phone) addr.phone = user.phone || '0000000000';
+      if (!addr.pincode) addr.pincode = '000000';
+      if (!addr.locality) addr.locality = 'N/A';
+      if (!addr.address) addr.address = 'N/A';
+      if (!addr.city) addr.city = 'N/A';
+      if (!addr.state) addr.state = 'N/A';
+    });
+  }
+};
+
 // @desc    Update user profile
 // @route   PUT /api/auth/profile
 // @access  Private
@@ -127,12 +184,16 @@ export const updateUserProfile = async (req, res, next) => {
 
     if (user) {
       user.name = req.body.name || user.name;
-      user.phone = req.body.phone || user.phone;
+      user.phone = req.body.phone !== undefined ? req.body.phone : user.phone;
+      user.alternatePhone = req.body.alternatePhone !== undefined ? req.body.alternatePhone : user.alternatePhone;
+      user.gender = req.body.gender !== undefined ? req.body.gender : user.gender;
+      user.dob = req.body.dob !== undefined ? req.body.dob : user.dob;
 
       if (req.body.password) {
         user.password = req.body.password;
       }
 
+      migrateLegacyAddresses(user);
       const updatedUser = await user.save();
       await logActivity(user._id, 'UPDATE_PROFILE', `User updated profile settings`, req);
 
@@ -143,6 +204,9 @@ export const updateUserProfile = async (req, res, next) => {
           name: updatedUser.name,
           email: updatedUser.email,
           phone: updatedUser.phone,
+          alternatePhone: updatedUser.alternatePhone,
+          gender: updatedUser.gender,
+          dob: updatedUser.dob,
           role: updatedUser.role,
           addresses: updatedUser.addresses
         }
@@ -159,25 +223,82 @@ export const updateUserProfile = async (req, res, next) => {
 // @route   POST /api/auth/addresses
 // @access  Private
 export const addAddress = async (req, res, next) => {
-  const { street, city, state, zipCode, country, isDefault } = req.body;
+  const { name, phone, pincode, locality, address, city, state, landmark, alternatePhone, addressType, isDefault } = req.body;
 
   try {
     const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    if (user) {
-      if (isDefault) {
-        // Set all other addresses isDefault to false
-        user.addresses.forEach(addr => addr.isDefault = false);
-      }
+    const shouldBeDefault = isDefault || user.addresses.length === 0;
 
-      user.addresses.push({ street, city, state, zipCode, country, isDefault: isDefault || user.addresses.length === 0 });
-      await user.save();
-      await logActivity(user._id, 'ADD_ADDRESS', `Added address: ${street}, ${city}`, req);
-
-      res.status(201).json({ success: true, addresses: user.addresses });
-    } else {
-      res.status(404).json({ success: false, message: 'User not found' });
+    if (shouldBeDefault && user.addresses.length > 0) {
+      await User.updateOne(
+        { _id: req.user._id },
+        { $set: { "addresses.$[].isDefault": false } }
+      );
     }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $push: {
+          addresses: {
+            name, phone, pincode, locality, address, city, state, landmark, alternatePhone, addressType, 
+            isDefault: shouldBeDefault 
+          }
+        }
+      },
+      { new: true }
+    );
+
+    await logActivity(user._id, 'ADD_ADDRESS', `Added address for: ${name}`, req);
+    res.status(201).json({ success: true, addresses: updatedUser.addresses });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update address in profile
+// @route   PUT /api/auth/addresses/:id
+// @access  Private
+export const updateAddress = async (req, res, next) => {
+  const { name, phone, pincode, locality, address, city, state, landmark, alternatePhone, addressType, isDefault } = req.body;
+
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const addressIndex = user.addresses.findIndex(addr => addr._id.toString() === req.params.id);
+    if (addressIndex === -1) return res.status(404).json({ success: false, message: 'Address not found' });
+
+    if (isDefault) {
+      await User.updateOne(
+        { _id: req.user._id },
+        { $set: { "addresses.$[].isDefault": false } }
+      );
+    }
+
+    const setQuery = {};
+    if (name) setQuery[`addresses.${addressIndex}.name`] = name;
+    if (phone) setQuery[`addresses.${addressIndex}.phone`] = phone;
+    if (pincode) setQuery[`addresses.${addressIndex}.pincode`] = pincode;
+    if (locality) setQuery[`addresses.${addressIndex}.locality`] = locality;
+    if (address) setQuery[`addresses.${addressIndex}.address`] = address;
+    if (city) setQuery[`addresses.${addressIndex}.city`] = city;
+    if (state) setQuery[`addresses.${addressIndex}.state`] = state;
+    if (landmark !== undefined) setQuery[`addresses.${addressIndex}.landmark`] = landmark;
+    if (alternatePhone !== undefined) setQuery[`addresses.${addressIndex}.alternatePhone`] = alternatePhone;
+    if (addressType) setQuery[`addresses.${addressIndex}.addressType`] = addressType;
+    if (isDefault !== undefined) setQuery[`addresses.${addressIndex}.isDefault`] = isDefault;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: setQuery },
+      { new: true }
+    );
+
+    await logActivity(req.user._id, 'UPDATE_ADDRESS', `Updated address ID: ${req.params.id}`, req);
+    res.json({ success: true, addresses: updatedUser.addresses });
   } catch (error) {
     next(error);
   }
@@ -188,14 +309,15 @@ export const addAddress = async (req, res, next) => {
 // @access  Private
 export const deleteAddress = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user._id);
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { $pull: { addresses: { _id: req.params.id } } },
+      { new: true }
+    );
 
-    if (user) {
-      user.addresses = user.addresses.filter(addr => addr._id.toString() !== req.params.id);
-      await user.save();
+    if (updatedUser) {
       await logActivity(req.user._id, 'DELETE_ADDRESS', `Deleted address ID: ${req.params.id}`, req);
-
-      res.json({ success: true, addresses: user.addresses });
+      res.json({ success: true, addresses: updatedUser.addresses });
     } else {
       res.status(404).json({ success: false, message: 'User not found' });
     }

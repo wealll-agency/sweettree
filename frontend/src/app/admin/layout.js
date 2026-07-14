@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import AdminSidebar from '../../components/AdminSidebar.js';
 import AdminHeader from '../../components/AdminHeader.js';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
@@ -11,6 +11,7 @@ import './admin.css';
 
 export default function AdminLayout({ children }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, loading } = useSelector((state) => state.auth);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -22,7 +23,8 @@ export default function AdminLayout({ children }) {
     if (!isMounted) return;
     // If not loading and no user, send to login
     if (!loading && !user) {
-      router.push('/login?redirect=admin/dashboard');
+      const currentPath = pathname ? pathname.replace(/^\//, '') : 'admin/dashboard';
+      router.push(`/login?redirect=${currentPath}`);
     }
   }, [user, loading, router, isMounted]);
 

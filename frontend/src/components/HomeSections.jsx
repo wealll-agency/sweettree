@@ -3,6 +3,7 @@ import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation, EffectCoverflow } from 'swiper/modules';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export const NuttyDelightOffers = () => {
   return (
@@ -30,7 +31,7 @@ export const NuttyDelightOffers = () => {
           ].map((slide, idx) => (
             <SwiperSlide key={idx}>
               <div className="offer-card mx-auto" style={{ borderRadius: '20px', overflow: 'hidden' }}>
-                <img src={slide.img} alt={slide.alt} style={{ width: '100%', display: 'block' }} />
+                <Image src={slide.img} alt={slide.alt} width={400} height={400} style={{ width: '100%', height: 'auto', display: 'block' }} />
               </div>
             </SwiperSlide>
           ))}
@@ -85,12 +86,14 @@ export const ShopByCategory = () => {
             { name: 'Seeds', icon: 'fa-seedling', borderColor: '#7eb672' },
             { name: 'Mixes', icon: 'fa-bowl-food', borderColor: '#6691c2' },
           ].map((cat, idx) => (
-            <div key={idx} className="category-squircle" style={{ borderColor: cat.borderColor, '--cat-color': cat.borderColor }}>
-              <div className="category-icon-circle">
-                <i className={`fa-solid ${cat.icon}`}></i>
+            <Link href={`/shop?category=${cat.name}`} key={idx} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div className="category-squircle" style={{ borderColor: cat.borderColor, '--cat-color': cat.borderColor }}>
+                <div className="category-icon-circle">
+                  <i className={`fa-solid ${cat.icon}`}></i>
+                </div>
+                <h5 className="category-name-text">{cat.name}</h5>
               </div>
-              <h5 className="category-name-text">{cat.name}</h5>
-            </div>
+            </Link>
           ))}
         </div>
 
@@ -149,19 +152,19 @@ export const ShopByCategory = () => {
         <div className="trust-bar-outer py-4 px-3 mt-5">
           <div className="row m-0 text-center text-white">
             <div className="col-lg-3 col-6 trust-item">
-              <img src="/shipping_icon1.gif" alt="Shipping" className="mb-3" style={{ maxHeight: '45px' }} />
+              <Image src="/shipping_icon1.gif" alt="Shipping" width={45} height={45} className="mb-3" style={{ maxHeight: '45px', width: 'auto' }} unoptimized />
               <div className="trust-text">Free Shipping On<br />Orders Above ₹1499</div>
             </div>
             <div className="col-lg-3 col-6 trust-item">
-              <img src="/shipping_icon2.gif" alt="Payment" className="mb-3" style={{ maxHeight: '45px' }} />
+              <Image src="/shipping_icon2.gif" alt="Payment" width={45} height={45} className="mb-3" style={{ maxHeight: '45px', width: 'auto' }} unoptimized />
               <div className="trust-text">Pay<br />On Delivery</div>
             </div>
             <div className="col-lg-3 col-6 trust-item">
-              <img src="/shipping_icon3.gif" alt="Quality" className="mb-3" style={{ maxHeight: '45px' }} />
+              <Image src="/shipping_icon3.gif" alt="Quality" width={45} height={45} className="mb-3" style={{ maxHeight: '45px', width: 'auto' }} unoptimized />
               <div className="trust-text">100% Quality<br />Guaranteed</div>
             </div>
             <div className="col-lg-3 col-6 trust-item border-lg-0">
-              <img src="/shipping_icon4.gif" alt="Rewards" className="mb-3" style={{ maxHeight: '45px' }} />
+              <Image src="/shipping_icon4.gif" alt="Rewards" width={45} height={45} className="mb-3" style={{ maxHeight: '45px', width: 'auto' }} unoptimized />
               <div className="trust-text">Reward Points<br />On Every Purchase</div>
             </div>
           </div>
@@ -191,12 +194,12 @@ export const RecentBlogs = () => {
           {/* Blog 1 */}
           <SwiperSlide>
             <div className="blog-card text-start">
-              <img src="/blog_image1.png" className="blog-img" alt="Blog 1" />
+              <Image src="/blog_image1.png" className="blog-img" alt="Blog 1" width={400} height={250} style={{ width: '100%', height: 'auto' }} />
               <div className="blog-content-box">
                 <div className="d-flex justify-content-between align-items-center mb-0">
                   <div className="d-flex align-items-center">
                     <div className="logo-circle-mini">
-                      <img src="/logo.png" alt="Sweettree Logo" />
+                      <Image src="/logo.png" alt="Sweettree Logo" width={30} height={30} style={{ width: '100%', height: 'auto' }} />
                     </div>
                     <div className="text-start ms-2">
                       <h6 className="mb-0 fw-bold" style={{ fontSize: '11px' }}>Admin</h6>
@@ -222,12 +225,12 @@ export const RecentBlogs = () => {
           {/* Blog 2 */}
           <SwiperSlide>
             <div className="blog-card text-start">
-              <img src="/blog_image2.png" className="blog-img" alt="Blog 2" />
+              <Image src="/blog_image2.png" className="blog-img" alt="Blog 2" width={400} height={250} style={{ width: '100%', height: 'auto' }} />
               <div className="blog-content-box">
                 <div className="d-flex justify-content-between align-items-center mb-0">
                   <div className="d-flex align-items-center">
                     <div className="logo-circle-mini">
-                      <img src="/logo.png" alt="Sweettree Logo" />
+                      <Image src="/logo.png" alt="Sweettree Logo" width={30} height={30} style={{ width: '100%', height: 'auto' }} />
                     </div>
                     <div className="text-start ms-2">
                       <h6 className="mb-0 fw-bold" style={{ fontSize: '11px' }}>Admin</h6>
@@ -252,12 +255,12 @@ export const RecentBlogs = () => {
           {/* Blog 3 */}
           <SwiperSlide>
             <div className="blog-card text-start">
-              <img src="/blog_image3.png" className="blog-img" alt="Blog 3" />
+              <Image src="/blog_image3.png" className="blog-img" alt="Blog 3" width={400} height={250} style={{ width: '100%', height: 'auto' }} />
               <div className="blog-content-box">
                 <div className="d-flex justify-content-between align-items-center mb-0">
                   <div className="d-flex align-items-center">
                     <div className="logo-circle-mini">
-                      <img src="/logo.png" alt="Sweettree Logo" />
+                      <Image src="/logo.png" alt="Sweettree Logo" width={30} height={30} style={{ width: '100%', height: 'auto' }} />
                     </div>
                     <div className="text-start ms-2">
                       <h6 className="mb-0 fw-bold" style={{ fontSize: '11px' }}>Admin</h6>
@@ -387,31 +390,31 @@ export const TagsSection = () => {
       <div className="container py-3">
         <h3 className="mb-4 text-start" style={{ fontSize: '24px', color: '#333' }}>People Are Also Looking For</h3>
         <div className="d-flex flex-wrap gap-2">
-          <Link href="/products?keyword=Cashew Royale" className="search-tag-pill">Cashew Royale</Link>
-          <Link href="/products?keyword=Cashew Premium" className="search-tag-pill">Cashew Premium</Link>
-          <Link href="/products?keyword=Almond American" className="search-tag-pill">Almond American</Link>
-          <Link href="/products?keyword=Mamra" className="search-tag-pill">Mamra</Link>
-          <Link href="/products?keyword=Kishmish Royale" className="search-tag-pill">Kishmish Royale</Link>
-          <Link href="/products?keyword=Kishmish Premium" className="search-tag-pill">Kishmish Premium</Link>
-          <Link href="/products?keyword=Walnut Royale" className="search-tag-pill">Walnut Royale</Link>
-          <Link href="/products?keyword=Anjeer" className="search-tag-pill">Anjeer</Link>
-          <Link href="/products?keyword=Pista" className="search-tag-pill">Pista</Link>
-          <Link href="/products?keyword=Dates Royale" className="search-tag-pill">Dates Royale</Link>
+          <Link href="/shop?keyword=Cashew Royale" className="search-tag-pill">Cashew Royale</Link>
+          <Link href="/shop?keyword=Cashew Premium" className="search-tag-pill">Cashew Premium</Link>
+          <Link href="/shop?keyword=Almond American" className="search-tag-pill">Almond American</Link>
+          <Link href="/shop?keyword=Mamra" className="search-tag-pill">Mamra</Link>
+          <Link href="/shop?keyword=Kishmish Royale" className="search-tag-pill">Kishmish Royale</Link>
+          <Link href="/shop?keyword=Kishmish Premium" className="search-tag-pill">Kishmish Premium</Link>
+          <Link href="/shop?keyword=Walnut Royale" className="search-tag-pill">Walnut Royale</Link>
+          <Link href="/shop?keyword=Anjeer" className="search-tag-pill">Anjeer</Link>
+          <Link href="/shop?keyword=Pista" className="search-tag-pill">Pista</Link>
+          <Link href="/shop?keyword=Dates Royale" className="search-tag-pill">Dates Royale</Link>
 
-          <Link href="/products?keyword=Kishmish Black" className="search-tag-pill">Kishmish Black</Link>
-          <Link href="/products?keyword=Mate Coffee Creamer" className="search-tag-pill">Mate Coffee Creamer</Link>
-          <Link href="/products?keyword=Shahi Rose Trail Mix" className="search-tag-pill">Shahi Rose Trail Mix</Link>
-          <Link href="/products?keyword=Crazy Crunchy Corn" className="search-tag-pill">Crazy Crunchy Corn</Link>
-          <Link href="/products?keyword=Museli Dry Fruits Medley" className="search-tag-pill">Museli Dry Fruits Medley</Link>
-          <Link href="/products?keyword=Fruity Orchard Mix" className="search-tag-pill">Fruity Orchard Mix</Link>
-          <Link href="/products?keyword=BBQ Millets Trail Mix" className="search-tag-pill">BBQ Millets Trail Mix</Link>
+          <Link href="/shop?keyword=Kishmish Black" className="search-tag-pill">Kishmish Black</Link>
+          <Link href="/shop?keyword=Mate Coffee Creamer" className="search-tag-pill">Mate Coffee Creamer</Link>
+          <Link href="/shop?keyword=Shahi Rose Trail Mix" className="search-tag-pill">Shahi Rose Trail Mix</Link>
+          <Link href="/shop?keyword=Crazy Crunchy Corn" className="search-tag-pill">Crazy Crunchy Corn</Link>
+          <Link href="/shop?keyword=Museli Dry Fruits Medley" className="search-tag-pill">Museli Dry Fruits Medley</Link>
+          <Link href="/shop?keyword=Fruity Orchard Mix" className="search-tag-pill">Fruity Orchard Mix</Link>
+          <Link href="/shop?keyword=BBQ Millets Trail Mix" className="search-tag-pill">BBQ Millets Trail Mix</Link>
 
-          <Link href="/products?keyword=Museli Fruit & Nut" className="search-tag-pill">Museli Fruit & Nut</Link>
-          <Link href="/products?keyword=Cashew Green Chilli" className="search-tag-pill">Cashew Green Chilli</Link>
-          <Link href="/products?keyword=Cashew Salted" className="search-tag-pill">Cashew Salted</Link>
-          <Link href="/products?keyword=Almond Salted" className="search-tag-pill">Almond Salted</Link>
-          <Link href="/products?keyword=Almond Peri Peri" className="search-tag-pill">Almond Peri Peri</Link>
-          <Link href="/products?keyword=Cashew Cheese" className="search-tag-pill">Cashew Cheese</Link>
+          <Link href="/shop?keyword=Museli Fruit & Nut" className="search-tag-pill">Museli Fruit & Nut</Link>
+          <Link href="/shop?keyword=Cashew Green Chilli" className="search-tag-pill">Cashew Green Chilli</Link>
+          <Link href="/shop?keyword=Cashew Salted" className="search-tag-pill">Cashew Salted</Link>
+          <Link href="/shop?keyword=Almond Salted" className="search-tag-pill">Almond Salted</Link>
+          <Link href="/shop?keyword=Almond Peri Peri" className="search-tag-pill">Almond Peri Peri</Link>
+          <Link href="/shop?keyword=Cashew Cheese" className="search-tag-pill">Cashew Cheese</Link>
         </div>
       </div>
     </section>
@@ -424,7 +427,7 @@ export const StoreLocator = () => {
       <div className="container position-relative">
         <div className="row">
           <div className="col-lg-5 mt-lg-4">
-            <img src="/banner_slider_image3.jpeg" alt="Sweettree Store Locations" className="img-fluid store-img mb-4 mb-lg-0" />
+            <Image src="/banner_slider_image3.jpeg" alt="Sweettree Store Locations" width={600} height={600} className="img-fluid store-img mb-4 mb-lg-0" style={{ width: '100%', height: 'auto' }} />
           </div>
           <div className="col-lg-6 d-flex flex-column py-lg-5">
             <div className="store-text-box ps-lg-5 mt-lg-4">
@@ -500,7 +503,7 @@ export const HealthyCombo = () => {
                 </div>
                 <div className="social-content">
                   <div className="social-header-info">
-                    <img src="/logo.png" className="social-shop-logo" alt="Logo" />
+                    <Image src="/logo.png" className="social-shop-logo" alt="Logo" width={40} height={40} />
                     <div className="social-product-info">
                       <h3 className="social-title">Sweettree Seeds 800g Combo - Pack of 4 (Pumpkin Seeds 200g, Chia Seed..</h3>
                       <div className="social-price-box">
@@ -527,7 +530,7 @@ export const HealthyCombo = () => {
                 </div>
                 <div className="social-content">
                   <div className="social-header-info">
-                    <img src="/logo.png" className="social-shop-logo" alt="Logo" />
+                    <Image src="/logo.png" className="social-shop-logo" alt="Logo" width={40} height={40} />
                     <div className="social-product-info">
                       <h3 className="social-title">Sweettree Sunflower Seeds & Pumpkin Seeds Combo 400g - (200g Each)</h3>
                       <div className="social-price-box">
@@ -554,7 +557,7 @@ export const HealthyCombo = () => {
                 </div>
                 <div className="social-content">
                   <div className="social-header-info">
-                    <img src="/logo.png" className="social-shop-logo" alt="Logo" />
+                    <Image src="/logo.png" className="social-shop-logo" alt="Logo" width={40} height={40} />
                     <div className="social-product-info">
                       <h3 className="social-title">Sweettree Daily Needs Dry Fruits Pack 1kg (Almonds, Cashews..</h3>
                       <div className="social-price-box">
@@ -581,7 +584,7 @@ export const HealthyCombo = () => {
                 </div>
                 <div className="social-content">
                   <div className="social-header-info">
-                    <img src="/logo.png" className="social-shop-logo" alt="Logo" />
+                    <Image src="/logo.png" className="social-shop-logo" alt="Logo" width={40} height={40} />
                     <div className="social-product-info">
                       <h3 className="social-title">Sweettree Seeds 1kg Combo Pack - Chia Seeds, Sunflower Seeds..</h3>
                       <div className="social-price-box">

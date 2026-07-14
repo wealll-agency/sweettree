@@ -2,11 +2,16 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 const addressSchema = new mongoose.Schema({
-  street: { type: String, required: true },
+  name: { type: String, required: true },
+  phone: { type: String, required: true },
+  pincode: { type: String, required: true },
+  locality: { type: String, required: true },
+  address: { type: String, required: true },
   city: { type: String, required: true },
   state: { type: String, required: true },
-  zipCode: { type: String, required: true },
-  country: { type: String, required: true },
+  landmark: { type: String },
+  alternatePhone: { type: String },
+  addressType: { type: String, enum: ['Home', 'Work'], default: 'Home' },
   isDefault: { type: Boolean, default: false }
 }, { _id: true });
 
@@ -15,6 +20,9 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true },
   phone: { type: String, trim: true },
+  alternatePhone: { type: String, trim: true },
+  gender: { type: String, enum: ['Male', 'Female', 'Other', ''], default: '' },
+  dob: { type: Date },
   role: {
     type: String,
     enum: ['Customer', 'Staff', 'Manager', 'Super Admin'],

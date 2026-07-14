@@ -1,6 +1,7 @@
 import Product from '../models/Product.js';
 import Inventory from '../models/Inventory.js';
 import { logActivity } from '../middleware/logger.js';
+import { uploadFile } from '../services/storageService.js';
 
 // @desc    Get all products (with search, category filter, sorting, pagination)
 // @route   GET /api/products
@@ -91,16 +92,32 @@ export const getProductById = async (req, res, next) => {
 
 // @desc    Create a product
 // @route   POST /api/products
-// @access  Private/Admin/Manager/Staff
+// @access  Private/Admin
 export const createProduct = async (req, res, next) => {
   const { 
-    name, category, subCategory, subSubCategory, brand, productType, sku, unit, searchTags, 
+    name, category, subCategory, subSubCategory, brand, productType, sku, unit, unitValue, searchTags, 
     price, purchasePrice, minOrderQty, discount, discountType, taxAmount, taxCalculation, 
     shippingCost, shippingMultiplyWithQty, isFeatured, isActive,
     description, ingredients, benefits, images, videos, batchNumber, expiryDate, stock 
   } = req.body;
 
   try {
+    let finalImages = images ? (Array.isArray(images) ? images : [images]) : [];
+
+    // If an image file was uploaded, process it
+    if (req.files && req.files.image) {
+      const file = req.files.image[0];
+      const s3Url = await uploadFile(file);
+      finalImages.push(s3Url);
+    }
+
+    if (req.files && req.files.subImages) {
+      for (const file of req.files.subImages) {
+        const s3Url = await uploadFile(file);
+        finalImages.push(s3Url);
+      }
+    }
+
     const product = new Product({
       name,
       category,
@@ -110,6 +127,7 @@ export const createProduct = async (req, res, next) => {
       productType: productType || 'Physical',
       sku: sku || '',
       unit: unit || 'kg',
+      unitValue: unitValue ? Number(unitValue) : 1,
       searchTags: searchTags || [],
       price,
       purchasePrice: purchasePrice || 0,
@@ -120,16 +138,16 @@ export const createProduct = async (req, res, next) => {
       taxCalculation: taxCalculation || 'Include with product',
       shippingCost: shippingCost || 0,
       shippingMultiplyWithQty: shippingMultiplyWithQty || false,
-      isFeatured: isFeatured || false,
-      isActive: isActive !== undefined ? isActive : true,
+      isFeatured: isFeatured === 'true' || isFeatured === true,
+      isActive: isActive === 'false' || isActive === false ? false : true,
       description,
-      ingredients: ingredients || [],
-      benefits: benefits || [],
-      images: images || [],
+      ingredients: typeof ingredients === 'string' ? ingredients.split(',').map(i => i.trim()).filter(Boolean) : (ingredients || []),
+      benefits: typeof benefits === 'string' ? benefits.split(',').map(b => b.trim()).filter(Boolean) : (benefits || []),
+      images: finalImages,
       videos: videos || [],
       batchNumber,
       expiryDate: expiryDate ? new Date(expiryDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Default 1 year expiry
-      stock: stock || 0
+      stock: Number(stock) || 0
     });
 
     const createdProduct = await product.save();
@@ -172,6 +190,7 @@ export const updateProduct = async (req, res, next) => {
       product.productType = req.body.productType || product.productType;
       product.sku = req.body.sku !== undefined ? req.body.sku : product.sku;
       product.unit = req.body.unit || product.unit;
+      product.unitValue = req.body.unitValue !== undefined ? Number(req.body.unitValue) : product.unitValue;
       product.searchTags = req.body.searchTags || product.searchTags;
       
       product.price = req.body.price !== undefined ? req.body.price : product.price;
@@ -186,9 +205,36 @@ export const updateProduct = async (req, res, next) => {
       product.isFeatured = req.body.isFeatured !== undefined ? req.body.isFeatured : product.isFeatured;
       product.isActive = req.body.isActive !== undefined ? req.body.isActive : product.isActive;
       product.description = req.body.description || product.description;
-      product.ingredients = req.body.ingredients || product.ingredients;
-      product.benefits = req.body.benefits || product.benefits;
-      product.images = req.body.images || product.images;
+      product.ingredients = typeof req.body.ingredients === 'string' ? req.body.ingredients.split(',').map(i => i.trim()).filter(Boolean) : (req.body.ingredients || product.ingredients);
+      product.benefits = typeof req.body.benefits === 'string' ? req.body.benefits.split(',').map(b => b.trim()).filter(Boolean) : (req.body.benefits || product.benefits);
+      
+      let finalImages = req.body.images ? (Array.isArray(req.body.images) ? req.body.images : [req.body.images]) : product.images;
+      
+      if (req.files) {
+        let newImages = [];
+        if (req.files.image) {
+          const file = req.files.image[0];
+          const s3Url = await uploadFile(file);
+          newImages.push(s3Url);
+        }
+        if (req.files.subImages) {
+          for (const file of req.files.subImages) {
+            const s3Url = await uploadFile(file);
+            newImages.push(s3Url);
+          }
+        }
+        if (newImages.length > 0) {
+          // If a new main image is provided, replace images or append?
+          // Since edit form only sends what exists or new files, we'll append.
+          // Wait, if we send FormData, `req.body.images` could contain existing urls.
+          // In frontend, `imagePreviewUrl` is sent in `images` array if no new file is selected.
+          finalImages = [...finalImages, ...newImages];
+          // Filter duplicates just in case
+          finalImages = [...new Set(finalImages)];
+        }
+      }
+      
+      product.images = finalImages;
       product.videos = req.body.videos || product.videos;
       
       const oldStock = product.stock;

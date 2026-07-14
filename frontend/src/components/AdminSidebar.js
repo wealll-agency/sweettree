@@ -86,6 +86,8 @@ export default function AdminSidebar() {
     >
       <button 
         onClick={() => setIsCollapsed(!isCollapsed)}
+        aria-label="Toggle Sidebar"
+        title="Toggle Sidebar"
         className="btn btn-sm position-absolute rounded-circle shadow p-1 d-flex align-items-center justify-content-center"
         style={{ 
           right: '-15px', 
@@ -238,6 +240,7 @@ export default function AdminSidebar() {
         )}
         <button 
           onClick={handleLogout}
+          aria-label="Sign Out"
           className={`w-100 sidebar-nav-link text-danger border-0 bg-transparent d-flex align-items-center gap-2 hover-light-red ${isCollapsed ? 'justify-content-center p-2' : 'text-start'}`}
           style={{ textDecoration: 'none', padding: isCollapsed ? '12px' : '12px 20px' }}
         >

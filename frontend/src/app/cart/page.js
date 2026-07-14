@@ -97,7 +97,7 @@ export default function CartPage() {
           <i className="fas fa-shopping-bag fa-3x text-muted mb-3 d-block"></i>
           <h2 className="fw-bold mb-2" style={{ color: '#203d74' }}>Your Cart is Empty</h2>
           <p className="text-muted mb-4">Discover our high-quality herbal products and start shopping.</p>
-          <Link href="/products" className="btn btn-brand">Shop Catalog</Link>
+          <Link href="/shop" className="btn btn-brand">Shop Catalog</Link>
         </div>
       </div>
     );
@@ -239,7 +239,7 @@ export default function CartPage() {
               </div>
               
               <div className="d-flex justify-content-between text-muted">
-                <span>GST Tax (18%)</span>
+                <span>GST Tax (5%)</span>
                 <span>₹{tax}</span>
               </div>
               

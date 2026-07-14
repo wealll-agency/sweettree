@@ -5,54 +5,98 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../store/cartSlice';
-import { fetchAdminProducts } from '../../store/adminSlice';
+import { fetchProducts, fetchProductDetails, fetchProductReviews, submitProductReview } from '../../store/productsSlice';
+import { Star, MessageCircle, Heart, Plus, Minus } from 'lucide-react';
+import { toggleWishlist } from '../../store/wishlistSlice';
 
 function ShopDetailsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const dispatch = useDispatch();
-  const { products } = useSelector((state) => state.admin);
-  const [productName, setProductName] = useState('Loading...');
+
+  const { items: products, selectedProduct, reviews, reviewsLoading } = useSelector((state) => state.products);
+  const wishlistItems = useSelector((state) => state.wishlist?.items || []);
+  const { user } = useSelector((state) => state.auth);
+  
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
-  const [selectedPack, setSelectedPack] = useState('100g');
   const [pincode, setPincode] = useState('');
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
+  // Review form states
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [reviewError, setReviewError] = useState('');
+  const [reviewSuccess, setReviewSuccess] = useState('');
+
+  const productIdParam = searchParams.get('id');
+  const productNameParam = searchParams.get('name') || '';
+
+  // 1. If we have productIdParam, dispatch fetch details and reviews
   useEffect(() => {
-    const name = searchParams.get('name');
-    if (name) {
-      setProductName(name);
+    if (productIdParam) {
+      dispatch(fetchProductDetails(productIdParam));
+      dispatch(fetchProductReviews(productIdParam));
     } else {
-      setProductName('Sweettree For Good Daily Nutrition Protein Energy Nut Bar 100g (25g x 4)');
+      // Fetch public list to match by name
+      dispatch(fetchProducts({ limit: 100 }));
     }
-  }, [searchParams]);
+  }, [dispatch, productIdParam]);
 
+  // 2. Resolve the real product: either the fetched selectedProduct (if id param) or matched from list (if name param)
+  let realProduct = null;
+  if (productIdParam) {
+    realProduct = selectedProduct;
+  } else if (productNameParam && products && products.length > 0) {
+    realProduct = products.find(p => {
+      const pName = p.name.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
+      const searchName = productNameParam.toLowerCase().replace(/\.\.\./g, '').replace(/[^a-zA-Z0-9]/g, '');
+      return pName.includes(searchName) || searchName.includes(pName);
+    });
+  }
+
+  // 3. If matched by name, dispatch its reviews
   useEffect(() => {
-    if (!products || products.length === 0) {
-      dispatch(fetchAdminProducts());
+    if (realProduct && !productIdParam) {
+      dispatch(fetchProductReviews(realProduct._id));
     }
-  }, [dispatch, products]);
+  }, [dispatch, realProduct, productIdParam]);
+
+  const [selectedPack, setSelectedPack] = useState('');
+  useEffect(() => {
+    if (realProduct) {
+      setSelectedPack(`${realProduct.unitValue || 1} ${realProduct.unit || 'Pack'}`);
+    }
+  }, [realProduct]);
+
+  if (!realProduct) {
+    return (
+      <div className="container py-5 text-center d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
+        <div className="spinner-border text-success mb-3" role="status">
+          <span className="visually-hidden">Loading product details...</span>
+        </div>
+        <p className="text-muted">Loading product details...</p>
+      </div>
+    );
+  }
 
   const handleAddToCart = () => {
-    // Find the real product from Redux to get its valid MongoDB _id so checkout works
-    const realProduct = products?.find(p => p.name === productName) || products?.[0];
-    const validId = realProduct ? realProduct._id : '60d5ecb8b392d700153528b8'; // Fallback to a valid hex string if store is empty
-
+    const finalPrice = realProduct.discountedPrice !== undefined ? realProduct.discountedPrice : realProduct.price;
     const mockProduct = {
-      _id: validId,
-      name: productName,
-      price: selectedPack === '100g' ? 856 : 1649,
-      discount: 0,
-      image: realProduct?.images?.[0] || '/top_product1.png'
+      _id: realProduct._id,
+      name: realProduct.name,
+      price: finalPrice,
+      discount: 0, // already applied
+      image: realProduct.images?.[0] || '/top_product1.png',
+      stock: realProduct.stock || 100
     };
     
     dispatch(addToCart({
       product: mockProduct,
       quantity,
-      size: selectedPack
+      size: selectedPack || `${realProduct.unitValue || 1} ${realProduct.unit || 'Pack'}`
     }));
 
-    // Open side cart
     if (typeof window !== 'undefined' && window.bootstrap) {
       const offcanvas = document.getElementById('cartOffcanvas');
       if (offcanvas) {
@@ -68,41 +112,67 @@ function ShopDetailsContent() {
     }, 100);
   };
 
+  const handleReviewSubmit = (e) => {
+    e.preventDefault();
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    if (!comment.trim()) {
+      setReviewError('Please enter a comment');
+      return;
+    }
+
+    dispatch(submitProductReview({ productId: realProduct._id, rating, comment: comment.trim() }))
+      .unwrap()
+      .then(() => {
+        setReviewSuccess('Review submitted successfully!');
+        setComment('');
+        setRating(5);
+        setReviewError('');
+      })
+      .catch((err) => {
+        setReviewError(err || 'Failed to submit review. You can only review once and must buy this product first.');
+      });
+  };
+
+  const isInWishlist = wishlistItems.some(item => item._id === realProduct._id);
+  const images = realProduct.images && realProduct.images.length > 0 ? realProduct.images : ['/top_product1.png'];
+  const finalPrice = realProduct.discountedPrice !== undefined ? realProduct.discountedPrice : realProduct.price;
+
   return (
-    <div className="container py-4 mt-2 bg-white">
+    <div className="container py-4 mt-2 bg-white animate-fade-in">
       {/* Breadcrumb */}
       <nav className="mb-4" style={{ fontSize: '13px', color: '#666' }}>
         <Link href="/" style={{ textDecoration: 'none', color: '#666' }}>Home</Link> &gt; 
         <Link href="/shop" style={{ textDecoration: 'none', color: '#666' }}> Shop </Link> &gt; 
-        <span style={{ color: '#333' }}>{productName}</span>
+        <span style={{ color: '#333' }}>{realProduct.name}</span>
       </nav>
 
       <div className="row g-5 mb-5">
         {/* Left Side: Images */}
         <div className="col-lg-5">
           <div className="mb-3 position-relative text-center border rounded-2 p-4">
-             <span className="badge bg-primary position-absolute top-0 start-0 m-3">PREMIUM</span>
+             {realProduct.isFeatured && <span className="badge bg-primary position-absolute top-0 start-0 m-3">PREMIUM</span>}
             <img
-              src="/top_product1.png"
-              alt={productName}
+              src={images[activeImageIndex]}
+              alt={realProduct.name}
               className="img-fluid object-fit-contain"
               style={{ maxHeight: '400px', width: '100%' }}
             />
           </div>
           
           <div className="d-flex justify-content-center gap-2 mb-4">
-            <div className="border rounded p-1 cursor-pointer" style={{ width: '60px', height: '60px' }}>
-                <img src="/top_product1.png" className="img-fluid h-100 object-fit-contain" />
-            </div>
-            <div className="border rounded p-1 cursor-pointer" style={{ width: '60px', height: '60px' }}>
-                <img src="/top_product2.png" className="img-fluid h-100 object-fit-contain" />
-            </div>
-            <div className="border rounded p-1 cursor-pointer" style={{ width: '60px', height: '60px' }}>
-                <img src="/top_product3.png" className="img-fluid h-100 object-fit-contain" />
-            </div>
-            <div className="border rounded p-1 cursor-pointer" style={{ width: '60px', height: '60px' }}>
-                <img src="/top_product4.png" className="img-fluid h-100 object-fit-contain" />
-            </div>
+            {images.map((imgUrl, index) => (
+              <div 
+                key={index} 
+                className={`border rounded p-1 cursor-pointer ${activeImageIndex === index ? 'border-primary border-2' : ''}`} 
+                style={{ width: '60px', height: '60px' }}
+                onClick={() => setActiveImageIndex(index)}
+              >
+                  <img src={imgUrl} className="img-fluid h-100 object-fit-contain" alt={`Thumbnail ${index}`} />
+              </div>
+            ))}
           </div>
 
           <div className="d-flex justify-content-between text-center px-3 border-top pt-4">
@@ -128,48 +198,56 @@ function ShopDetailsContent() {
         {/* Right Side: Details */}
         <div className="col-lg-7 ps-lg-5">
           <div className="d-flex justify-content-between align-items-start mb-2">
-            <h1 className="fw-bold mb-2" style={{ fontSize: '24px', color: '#333', maxWidth: '80%' }}>{productName}</h1>
+            <h1 className="fw-bold mb-2" style={{ fontSize: '24px', color: '#333', maxWidth: '80%' }}>{realProduct.name}</h1>
             <i className="fas fa-share-alt" style={{ fontSize: '20px', cursor: 'pointer', color: '#666' }}></i>
           </div>
           
           <div className="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom">
-            <span className="badge bg-success text-white">4.8 <i className="fas fa-star" style={{ fontSize: '10px' }}></i></span>
-            <span className="text-muted" style={{ fontSize: '13px' }}>785 reviews | 520 answered questions</span>
+            <div className="d-flex text-warning">
+              {[...Array(5).keys()].map(x => (
+                <Star key={x} fill={x < Math.round(realProduct.rating || 5) ? "#F59E0B" : "none"} color="#F59E0B" size={14} />
+              ))}
+            </div>
+            <span className="badge bg-success text-white">{realProduct.rating || '5.0'}</span>
+            <span className="text-muted" style={{ fontSize: '13px' }}>{reviews.length} reviews</span>
           </div>
 
           <div className="d-flex align-items-center gap-3 mb-1">
-            <span className="fw-bold" style={{ fontSize: '32px', color: '#005B6E' }}>₹856</span>
-            <span className="badge bg-danger">50% OFF</span>
+            <span className="fw-bold" style={{ fontSize: '32px', color: '#005B6E' }}>₹{finalPrice}</span>
+            {realProduct.discount > 0 && (
+              <>
+                <span className="badge bg-danger">{realProduct.discount}% OFF</span>
+              </>
+            )}
           </div>
-          <p className="text-muted mb-4" style={{ fontSize: '14px' }}>MRP: <del>₹1,733</del> <span style={{ fontSize: '12px' }}>(MRP inclusive of all taxes)</span></p>
+          <p className="text-muted mb-4" style={{ fontSize: '14px' }}>MRP: <del>₹{realProduct.price}</del> <span style={{ fontSize: '12px' }}>(MRP inclusive of all taxes)</span></p>
 
           <div className="row mb-4">
-             <div className="col-md-2">
+             <div className="col-md-3">
                  <p className="fw-bold mb-2" style={{ fontSize: '14px' }}>Quantity</p>
-                 <div className="d-flex align-items-center border rounded justify-content-between p-1" style={{ width: '90px' }}>
-                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="btn btn-sm border-0"><i className="fas fa-minus" style={{ fontSize: '10px' }}></i></button>
+                 <div className="d-flex align-items-center border rounded justify-content-between p-1" style={{ width: '100px' }}>
+                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="btn btn-sm border-0"><Minus size={12} /></button>
                     <span className="fw-bold">{quantity}</span>
-                    <button onClick={() => setQuantity(quantity + 1)} className="btn btn-sm border-0"><i className="fas fa-plus" style={{ fontSize: '10px' }}></i></button>
+                    <button onClick={() => setQuantity(Math.min(realProduct.stock || 100, quantity + 1))} className="btn btn-sm border-0" disabled={quantity >= (realProduct.stock || 100)}><Plus size={12} /></button>
                  </div>
              </div>
-             <div className="col-md-10">
+              <div className="col-md-9">
                  <p className="fw-bold mb-2" style={{ fontSize: '14px' }}>Select Pack Size</p>
                  <div className="d-flex gap-3">
-                     <div onClick={() => setSelectedPack('100g')} className={`border rounded p-2 text-center cursor-pointer ${selectedPack === '100g' ? 'border-primary border-2' : ''}`} style={{ width: '120px' }}>
-                        <div style={{ fontSize: '13px', fontWeight: 'bold' }}>100g</div>
-                        <div style={{ fontSize: '12px', color: '#005B6E' }}>₹856</div>
-                     </div>
-                     <div onClick={() => setSelectedPack('200g')} className={`border rounded p-2 text-center cursor-pointer ${selectedPack === '200g' ? 'border-primary border-2' : ''}`} style={{ width: '120px' }}>
-                        <div style={{ fontSize: '13px', fontWeight: 'bold' }}>200g [Pack of 2]</div>
-                        <div style={{ fontSize: '12px', color: '#005B6E' }}>₹1,649</div>
-                     </div>
+                      <div onClick={() => setSelectedPack(`${realProduct.unitValue || 1} ${realProduct.unit || 'Pack'}`)} className={`border rounded p-2 text-center cursor-pointer ${selectedPack === `${realProduct.unitValue || 1} ${realProduct.unit || 'Pack'}` ? 'border-primary border-2' : ''}`} style={{ minWidth: '120px' }}>
+                         <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{realProduct.unitValue || 1} {realProduct.unit || 'Pack'}</div>
+                         <div style={{ fontSize: '12px', color: '#005B6E' }}>₹{finalPrice}</div>
+                      </div>
                  </div>
-             </div>
+              </div>
           </div>
 
           <div className="d-flex gap-3 mb-4">
-             <button onClick={handleAddToCart} className="btn w-50 py-3 fw-bold" style={{ backgroundColor: '#005B6E', color: 'white' }}>Add To Cart</button>
-             <button onClick={handleBuyNow} className="btn btn-outline-dark w-50 py-3 fw-bold">Buy It Now</button>
+             <button onClick={handleAddToCart} className="btn w-50 py-3 fw-bold" style={{ backgroundColor: '#005B6E', color: 'white' }} disabled={realProduct.stock === 0}>
+               {realProduct.stock === 0 ? 'Out of Stock' : 'Add To Cart'}
+             </button>
+             <button onClick={handleBuyNow} className="btn btn-outline-dark w-50 py-3 fw-bold" disabled={realProduct.stock === 0}>Buy It Now</button>
+             <button onClick={() => dispatch(toggleWishlist(realProduct))} className="btn btn-outline-dark px-3"><Heart size={20} fill={isInWishlist ? 'var(--accent-color)' : 'none'} color={isInWishlist ? 'var(--accent-color)' : 'currentColor'} /></button>
           </div>
 
           <div className="mb-4 pt-2">
@@ -187,67 +265,136 @@ function ShopDetailsContent() {
 
       <div className="border-top pt-5 mb-5 text-center px-4" style={{ maxWidth: '1000px', margin: '0 auto' }}>
         <div className="d-flex justify-content-center gap-5 border-bottom mb-4">
-           {['description', 'specifications', 'reviews', 'faq'].map((tab) => (
+           {['description', 'ingredients', 'benefits', 'additional info', 'reviews'].map((tab) => (
              <button 
                 key={tab} 
                 className={`btn border-0 text-capitalize fw-bold pb-3 rounded-0 ${activeTab === tab ? 'border-bottom border-dark border-2' : 'text-muted'}`}
                 onClick={() => setActiveTab(tab)}
                 style={{ fontSize: '14px' }}
              >
-                {tab}
+                {tab === 'reviews' ? `Reviews (${reviews.length})` : tab}
              </button>
            ))}
         </div>
         
         {activeTab === 'description' && (
            <p className="text-muted" style={{ fontSize: '14px', lineHeight: '1.8' }}>
-             Experience the authentic taste of healthiness mixed with the zeal of nature! Sweettree Anmol Medjool Dates that are locally sourced and free from any additives or preservatives. The Anmol Medjool Dates are larger than life, overall naturally nutrition-filled, and taste like heaven! Not, have to be added to your baking recipes, desserts, and daily diet, Anmol Medjool Dates are your perfect alternative to sugar cravings and a super healthy dose of dietary fiber, calcium, iron, copper, and so much more.
+             {realProduct.description}
            </p>
         )}
-        {activeTab === 'specifications' && (
+        {activeTab === 'ingredients' && (
            <p className="text-muted" style={{ fontSize: '14px', lineHeight: '1.8' }}>
-             100% natural and premium quality dates, packaged carefully to maintain freshness. Ideal for vegan diets and gluten-free lifestyles. 
+             {realProduct.ingredients?.length > 0 ? realProduct.ingredients.join(', ') : 'No ingredients specified.'}
            </p>
+        )}
+        {activeTab === 'benefits' && (
+           <p className="text-muted" style={{ fontSize: '14px', lineHeight: '1.8' }}>
+             {realProduct.benefits?.length > 0 ? realProduct.benefits.join(', ') : 'No benefits specified.'}
+           </p>
+        )}
+        {activeTab === 'additional info' && (
+           <div className="text-muted text-start px-3" style={{ fontSize: '14px', lineHeight: '1.8' }}>
+             <ul className="list-unstyled">
+                <li><strong>SKU:</strong> {realProduct.sku || 'N/A'}</li>
+                <li><strong>Category:</strong> {realProduct.category || 'N/A'}</li>
+                {realProduct.subCategory && <li><strong>Sub Category:</strong> {realProduct.subCategory}</li>}
+                {realProduct.subSubCategory && <li><strong>Sub Sub Category:</strong> {realProduct.subSubCategory}</li>}
+                {realProduct.brand && <li><strong>Brand:</strong> {realProduct.brand}</li>}
+                <li><strong>Product Type:</strong> {realProduct.productType || 'Physical'}</li>
+                {realProduct.batchNumber && <li><strong>Batch Number:</strong> {realProduct.batchNumber}</li>}
+                {realProduct.expiryDate && <li><strong>Expiry Date:</strong> {new Date(realProduct.expiryDate).toLocaleDateString()}</li>}
+             </ul>
+           </div>
         )}
         {activeTab === 'reviews' && (
-           <p className="text-muted" style={{ fontSize: '14px', lineHeight: '1.8' }}>
-             Customer reviews will be displayed here. 
-           </p>
-        )}
-        {activeTab === 'faq' && (
-           <p className="text-muted" style={{ fontSize: '14px', lineHeight: '1.8' }}>
-             Frequently asked questions regarding this product will be shown here.
-           </p>
-        )}
-      </div>
+          <div className="text-start animate-fade-in">
+            <div className="row g-4">
+              
+              {/* Reviews List */}
+              <div className="col-lg-7">
+                <h5 className="fw-bold mb-4">Customer Feedback</h5>
+                
+                {reviewsLoading ? (
+                  <p className="text-muted">Loading reviews...</p>
+                ) : reviews.length === 0 ? (
+                  <p className="text-muted">No reviews yet for this product. Be the first to write a review!</p>
+                ) : (
+                  <div className="d-flex flex-column gap-3">
+                    {reviews.map((rev) => (
+                      <div key={rev._id} className="border-bottom pb-3">
+                        <div className="d-flex align-items-center justify-content-between mb-2">
+                          <h6 className="fw-bold m-0">{rev.user?.name || 'Anonymous User'}</h6>
+                          <small className="text-muted">{new Date(rev.createdAt).toLocaleDateString()}</small>
+                        </div>
+                        
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                          <div className="d-flex text-warning">
+                            {[...Array(rev.rating).keys()].map(x => <Star key={x} fill="#F59E0B" color="#F59E0B" size={14} />)}
+                          </div>
+                          {rev.isVerifiedPurchase && (
+                            <span className="badge bg-success-subtle text-success fs-8">Verified Purchase</span>
+                          )}
+                        </div>
+                        <p className="text-muted m-0 fs-7">{rev.comment}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-      <div className="py-5 bg-light px-4 rounded-3 text-center">
-         <h4 className="fw-bold mb-4" style={{ fontSize: '18px' }}>People Are Also Looking For</h4>
-         <div className="d-flex flex-wrap gap-2 justify-content-center mx-auto" style={{ maxWidth: '800px' }}>
-            <span className="search-tag-pill bg-white">Cashew Royale</span>
-            <span className="search-tag-pill bg-white">Cashew Premium</span>
-            <span className="search-tag-pill bg-white">Almond American</span>
-            <span className="search-tag-pill bg-white">Mamra</span>
-            <span className="search-tag-pill bg-white">Kishmish Royale</span>
-            <span className="search-tag-pill bg-white">Kishmish Premium</span>
-            <span className="search-tag-pill bg-white">Walnut Royale</span>
-            <span className="search-tag-pill bg-white">Anjeer</span>
-            <span className="search-tag-pill bg-white">Pista</span>
-            <span className="search-tag-pill bg-white">Dates Royale</span>
-            <span className="search-tag-pill bg-white">Kishmish Black</span>
-            <span className="search-tag-pill bg-white">Mate Coffee Creamer</span>
-            <span className="search-tag-pill bg-white">Shahi Rose Trail Mix</span>
-            <span className="search-tag-pill bg-white">Crazy Crunchy Corn</span>
-            <span className="search-tag-pill bg-white">Museli Dry Fruits Medley</span>
-            <span className="search-tag-pill bg-white">Fruity Orchard Mix</span>
-            <span className="search-tag-pill bg-white">BBQ Millets Trail Mix</span>
-            <span className="search-tag-pill bg-white">Museli Fruit & Nut</span>
-            <span className="search-tag-pill bg-white">Cashew Green Chilli</span>
-            <span className="search-tag-pill bg-white">Cashew Salted</span>
-            <span className="search-tag-pill bg-white">Almond Salted</span>
-            <span className="search-tag-pill bg-white">Almond Peri Peri</span>
-            <span className="search-tag-pill bg-white">Cashew Cheese</span>
-         </div>
+              {/* Write a Review Form */}
+              <div className="col-lg-5">
+                <div className="bg-light p-4 rounded-3 border">
+                  <h5 className="fw-bold mb-3">Write a Review</h5>
+                  
+                  {user ? (
+                    <form onSubmit={handleReviewSubmit}>
+                      <div className="mb-3">
+                        <label className="fw-medium mb-1">Rating</label>
+                        <select 
+                          className="form-select"
+                          value={rating}
+                          onChange={(e) => setRating(Number(e.target.value))}
+                        >
+                          <option value="5">5 Stars (Excellent)</option>
+                          <option value="4">4 Stars (Good)</option>
+                          <option value="3">3 Stars (Average)</option>
+                          <option value="2">2 Stars (Poor)</option>
+                          <option value="1">1 Star (Very Poor)</option>
+                        </select>
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="fw-medium mb-1">Your Comment</label>
+                        <textarea
+                          rows="4"
+                          className="form-control"
+                          placeholder="Share your experience with this product..."
+                          value={comment}
+                          onChange={(e) => setComment(e.target.value)}
+                        ></textarea>
+                      </div>
+
+                      {reviewError && <div className="alert alert-danger p-2 fs-7 mb-3">{reviewError}</div>}
+                      {reviewSuccess && <div className="alert alert-success p-2 fs-7 mb-3">{reviewSuccess}</div>}
+
+                      <button type="submit" className="btn btn-brand w-100 py-2" style={{ backgroundColor: '#005B6E', border: '1px solid #005B6E', color: 'white' }}>
+                        Submit Review
+                      </button>
+                    </form>
+                  ) : (
+                    <div className="text-center py-3">
+                      <MessageCircle className="text-muted mb-2" size={32} />
+                      <p className="text-muted fs-7 mb-3">You must be logged in to review products.</p>
+                      <Link href="/login" className="btn btn-brand btn-sm">Log In</Link>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

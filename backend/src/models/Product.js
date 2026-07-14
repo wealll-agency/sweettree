@@ -9,6 +9,7 @@ const productSchema = new mongoose.Schema({
   productType: { type: String, enum: ['Physical', 'Digital'], default: 'Physical' },
   sku: { type: String, default: '' },
   unit: { type: String, default: 'kg' },
+  unitValue: { type: Number, default: 1 },
   searchTags: [{ type: String }],
   
   price: { type: Number, required: true, min: 0 }, // This represents Unit Price

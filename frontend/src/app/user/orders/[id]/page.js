@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchOrderDetails } from '../../../../store/ordersSlice.js';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -14,19 +14,39 @@ export default function OrderTrackingPage() {
   const searchParams = useSearchParams();
 
   const { activeOrder: order, orderLoading } = useSelector((state) => state.orders);
-  const { user } = useSelector((state) => state.auth);
+  const { user, loading: authLoading } = useSelector((state) => state.auth);
   
   const isNewSuccess = searchParams.get('success') === 'true';
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || authLoading) return;
     if (!user) {
-      router.push('/login');
-    } else if (id) {
+      router.push(`/login?redirect=user/orders/${id}`);
+    }
+  }, [user, authLoading, mounted, router, id]);
+
+  useEffect(() => {
+    if (user && !authLoading && id) {
       dispatch(fetchOrderDetails(id));
     }
-  }, [dispatch, id, user, router]);
+  }, [dispatch, id, user, authLoading]);
 
-  if (!user) return null;
+  if (!mounted || authLoading || !user) {
+    return (
+      <div className="container py-5 text-center d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
+        <div className="spinner-border text-success mb-3" role="status">
+          <span className="visually-hidden">Checking authentication...</span>
+        </div>
+        <p className="text-muted">Verifying your session...</p>
+      </div>
+    );
+  }
 
   if (orderLoading || !order) {
     return (
@@ -94,8 +114,8 @@ export default function OrderTrackingPage() {
               <MapPin size={20} className="text-muted mt-1" />
               <div>
                 <h6 className="fw-bold m-0">Shipping Destination:</h6>
-                <p className="m-0 text-muted fs-7 mt-1">{order.deliveryAddress.street}, {order.deliveryAddress.city}</p>
-                <p className="m-0 text-muted fs-7">{order.deliveryAddress.state} - {order.deliveryAddress.zipCode}, {order.deliveryAddress.country}</p>
+                <p className="m-0 text-muted fs-7 mt-1">{order.deliveryAddress.street || order.deliveryAddress.address || order.deliveryAddress.locality}, {order.deliveryAddress.city}</p>
+                <p className="m-0 text-muted fs-7">{order.deliveryAddress.state} - {order.deliveryAddress.zipCode || order.deliveryAddress.pincode}, {order.deliveryAddress.country || 'India'}</p>
               </div>
             </div>
 
@@ -111,24 +131,77 @@ export default function OrderTrackingPage() {
           </div>
 
           {/* Items Recap */}
-          <div className="bg-white p-4 rounded-4 shadow-sm border">
+          <div className="bg-white p-4 rounded-4 shadow-sm border mb-4">
             <h5 className="fw-bold mb-3">Purchased Items</h5>
             
             <div className="d-flex flex-column gap-3">
-              {order.items.map(item => (
-                <div key={item._id} className="d-flex align-items-center justify-content-between border-bottom pb-2">
+              {order.items.map((item, index) => (
+                <div key={item._id || index} className="d-flex align-items-center justify-content-between border-bottom pb-3">
                   <div className="d-flex align-items-center gap-3">
-                    <div className="bg-light p-2 rounded">
-                      <ShoppingBag size={24} className="text-success" />
+                    <div 
+                      className="product-img-box m-0 p-0" 
+                      style={{ width: '80px', height: '80px', flexShrink: 0, overflow: 'hidden', border: '1px solid #eee', borderRadius: '4px' }}
+                    >
+                      {item.product && item.product.images && item.product.images.length > 0 ? (
+                        <img 
+                          src={item.product.images[0].replace('/assets/images/', '/')} 
+                          alt={item.name} 
+                          style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} 
+                        />
+                      ) : (
+                        <div className="w-100 h-100 d-flex align-items-center justify-content-center text-muted bg-light">
+                          <ShoppingBag size={24} />
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <h6 className="fw-bold m-0">{item.name}</h6>
-                      <small className="text-muted">₹{item.price} x {item.quantity}</small>
+                    <div className="flex-grow-1">
+                      <span className="brand-text d-block mb-1 text-uppercase">SWEETTREE</span>
+                      <h3 className="product-name m-0" style={{ fontSize: '14px', lineHeight: '1.4' }}>{item.name}</h3>
+                      <div className="product-pricing mt-1">
+                        <span className="current-price fs-6">₹{item.price}</span> <span className="text-muted fs-7">x {item.quantity}</span>
+                      </div>
                     </div>
                   </div>
-                  <span className="fw-bold text-dark">₹{item.price * item.quantity}</span>
+                  <span className="current-price fs-5">₹{item.price * item.quantity}</span>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Payment Details */}
+          <div className="bg-white p-4 rounded-4 shadow-sm border">
+            <h5 className="fw-bold mb-3">Payment Details</h5>
+            <div className="d-flex flex-column gap-2">
+              <div className="d-flex justify-content-between">
+                <span className="text-muted">Subtotal</span>
+                <span className="fw-medium">₹{order.subtotal}</span>
+              </div>
+              {order.couponDiscount > 0 && (
+                <div className="d-flex justify-content-between text-success">
+                  <span>Discount</span>
+                  <span className="fw-medium">-₹{order.couponDiscount}</span>
+                </div>
+              )}
+              <div className="d-flex justify-content-between">
+                <span className="text-muted">Tax</span>
+                <span className="fw-medium">₹{order.tax}</span>
+              </div>
+              <div className="d-flex justify-content-between">
+                <span className="text-muted">Shipping Fee</span>
+                <span className="fw-medium">
+                  {order.shippingFee === 0 ? <span className="text-success">Free</span> : `₹${order.shippingFee}`}
+                </span>
+              </div>
+              <hr className="my-2" />
+              <div className="d-flex justify-content-between align-items-center">
+                <span className="fw-bold text-dark fs-5">Total Paid</span>
+                <span className="fw-bold text-dark fs-5">₹{order.totalAmount}</span>
+              </div>
+              <div className="mt-2 text-end">
+                <span className="badge bg-success-subtle text-success fs-7 px-3 py-2 rounded-pill">
+                  Payment Status: {order.paymentStatus}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -150,9 +223,19 @@ export default function OrderTrackingPage() {
               <div className="d-flex flex-column gap-4 relative-timeline py-2 ps-2">
                 {steps.map((step, idx) => {
                   const status = getStepStatus(idx);
+                  const getStepDate = (stepName) => {
+                    if (stepName === 'Placed') return order.createdAt;
+                    if (stepName === 'Confirmed') return order.confirmedAt;
+                    if (stepName === 'Packed') return order.packedAt;
+                    if (stepName === 'Shipped') return order.shippedAt;
+                    if (stepName === 'Delivered') return order.deliveredAt;
+                    return null;
+                  };
+                  const stepDate = getStepDate(step);
+
                   return (
-                    <div key={step} className="d-flex align-items-start gap-3">
-                      <div className="position-relative">
+                    <div key={step} className="d-flex align-items-start gap-3 w-100">
+                      <div className="position-relative flex-shrink-0">
                         <div 
                           className="rounded-circle d-flex align-items-center justify-content-center"
                           style={{
@@ -180,8 +263,15 @@ export default function OrderTrackingPage() {
                         )}
                       </div>
                       
-                      <div>
-                        <h6 className={`fw-bold m-0 ${status === 'active' ? 'text-success' : status === 'pending' ? 'text-muted' : 'text-dark'}`}>{step}</h6>
+                      <div className="flex-grow-1">
+                        <div className="d-flex justify-content-between align-items-start flex-wrap gap-1">
+                          <h6 className={`fw-bold m-0 ${status === 'active' ? 'text-success' : status === 'pending' ? 'text-muted' : 'text-dark'}`}>{step}</h6>
+                          {stepDate && (
+                            <small className="text-muted ms-auto text-end" style={{ fontSize: '0.75rem' }}>
+                              {new Date(stepDate).toLocaleDateString()} {new Date(stepDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </small>
+                          )}
+                        </div>
                         <small className="text-muted fs-8">
                           {status === 'completed' ? 'Activity recorded' : status === 'active' ? 'Current processing stage' : 'Pending completion'}
                         </small>

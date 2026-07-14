@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Production-grade enterprise ecommerce monorepo for Sweettree",
   "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
     "install-all": "npm install && npm install --workspace=backend && npm install --workspace=frontend",
     "dev": "concurrently \"npm run dev --workspace=backend\" \"npm run dev --workspace=frontend\"",

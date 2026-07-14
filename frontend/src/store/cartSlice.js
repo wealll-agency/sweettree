@@ -30,7 +30,7 @@ const calculateTotals = (items, discountPercentage = 0, applicableProducts = [],
 
   const discount = Math.round((discountableSubtotal * discountPercentage) / 100);
   const taxableAmount = subtotal - discount;
-  const tax = Math.round(taxableAmount * 0.18); // 18% GST
+  const tax = Math.round(taxableAmount * 0.05); // 5% GST
   const shippingFee = taxableAmount > 500 || items.length === 0 ? 0 : 40;
   const total = taxableAmount + tax + shippingFee;
 
@@ -54,9 +54,7 @@ const cartSlice = createSlice({
   reducers: {
     addToCart: (state, action) => {
       const { product, quantity, size } = action.payload;
-      const activePrice = product.discount > 0 
-        ? Math.round(product.price * (1 - product.discount / 100))
-        : product.price;
+      const activePrice = product.price;
 
       const existingIndex = state.items.findIndex(
         item => item.product === product._id && item.size === size

@@ -2,49 +2,70 @@
 
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addAddress, deleteAddress, updateUserProfile } from '../../../store/authSlice.js';
+import { addAddress, deleteAddress, updateAddress, updateUserProfile } from '../../../store/authSlice.js';
 import { useRouter } from 'next/navigation';
-import { User, MapPin, Trash2, Mail, Phone, Plus } from 'lucide-react';
+import { User, MapPin, Trash2, Edit2, Mail, Phone, Plus } from 'lucide-react';
 
 export default function ProfilePage() {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { user } = useSelector((state) => state.auth);
+  const { user, loading } = useSelector((state) => state.auth);
 
   // Profile states
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [alternatePhone, setAlternatePhone] = useState('');
   const [password, setPassword] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
 
   // Address form states
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [street, setStreet] = useState('');
+  const [editingAddressId, setEditingAddressId] = useState(null);
+  const [addrName, setAddrName] = useState('');
+  const [addrPhone, setAddrPhone] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [locality, setLocality] = useState('');
+  const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [stateName, setStateName] = useState('');
-  const [zipCode, setZipCode] = useState('');
-  const [country, setCountry] = useState('India');
+  const [landmark, setLandmark] = useState('');
+  const [altPhone, setAltPhone] = useState('');
+  const [addressType, setAddressType] = useState('Home');
   const [addressError, setAddressError] = useState('');
 
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    if (!user) {
-      router.push('/login');
-    } else {
-      setName(user.name);
-      setPhone(user.phone || '');
-    }
-  }, [user, router]);
+    window.scrollTo(0, 0);
+  }, []);
 
-  if (!mounted || !user) return null;
+  useEffect(() => {
+    if (!mounted || loading) return;
+    if (!user) {
+      router.push('/login?redirect=user/profile');
+    } else {
+      setName(user.name || '');
+      setPhone(user.phone || '');
+      setAlternatePhone(user.alternatePhone || '');
+    }
+  }, [user, loading, mounted, router]);
+
+  if (!mounted || loading || !user) {
+    return (
+      <div className="container py-5 d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
+        <div className="spinner-border text-success" role="status">
+          <span className="visually-hidden">Loading profile...</span>
+        </div>
+      </div>
+    );
+  }
 
   const handleProfileSubmit = (e) => {
     e.preventDefault();
     setProfileSuccess('');
-    dispatch(updateUserProfile({ name, phone, password: password || undefined }))
+    dispatch(updateUserProfile({ name, phone, alternatePhone, password: password || undefined }))
       .unwrap()
       .then(() => {
         setProfileSuccess('Profile details updated successfully!');
@@ -54,17 +75,52 @@ export default function ProfilePage() {
 
   const handleAddressSubmit = (e) => {
     e.preventDefault();
-    if (!street || !city || !stateName || !zipCode || !country) {
-      setAddressError('Please fill out all address fields');
+    if (!addrName || !addrPhone || !pincode || !locality || !address || !city || !stateName) {
+      setAddressError('Please fill out all required address fields');
       return;
     }
     setAddressError('');
-    dispatch(addAddress({ street, city, state: stateName, zipCode, country }))
-      .unwrap()
-      .then(() => {
-        setShowAddressForm(false);
-        setStreet(''); setCity(''); setStateName(''); setZipCode('');
-      });
+    const addressData = { 
+      name: addrName, phone: addrPhone, pincode, locality, address, 
+      city, state: stateName, landmark, alternatePhone: altPhone, addressType 
+    };
+
+    if (editingAddressId) {
+      dispatch(updateAddress({ addressId: editingAddressId, addressData }))
+        .unwrap()
+        .then(() => {
+          resetAddressForm();
+        });
+    } else {
+      dispatch(addAddress(addressData))
+        .unwrap()
+        .then(() => {
+          resetAddressForm();
+        });
+    }
+  };
+
+  const resetAddressForm = () => {
+    setShowAddressForm(false);
+    setEditingAddressId(null);
+    setAddrName(''); setAddrPhone(''); setPincode(''); setLocality('');
+    setAddress(''); setCity(''); setStateName(''); setLandmark(''); setAltPhone('');
+    setAddressType('Home');
+  };
+
+  const handleEditAddress = (addr) => {
+    setEditingAddressId(addr._id);
+    setAddrName(addr.name || '');
+    setAddrPhone(addr.phone || '');
+    setPincode(addr.pincode || '');
+    setLocality(addr.locality || '');
+    setAddress(addr.address || '');
+    setCity(addr.city || '');
+    setStateName(addr.state || '');
+    setLandmark(addr.landmark || '');
+    setAltPhone(addr.alternatePhone || '');
+    setAddressType(addr.addressType || 'Home');
+    setShowAddressForm(true);
   };
 
   const handleAddressDelete = (id) => {
@@ -129,6 +185,19 @@ export default function ProfilePage() {
               </div>
 
               <div>
+                <label className="fw-medium mb-1 fs-7">Alternate Phone</label>
+                <div className="position-relative">
+                  <input
+                    type="tel"
+                    className="form-control form-control-brand ps-5"
+                    value={alternatePhone}
+                    onChange={(e) => setAlternatePhone(e.target.value)}
+                  />
+                  <Phone className="text-muted position-absolute start-0 top-50 translate-middle-y ms-3" size={18} />
+                </div>
+              </div>
+
+              <div>
                 <label className="fw-medium mb-1 fs-7">Reset Password</label>
                 <input
                   type="password"
@@ -155,7 +224,10 @@ export default function ProfilePage() {
               </h5>
               {!showAddressForm && (
                 <button 
-                  onClick={() => setShowAddressForm(true)} 
+                  onClick={() => {
+                    resetAddressForm();
+                    setShowAddressForm(true);
+                  }} 
                   className="btn btn-brand-outline btn-sm d-flex align-items-center gap-1"
                 >
                   <Plus size={16} /> Add Address
@@ -165,31 +237,77 @@ export default function ProfilePage() {
 
             {showAddressForm && (
               <form onSubmit={handleAddressSubmit} className="bg-light p-3 rounded mb-4 border">
-                <h6 className="fw-bold mb-2">New Address Details</h6>
+                <h6 className="fw-bold mb-3">{editingAddressId ? 'Edit Address' : 'Add a new address'}</h6>
                 
-                <div className="mb-2">
-                  <input
-                    type="text"
-                    required
-                    className="form-control form-control-brand py-2 fs-7"
-                    placeholder="Street Address, Block"
-                    value={street}
-                    onChange={(e) => setStreet(e.target.value)}
-                  />
-                </div>
-
                 <div className="row g-2 mb-2">
-                  <div className="col-6">
+                  <div className="col-md-6">
                     <input
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="City"
+                      placeholder="Name"
+                      value={addrName}
+                      onChange={(e) => setAddrName(e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <input
+                      type="tel"
+                      required
+                      className="form-control form-control-brand py-2 fs-7"
+                      placeholder="10-digit mobile number"
+                      value={addrPhone}
+                      onChange={(e) => setAddrPhone(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="row g-2 mb-2">
+                  <div className="col-md-6">
+                    <input
+                      type="text"
+                      required
+                      className="form-control form-control-brand py-2 fs-7"
+                      placeholder="Pincode"
+                      value={pincode}
+                      onChange={(e) => setPincode(e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <input
+                      type="text"
+                      required
+                      className="form-control form-control-brand py-2 fs-7"
+                      placeholder="Locality"
+                      value={locality}
+                      onChange={(e) => setLocality(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-2">
+                  <textarea
+                    required
+                    className="form-control form-control-brand py-2 fs-7"
+                    placeholder="Address (Area and Street)"
+                    rows="2"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                  ></textarea>
+                </div>
+
+                <div className="row g-2 mb-2">
+                  <div className="col-md-6">
+                    <input
+                      type="text"
+                      required
+                      className="form-control form-control-brand py-2 fs-7"
+                      placeholder="City/District/Town"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                     />
                   </div>
-                  <div className="col-6">
+                  <div className="col-md-6">
                     <input
                       type="text"
                       required
@@ -202,39 +320,43 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="row g-2 mb-3">
-                  <div className="col-6">
+                  <div className="col-md-6">
                     <input
                       type="text"
-                      required
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="Zip Code"
-                      value={zipCode}
-                      onChange={(e) => setZipCode(e.target.value)}
+                      placeholder="Landmark (Optional)"
+                      value={landmark}
+                      onChange={(e) => setLandmark(e.target.value)}
                     />
                   </div>
-                  <div className="col-6">
+                  <div className="col-md-6">
                     <input
-                      type="text"
-                      required
+                      type="tel"
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="Country"
-                      value={country}
-                      onChange={(e) => setCountry(e.target.value)}
+                      placeholder="Alternate Phone (Optional)"
+                      value={altPhone}
+                      onChange={(e) => setAltPhone(e.target.value)}
                     />
                   </div>
                 </div>
 
-                {addressError && <div className="text-danger fs-8 mb-2">{addressError}</div>}
+                <div className="mb-3 d-flex gap-3 align-items-center">
+                  <span className="fs-7 fw-medium text-muted">Address Type</span>
+                  <div className="form-check">
+                    <input className="form-check-input" type="radio" name="addressType" id="homeType" value="Home" checked={addressType === 'Home'} onChange={(e) => setAddressType(e.target.value)} />
+                    <label className="form-check-label fs-7" htmlFor="homeType">Home</label>
+                  </div>
+                  <div className="form-check">
+                    <input className="form-check-input" type="radio" name="addressType" id="workType" value="Work" checked={addressType === 'Work'} onChange={(e) => setAddressType(e.target.value)} />
+                    <label className="form-check-label fs-7" htmlFor="workType">Work</label>
+                  </div>
+                </div>
 
-                <div className="d-flex gap-2">
-                  <button type="submit" className="btn btn-brand btn-sm">Save</button>
-                  <button 
-                    type="button" 
-                    onClick={() => setShowAddressForm(false)} 
-                    className="btn btn-brand-secondary btn-sm"
-                  >
-                    Cancel
-                  </button>
+                {addressError && <div className="alert alert-danger p-2 fs-8 mb-2">{addressError}</div>}
+                
+                <div className="d-flex gap-2 mt-2">
+                  <button type="submit" className="btn btn-brand btn-sm py-2 px-4">{editingAddressId ? 'Update' : 'Save'}</button>
+                  <button type="button" onClick={resetAddressForm} className="btn btn-light btn-sm py-2 px-4 border">Cancel</button>
                 </div>
               </form>
             )}
@@ -243,21 +365,43 @@ export default function ProfilePage() {
               <p className="text-muted m-0 fs-7">No saved shipping addresses found. Add one to speed up checkouts.</p>
             ) : (
               <div className="d-flex flex-column gap-3">
-                {user.addresses.map((addr) => (
-                  <div key={addr._id} className="p-3 rounded border d-flex justify-content-between align-items-center">
-                    <div>
-                      <p className="m-0 fw-semibold text-dark fs-6">{user.name}</p>
-                      <p className="m-0 text-muted fs-7">{addr.street}, {addr.city}</p>
-                      <p className="m-0 text-muted fs-7">{addr.state} - {addr.zipCode}, {addr.country}</p>
+                {user.addresses && user.addresses.map((addr) => (
+                  <div key={addr._id} className="border rounded p-3 position-relative">
+                    <span className="badge bg-light text-dark border position-absolute top-0 end-0 m-3 fs-8 px-2 py-1">{addr.addressType || 'Home'}</span>
+                    <div className="d-flex justify-content-between align-items-start">
+                      <div>
+                        <div className="d-flex align-items-center gap-3 mb-1">
+                          <span className="fw-bold fs-6 text-dark">{addr.name || user.name}</span>
+                          {(addr.phone || user.phone) && <span className="fw-bold fs-6 text-dark">{addr.phone || user.phone}</span>}
+                        </div>
+                        <p className="text-muted m-0 fs-7 lh-sm">
+                          {addr.address || addr.street}
+                          {addr.locality ? `, ${addr.locality}` : ''}<br />
+                          {addr.city}, {addr.state} - <span className="fw-medium text-dark">{addr.pincode || addr.zipCode}</span>
+                        </p>
+                      </div>
+                      <div className="d-flex align-items-center mt-auto">
+                        <button 
+                          onClick={() => handleEditAddress(addr)}
+                          className="btn btn-link text-primary p-0 me-3"
+                          title="Edit Address"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                        <button 
+                          onClick={() => handleAddressDelete(addr._id)}
+                          className="btn btn-link text-danger p-0"
+                          title="Delete Address"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </div>
-                    <button 
-                      onClick={() => handleAddressDelete(addr._id)}
-                      className="btn btn-sm btn-link text-danger border-0 p-0 hover-red"
-                    >
-                      <Trash2 size={18} />
-                    </button>
                   </div>
                 ))}
+                {(!user.addresses || user.addresses.length === 0) && (
+                  <p className="text-muted fs-7">No saved addresses found.</p>
+                )}
               </div>
             )}
           </div>

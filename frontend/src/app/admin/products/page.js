@@ -35,6 +35,7 @@ export default function AdminProductsPage() {
   const [productType, setProductType] = useState('Physical');
   const [sku, setSku] = useState('');
   const [unit, setUnit] = useState('kg');
+  const [unitValue, setUnitValue] = useState('');
   const [searchTags, setSearchTags] = useState('');
   
   const [price, setPrice] = useState(''); // Represents Unit Price
@@ -52,7 +53,28 @@ export default function AdminProductsPage() {
   const [batchNumber, setBatchNumber] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [stock, setStock] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+  
+  const [subImageFiles, setSubImageFiles] = useState([null, null, null]);
+  const [subImagePreviews, setSubImagePreviews] = useState(['', '', '']);
+
+  useEffect(() => {
+    const mrp = parseFloat(purchasePrice) || 0;
+    const disc = parseFloat(discount) || 0;
+    let computedPrice = mrp;
+
+    if (disc > 0) {
+      if (discountType === 'Percent') {
+        computedPrice = mrp * (1 - disc / 100);
+      } else {
+        computedPrice = mrp - disc;
+      }
+    }
+
+    computedPrice = Math.max(0, computedPrice);
+    setPrice(Math.round(computedPrice).toString());
+  }, [purchasePrice, discount, discountType]);
 
   const loadProducts = () => {
     dispatch(fetchAdminProducts({
@@ -77,7 +99,7 @@ export default function AdminProductsPage() {
       alert("No products to export");
       return;
     }
-    const headers = ['SL', 'Product Name', 'Category', 'Product Type', 'Purchase Price', 'Selling Price', 'Stock', 'Featured', 'Active'];
+    const headers = ['SL', 'Product Name', 'Category', 'Product Type', 'MRP Price', 'Selling Price', 'Stock', 'Featured', 'Active'];
     const csvRows = [headers.join(',')];
     
     products.forEach((p, index) => {
@@ -114,6 +136,7 @@ export default function AdminProductsPage() {
     setProductType('Physical');
     setSku('');
     setUnit('kg');
+    setUnitValue('');
     setSearchTags('');
     setPrice('');
     setPurchasePrice('0');
@@ -130,7 +153,10 @@ export default function AdminProductsPage() {
     setBatchNumber('');
     setExpiryDate('');
     setStock('');
-    setImageUrl('');
+    setImageFile(null);
+    setImagePreviewUrl('');
+    setSubImageFiles([null, null, null]);
+    setSubImagePreviews(['', '', '']);
     setEditMode(false);
     setEditId('');
     setShowForm(false);
@@ -146,6 +172,7 @@ export default function AdminProductsPage() {
     setProductType(product.productType || 'Physical');
     setSku(product.sku || '');
     setUnit(product.unit || 'kg');
+    setUnitValue(product.unitValue || '');
     setSearchTags(product.searchTags ? product.searchTags.join(', ') : '');
     setPrice(product.price.toString());
     setPurchasePrice(product.purchasePrice ? product.purchasePrice.toString() : '0');
@@ -162,7 +189,17 @@ export default function AdminProductsPage() {
     setBatchNumber(product.batchNumber);
     setExpiryDate(product.expiryDate.split('T')[0]);
     setStock(product.stock.toString());
-    setImageUrl(product.images[0] || '');
+    setImagePreviewUrl(product.images[0] || '');
+    setImageFile(null);
+    
+    // Set sub-image previews if they exist
+    const previews = ['', '', ''];
+    for(let i=1; i<=3; i++) {
+      if(product.images[i]) previews[i-1] = product.images[i];
+    }
+    setSubImagePreviews(previews);
+    setSubImageFiles([null, null, null]);
+    
     setEditMode(true);
     setShowForm(true);
   };
@@ -176,38 +213,99 @@ export default function AdminProductsPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const payload = {
-      name,
-      category,
-      subCategory,
-      subSubCategory,
-      brand,
-      productType,
-      sku,
-      unit,
-      searchTags: searchTags.split(',').map(tag => tag.trim()).filter(Boolean),
-      price: Number(price),
-      purchasePrice: Number(purchasePrice),
-      minOrderQty: Number(minOrderQty),
-      discount: Number(discount),
-      discountType,
-      taxAmount: Number(taxAmount),
-      taxCalculation,
-      shippingCost: Number(shippingCost),
-      shippingMultiplyWithQty,
-      description,
-      ingredients: ingredients.split(',').map(i => i.trim()).filter(Boolean),
-      benefits: benefits.split(',').map(b => b.trim()).filter(Boolean),
-      batchNumber,
-      expiryDate,
-      stock: Number(stock),
-      images: imageUrl.trim() ? [imageUrl.trim()] : ['https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=400']
-    };
+    const payload = new FormData();
+    payload.append('name', name);
+    payload.append('category', category);
+    payload.append('subCategory', subCategory);
+    payload.append('subSubCategory', subSubCategory);
+    payload.append('brand', brand);
+    payload.append('productType', productType);
+    payload.append('sku', sku);
+    payload.append('unit', unit);
+    payload.append('unitValue', unitValue);
+    
+    // Arrays need special handling in FormData or just stringified
+    // Since backend expects an array, let's join them and let backend split, 
+    // OR we can just pass them as strings if backend is handling them.
+    // Looking at backend `createProduct`, it expects `ingredients`, `benefits` as array if JSON. 
+    // Wait, since we are sending FormData, everything is a string.
+    // The backend receives strings, so we need to ensure backend splits them if needed.
+    // Currently backend: `const { ingredients } = req.body;` If it's a string, `ingredients || []` will be a string. 
+    // Let's pass them exactly as the user typed, and we will update backend to parse if needed.
+    payload.append('searchTags', searchTags);
+    payload.append('price', price);
+    payload.append('purchasePrice', purchasePrice);
+    payload.append('minOrderQty', minOrderQty);
+    payload.append('discount', discount);
+    payload.append('discountType', discountType);
+    payload.append('taxAmount', taxAmount);
+    payload.append('taxCalculation', taxCalculation);
+    payload.append('shippingCost', shippingCost);
+    payload.append('shippingMultiplyWithQty', shippingMultiplyWithQty);
+    payload.append('description', description);
+    payload.append('ingredients', ingredients);
+    payload.append('benefits', benefits);
+    payload.append('batchNumber', batchNumber);
+    payload.append('expiryDate', expiryDate);
+    payload.append('stock', stock);
+
+    if (imageFile) {
+      payload.append('image', imageFile);
+    } else if (imagePreviewUrl) {
+      payload.append('images', imagePreviewUrl);
+    }
+    
+    // Sub-images
+    subImageFiles.forEach((file, index) => {
+      if (file) {
+        payload.append('subImages', file);
+      } else if (subImagePreviews[index]) {
+        // If editing and no new file was chosen, keep the existing URL
+        payload.append('images', subImagePreviews[index]);
+      }
+    });
 
     if (editMode) {
-      dispatch(editProduct({ id: editId, data: payload })).then(() => resetForm());
+      dispatch(editProduct({ id: editId, data: payload }))
+        .unwrap()
+        .then(() => {
+          resetForm();
+          alert("Product updated successfully!");
+        })
+        .catch((err) => {
+          alert("Failed to update product: " + err);
+        });
     } else {
-      dispatch(addProduct(payload)).then(() => resetForm());
+      dispatch(addProduct(payload))
+        .unwrap()
+        .then(() => {
+          resetForm();
+          alert("Product added successfully!");
+        })
+        .catch((err) => {
+          alert("Failed to add product: " + err);
+        });
+    }
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSubImageChange = (e, index) => {
+    const file = e.target.files[0];
+    if (file) {
+      const newFiles = [...subImageFiles];
+      newFiles[index] = file;
+      setSubImageFiles(newFiles);
+      
+      const newPreviews = [...subImagePreviews];
+      newPreviews[index] = URL.createObjectURL(file);
+      setSubImagePreviews(newPreviews);
     }
   };
 
@@ -236,7 +334,12 @@ export default function AdminProductsPage() {
               <img src={viewingProduct.images[0] || 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=200'} alt="product" className="img-fluid rounded mb-3" style={{ maxHeight: '200px', objectFit: 'cover' }} />
               <h5 className="fw-bold">{viewingProduct.name}</h5>
               <p className="text-muted mb-1">Category: {viewingProduct.category}</p>
-              <p className="fw-semibold text-brand fs-5 mb-1">${viewingProduct.price}</p>
+              <p className="fw-semibold text-brand fs-5 mb-1">
+                ₹{viewingProduct.price}
+                {viewingProduct.purchasePrice > viewingProduct.price && (
+                  <span className="text-muted text-decoration-line-through fs-7 ms-2">₹{viewingProduct.purchasePrice}</span>
+                )}
+              </p>
               <span className={`badge ${viewingProduct.stock > 0 ? 'bg-success' : 'bg-danger'}`}>{viewingProduct.stock} in stock</span>
               <p className="mt-3 fs-7 text-start text-muted">{viewingProduct.description}</p>
             </div>
@@ -376,13 +479,9 @@ export default function AdminProductsPage() {
               </div>
               <div className="card-body">
                 <div className="row g-4">
-                  <div className="col-md-6">
+                  <div className="col-md-12">
                     <label className="fw-medium mb-1 fs-7">Product Name</label>
                     <input type="text" required className="form-control" placeholder="Product Name" value={name} onChange={(e) => setName(e.target.value)} />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="fw-medium mb-1 fs-7">Brand</label>
-                    <input type="text" className="form-control" placeholder="Select Brand" value={brand} onChange={(e) => setBrand(e.target.value)} />
                   </div>
                   
                   <div className="col-md-4">
@@ -405,29 +504,25 @@ export default function AdminProductsPage() {
                     <input type="text" className="form-control" placeholder="Select Sub Sub Category" value={subSubCategory} onChange={(e) => setSubSubCategory(e.target.value)} />
                   </div>
 
-                  <div className="col-md-4">
-                    <label className="fw-medium mb-1 fs-7">Product Type</label>
-                    <select className="form-select" value={productType} onChange={(e) => setProductType(e.target.value)}>
-                      <option value="Physical">Physical</option>
-                      <option value="Digital">Digital</option>
-                    </select>
-                  </div>
-                  <div className="col-md-4">
+                  <div className="col-md-6">
                     <div className="d-flex justify-content-between">
                       <label className="fw-medium mb-1 fs-7">Product SKU</label>
                       <a href="#" className="text-primary text-decoration-none fs-7" onClick={(e) => { e.preventDefault(); generateSku(); }}>Generate Code</a>
                     </div>
                     <input type="text" className="form-control" placeholder="Code" value={sku} onChange={(e) => setSku(e.target.value)} />
                   </div>
-                  <div className="col-md-4">
-                    <label className="fw-medium mb-1 fs-7">Unit</label>
-                    <select className="form-select" value={unit} onChange={(e) => setUnit(e.target.value)}>
-                      <option value="kg">kg</option>
-                      <option value="gm">gm</option>
-                      <option value="pcs">pcs</option>
-                      <option value="ltr">ltr</option>
-                      <option value="pack">pack</option>
-                    </select>
+                  <div className="col-md-6">
+                    <label className="fw-medium mb-1 fs-7">Unit Quantity & Type</label>
+                    <div className="input-group">
+                      <input type="number" className="form-control" placeholder="Qty (e.g. 500)" value={unitValue} onChange={(e) => setUnitValue(e.target.value)} />
+                      <select className="form-select" style={{ maxWidth: '100px' }} value={unit} onChange={(e) => setUnit(e.target.value)}>
+                        <option value="kg">kg</option>
+                        <option value="gm">gm</option>
+                        <option value="pcs">pcs</option>
+                        <option value="ltr">ltr</option>
+                        <option value="pack">pack</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div className="col-12">
@@ -435,20 +530,50 @@ export default function AdminProductsPage() {
                     <input type="text" className="form-control" placeholder="Enter tag (comma separated)" value={searchTags} onChange={(e) => setSearchTags(e.target.value)} />
                   </div>
 
-                  {/* Rest of the original form fields that belong to general data */}
-                  <div className="col-md-4">
-                    <label className="fw-medium mb-1 fs-7">Image URL</label>
-                    <input type="text" className="form-control" placeholder="https://image-url..." value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+                  {/* Images */}
+                  <div className="col-md-12">
+                    <h6 className="fw-bold mb-3 mt-4 text-brand">Product Images</h6>
+                    <div className="row g-3">
+                      <div className="col-md-12 mb-3">
+                        <label className="form-label text-muted fs-7 mb-1">Main Image</label>
+                        <input 
+                          type="file" 
+                          className="form-control" 
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          required={!editMode}
+                        />
+                        {imagePreviewUrl && (
+                          <div className="mt-3">
+                            <img src={imagePreviewUrl} alt="Preview" className="img-thumbnail" style={{ height: '100px', objectFit: 'cover' }} />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Optional Sub Images */}
+                      {[0, 1, 2].map(index => (
+                        <div className="col-md-4" key={`sub-image-${index}`}>
+                          <label className="form-label text-muted fs-7 mb-1">Sub Image {index + 1} (Optional)</label>
+                          <input 
+                            type="file" 
+                            className="form-control" 
+                            accept="image/*"
+                            onChange={(e) => handleSubImageChange(e, index)}
+                          />
+                          {subImagePreviews[index] && (
+                            <div className="mt-3">
+                              <img src={subImagePreviews[index]} alt={`Sub Preview ${index + 1}`} className="img-thumbnail" style={{ height: '80px', objectFit: 'cover' }} />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="col-md-4">
+                  
+                  <div className="col-md-12">
                     <label className="fw-medium mb-1 fs-7">Batch Number</label>
                     <input type="text" required className="form-control" placeholder="BATCH-123" value={batchNumber} onChange={(e) => setBatchNumber(e.target.value)} />
                   </div>
-                  <div className="col-md-4">
-                    <label className="fw-medium mb-1 fs-7">Expiry Date</label>
-                    <input type="date" required className="form-control" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
-                  </div>
-                  
                   <div className="col-md-6">
                     <label className="fw-medium mb-1 fs-7">Ingredients (Comma-separated)</label>
                     <input type="text" className="form-control" placeholder="Aloe Vera, Glycerin..." value={ingredients} onChange={(e) => setIngredients(e.target.value)} />
@@ -475,12 +600,12 @@ export default function AdminProductsPage() {
               <div className="card-body">
                 <div className="row g-4">
                   <div className="col-md-3">
-                    <label className="fw-medium mb-1 fs-7">Purchase Price (₹)</label>
-                    <input type="number" className="form-control" placeholder="Purchase price" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} />
+                    <label className="fw-medium mb-1 fs-7">MRP Price (₹)</label>
+                    <input type="number" required className="form-control" placeholder="MRP price" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} />
                   </div>
-                  <div className="col-md-3">
-                    <label className="fw-medium mb-1 fs-7">Unit Price (₹)</label>
-                    <input type="number" required className="form-control" placeholder="Unit price" value={price} onChange={(e) => setPrice(e.target.value)} />
+                  <div className="col-md-3 d-flex flex-column justify-content-center">
+                    <span className="fw-medium mb-1 fs-7 text-muted">Discount Price</span>
+                    <span className="fw-bold fs-3 text-brand">₹{price || '0'}</span>
                   </div>
                   <div className="col-md-3">
                     <label className="fw-medium mb-1 fs-7">Minimum Order Qty</label>
@@ -549,7 +674,7 @@ export default function AdminProductsPage() {
                     <th>SL</th>
                     <th>Product Name</th>
                     <th>Product Type</th>
-                    <th>Purchase Price</th>
+                    <th>MRP Price</th>
                     <th>Selling Price</th>
                     <th className="text-center">Show As Featured</th>
                     <th className="text-center">Active Status</th>
@@ -572,8 +697,8 @@ export default function AdminProductsPage() {
                         </div>
                       </td>
                       <td>{prod.productType || 'Physical'}</td>
-                      <td>${prod.purchasePrice || 0}</td>
-                      <td className="fw-semibold">${prod.price}</td>
+                      <td>₹{prod.purchasePrice || 0}</td>
+                      <td className="fw-semibold">₹{prod.price}</td>
                       <td className="text-center">
                         <div className="form-check form-switch d-inline-block">
                           <input 

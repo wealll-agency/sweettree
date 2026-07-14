@@ -16,18 +16,28 @@ const EarningStatistics = dynamic(() => import('../../../components/admin/Earnin
 export default function DashboardPage() {
   const dispatch = useDispatch();
 
-  const { stats, salesOverview, topProducts, lowStockDetails, loading } = useSelector((state) => state.admin);
+  const { stats, salesOverview, topProducts, lowStockDetails, loading, error } = useSelector((state) => state.admin);
   const { user } = useSelector((state) => state.auth);
 
   useEffect(() => {
     dispatch(fetchDashboardStats());
   }, [dispatch]);
 
-  if (loading || !stats) {
+  if (loading) {
     return (
       <div className="text-center py-5">
         <div className="spinner-border text-success" role="status">
           <span className="visually-hidden">Loading dashboard metrics...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !stats) {
+    return (
+      <div className="text-center py-5">
+        <div className="alert alert-danger d-inline-block">
+          Failed to load dashboard metrics. {error || 'No data available.'}
         </div>
       </div>
     );

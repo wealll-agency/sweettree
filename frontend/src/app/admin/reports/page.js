@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, Table, Calendar, Download } from 'lucide-react';
+import { FileText, Table, Calendar, Download, FileSpreadsheet } from 'lucide-react';
 
 export default function AdminReportsPage() {
   const [startDate, setStartDate] = useState('');
@@ -28,33 +28,35 @@ export default function AdminReportsPage() {
   };
 
   return (
-    <div className="container animate-fade-in" style={{ maxWidth: '780px' }}>
-      <div className="mb-4">
-        <h1 className="fw-bold m-0 display-font">Reports Center</h1>
-        <p className="text-muted m-0">Generate, filter, and download spreadsheet logs or formal PDFs.</p>
+    <div className="animate-fade-in">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h1 className="fw-bold m-0 display-font">Reports Center</h1>
+          <p className="text-muted m-0">Generate, filter, and download spreadsheet logs or formal PDFs.</p>
+        </div>
       </div>
 
-      <div className="card shadow-sm p-4 border-0 rounded-4 bg-white mb-4">
-        <h5 className="fw-bold mb-3 d-flex align-items-center gap-2">
-          <Calendar size={20} color="var(--primary-color)" /> Filter Reporting Window
-        </h5>
-        
-        <div className="row g-3">
+      <h5 className="fw-bold mb-3 d-flex align-items-center gap-2">
+        <Calendar size={18} className="text-brand" /> Filter Reporting Window
+      </h5>
+      
+      <div className="card shadow-sm p-4 border-0 rounded-4 bg-white mb-5">
+        <div className="row g-4">
           <div className="col-md-6">
-            <label className="fw-medium mb-1 fs-7">Start Date</label>
+            <label className="fw-medium mb-2 fs-7 text-muted">Start Date</label>
             <input
               type="date"
-              className="form-control"
+              className="form-control form-control-lg fs-6 bg-light border-0 rounded-3 px-3 py-2"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
             />
           </div>
           
           <div className="col-md-6">
-            <label className="fw-medium mb-1 fs-7">End Date</label>
+            <label className="fw-medium mb-2 fs-7 text-muted">End Date</label>
             <input
               type="date"
-              className="form-control"
+              className="form-control form-control-lg fs-6 bg-light border-0 rounded-3 px-3 py-2"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
             />
@@ -62,24 +64,32 @@ export default function AdminReportsPage() {
         </div>
       </div>
 
+      <h5 className="fw-bold mb-3 d-flex align-items-center gap-2">
+        <FileSpreadsheet size={18} className="text-info" /> Export Documents
+      </h5>
+      
       <div className="row g-4">
         
         {/* PDF Card */}
-        <div className="col-md-6">
-          <div className="card shadow-sm p-4 border-0 rounded-4 bg-white text-center h-100 d-flex flex-column justify-content-between">
-            <div>
-              <div className="d-inline-flex p-3 rounded-circle bg-danger bg-opacity-10 text-danger mb-3">
-                <FileText size={32} />
+        <div className="col-md-6 col-lg-6">
+          <div className="card shadow-sm p-4 border-0 rounded-4 bg-white h-100 d-flex flex-column hover-shadow transition-all">
+            <div className="d-flex align-items-center gap-3 mb-3">
+              <div className="rounded-circle p-3 bg-danger bg-opacity-10 text-danger">
+                <FileText size={28} />
               </div>
-              <h5 className="fw-bold">PDF Executive Report</h5>
-              <p className="text-muted fs-7 mb-4">
-                A formal sales breakdown document featuring company metrics, gross sales summaries, and itemized customer transactions.
-              </p>
+              <div>
+                <h5 className="fw-bold m-0 text-dark">PDF Executive Report</h5>
+                <span className="text-muted fs-8">Formal Document</span>
+              </div>
             </div>
+            
+            <p className="text-muted fs-7 mb-4 flex-grow-1">
+              A formal sales breakdown document featuring company metrics, gross sales summaries, and itemized customer transactions.
+            </p>
             
             <button 
               onClick={handleExportPDF}
-              className="btn btn-danger py-2 w-100 d-flex align-items-center justify-content-center gap-2"
+              className="btn btn-danger py-3 w-100 d-flex align-items-center justify-content-center gap-2 fw-bold rounded-3"
             >
               <Download size={18} /> Export PDF Document
             </button>
@@ -87,21 +97,25 @@ export default function AdminReportsPage() {
         </div>
 
         {/* Excel Card */}
-        <div className="col-md-6">
-          <div className="card shadow-sm p-4 border-0 rounded-4 bg-white text-center h-100 d-flex flex-column justify-content-between">
-            <div>
-              <div className="d-inline-flex p-3 rounded-circle bg-success bg-opacity-10 text-success mb-3">
-                <Table size={32} />
+        <div className="col-md-6 col-lg-6">
+          <div className="card shadow-sm p-4 border-0 rounded-4 bg-white h-100 d-flex flex-column hover-shadow transition-all">
+            <div className="d-flex align-items-center gap-3 mb-3">
+              <div className="rounded-circle p-3 bg-success bg-opacity-10 text-success">
+                <Table size={28} />
               </div>
-              <h5 className="fw-bold">Excel Transaction Ledger</h5>
-              <p className="text-muted fs-7 mb-4">
-                A tabular spreadsheet compatible with Microsoft Excel, featuring granular data formulas, coupon deductions, taxes, and net profit margins.
-              </p>
+              <div>
+                <h5 className="fw-bold m-0 text-dark">Excel Transaction Ledger</h5>
+                <span className="text-muted fs-8">Spreadsheet Data</span>
+              </div>
             </div>
+            
+            <p className="text-muted fs-7 mb-4 flex-grow-1">
+              A tabular spreadsheet compatible with Microsoft Excel, featuring granular data formulas, coupon deductions, taxes, and net profit margins.
+            </p>
             
             <button 
               onClick={handleExportExcel}
-              className="btn btn-success py-2 w-100 d-flex align-items-center justify-content-center gap-2"
+              className="btn btn-success py-3 w-100 d-flex align-items-center justify-content-center gap-2 fw-bold rounded-3"
             >
               <Download size={18} /> Export Excel Ledger
             </button>

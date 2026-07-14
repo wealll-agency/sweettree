@@ -191,6 +191,10 @@ const adminSlice = createSlice({
         state.topProducts = action.payload.topProducts;
         state.lowStockDetails = action.payload.lowStockDetails;
       })
+      .addCase(fetchDashboardStats.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       // Admin products list
       .addCase(fetchAdminProducts.pending, (state) => {
         state.productsLoading = true;

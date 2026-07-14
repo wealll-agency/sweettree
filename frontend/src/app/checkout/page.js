@@ -30,11 +30,16 @@ export default function CheckoutPage() {
   const [couponSuccess, setCouponSuccess] = useState('');
 
   // New Address Form fields
-  const [street, setStreet] = useState('');
+  const [addrName, setAddrName] = useState('');
+  const [addrPhone, setAddrPhone] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [locality, setLocality] = useState('');
+  const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [stateName, setStateName] = useState('');
-  const [zipCode, setZipCode] = useState('');
-  const [country, setCountry] = useState('India');
+  const [landmark, setLandmark] = useState('');
+  const [altPhone, setAltPhone] = useState('');
+  const [addressType, setAddressType] = useState('Home');
   const [addressError, setAddressError] = useState('');
 
   useEffect(() => {
@@ -70,13 +75,20 @@ export default function CheckoutPage() {
   }, [items, router, isMounted]);
 
   if (!isMounted || items.length === 0) {
-    return null;
+    return (
+      <div className="container py-5 text-center d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
+        <div className="spinner-border text-success mb-3" role="status">
+          <span className="visually-hidden">Loading checkout...</span>
+        </div>
+        <p className="text-muted">Loading checkout details...</p>
+      </div>
+    );
   }
 
   const handleAddAddressSubmit = (e) => {
     e.preventDefault();
-    if (!street || !city || !stateName || !zipCode || !country) {
-      setAddressError('Please fill out all address fields');
+    if (!addrName || !addrPhone || !pincode || !locality || !address || !city || !stateName) {
+      setAddressError('Please fill out all required address fields');
       return;
     }
     setAddressError('');
@@ -87,12 +99,17 @@ export default function CheckoutPage() {
       return;
     }
 
-    dispatch(addAddress({ street, city, state: stateName, zipCode, country, isDefault: user.addresses.length === 0 }))
+    dispatch(addAddress({ 
+      name: addrName, phone: addrPhone, pincode, locality, address, 
+      city, state: stateName, landmark, alternatePhone: altPhone, addressType,
+      isDefault: user.addresses.length === 0 
+    }))
       .unwrap()
       .then((addresses) => {
         setShowNewAddressForm(false);
         setSelectedAddressIndex(addresses.length - 1);
-        setStreet(''); setCity(''); setStateName(''); setZipCode('');
+        setAddrName(''); setAddrPhone(''); setPincode(''); setLocality('');
+        setAddress(''); setCity(''); setStateName(''); setLandmark(''); setAltPhone('');
       });
   };
 
@@ -111,11 +128,16 @@ export default function CheckoutPage() {
     const orderData = {
       items: items.map(i => ({ product: i.product, name: i.name, quantity: i.quantity, price: i.price })),
       deliveryAddress: {
-        street: address.street,
-        city: address.city,
-        state: address.state,
-        zipCode: address.zipCode,
-        country: address.country
+        name: address.name || user.name || 'Guest Customer',
+        phone: address.phone || user.phone || '9999999999',
+        pincode: address.pincode || address.zipCode || '',
+        locality: address.locality || address.street || address.address || address.city || '',
+        address: address.address || address.street || address.locality || '',
+        city: address.city || '',
+        state: address.state || '',
+        landmark: address.landmark || '',
+        alternatePhone: address.alternatePhone || address.phone || user.phone || '',
+        addressType: address.addressType || 'Home'
       },
       couponCode: couponCode || undefined
     };
@@ -274,9 +296,16 @@ export default function CheckoutPage() {
                     style={{ cursor: 'pointer' }}
                   >
                     <div>
-                      <h6 className="fw-bold mb-1">{user.name}</h6>
-                      <p className="m-0 text-muted fs-7">{addr.street}, {addr.city}</p>
-                      <p className="m-0 text-muted fs-7">{addr.state} - {addr.zipCode}, {addr.country}</p>
+                      <div className="d-flex align-items-center gap-3 mb-1">
+                        <span className="fw-bold fs-6 text-dark">{addr.name || user.name}</span>
+                        {(addr.phone || user.phone) && <span className="fw-bold fs-6 text-dark">{addr.phone || user.phone}</span>}
+                        <span className="badge bg-light text-dark border fs-8 px-2 py-1">{addr.addressType || 'Home'}</span>
+                      </div>
+                      <p className="m-0 text-muted fs-7 lh-sm mt-1">
+                        {addr.address || addr.street}
+                        {addr.locality ? `, ${addr.locality}` : ''}<br />
+                        {addr.city}, {addr.state} - <span className="fw-medium text-dark">{addr.pincode || addr.zipCode}</span>
+                      </p>
                     </div>
                     {selectedAddressIndex === idx && <span className="badge bg-success">Selected</span>}
                   </div>
@@ -290,35 +319,84 @@ export default function CheckoutPage() {
                 onClick={() => setShowNewAddressForm(true)} 
                 className="btn btn-brand-outline btn-sm d-flex align-items-center gap-1 mt-3"
               >
-                <Plus size={16} /> {(user?.addresses?.length > 0) || (street && city) ? 'Add / Change Address' : 'Add Shipping Address'}
+                <Plus size={16} /> {(user?.addresses?.length > 0) || (address && city) ? 'Add / Change Address' : 'Add Shipping Address'}
               </button>
             ) : (
               <form onSubmit={handleAddAddressSubmit} className="mt-3 border-top pt-3">
-                <h6 className="fw-bold mb-2">New Address Details</h6>
+                <h6 className="fw-bold mb-3">Add a new address</h6>
                 
-                <div className="mb-2">
-                  <input
-                    type="text"
-                    className="form-control form-control-brand py-2 fs-7"
-                    placeholder="Street Address, Area"
-                    value={street}
-                    onChange={(e) => setStreet(e.target.value)}
-                  />
+                <div className="row g-2 mb-2">
+                  <div className="col-md-6">
+                    <input
+                      type="text"
+                      required
+                      className="form-control form-control-brand py-2 fs-7"
+                      placeholder="Name"
+                      value={addrName}
+                      onChange={(e) => setAddrName(e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <input
+                      type="tel"
+                      required
+                      className="form-control form-control-brand py-2 fs-7"
+                      placeholder="10-digit mobile number"
+                      value={addrPhone}
+                      onChange={(e) => setAddrPhone(e.target.value)}
+                    />
+                  </div>
                 </div>
 
                 <div className="row g-2 mb-2">
-                  <div className="col-6">
+                  <div className="col-md-6">
                     <input
                       type="text"
+                      required
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="City"
+                      placeholder="Pincode"
+                      value={pincode}
+                      onChange={(e) => setPincode(e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <input
+                      type="text"
+                      required
+                      className="form-control form-control-brand py-2 fs-7"
+                      placeholder="Locality"
+                      value={locality}
+                      onChange={(e) => setLocality(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-2">
+                  <textarea
+                    required
+                    className="form-control form-control-brand py-2 fs-7"
+                    placeholder="Address (Area and Street)"
+                    rows="2"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                  ></textarea>
+                </div>
+
+                <div className="row g-2 mb-2">
+                  <div className="col-md-6">
+                    <input
+                      type="text"
+                      required
+                      className="form-control form-control-brand py-2 fs-7"
+                      placeholder="City/District/Town"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                     />
                   </div>
-                  <div className="col-6">
+                  <div className="col-md-6">
                     <input
                       type="text"
+                      required
                       className="form-control form-control-brand py-2 fs-7"
                       placeholder="State"
                       value={stateName}
@@ -328,34 +406,46 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="row g-2 mb-3">
-                  <div className="col-6">
+                  <div className="col-md-6">
                     <input
                       type="text"
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="Zip Code"
-                      value={zipCode}
-                      onChange={(e) => setZipCode(e.target.value)}
+                      placeholder="Landmark (Optional)"
+                      value={landmark}
+                      onChange={(e) => setLandmark(e.target.value)}
                     />
                   </div>
-                  <div className="col-6">
+                  <div className="col-md-6">
                     <input
-                      type="text"
+                      type="tel"
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="Country"
-                      value={country}
-                      onChange={(e) => setCountry(e.target.value)}
+                      placeholder="Alternate Phone (Optional)"
+                      value={altPhone}
+                      onChange={(e) => setAltPhone(e.target.value)}
                     />
                   </div>
                 </div>
 
-                {addressError && <div className="text-danger fs-8 mb-2">{addressError}</div>}
+                <div className="mb-3 d-flex gap-3 align-items-center">
+                  <span className="fs-7 fw-medium text-muted">Address Type</span>
+                  <div className="form-check">
+                    <input className="form-check-input" type="radio" name="addressType" id="homeTypeCheckout" value="Home" checked={addressType === 'Home'} onChange={(e) => setAddressType(e.target.value)} />
+                    <label className="form-check-label fs-7" htmlFor="homeTypeCheckout">Home</label>
+                  </div>
+                  <div className="form-check">
+                    <input className="form-check-input" type="radio" name="addressType" id="workTypeCheckout" value="Work" checked={addressType === 'Work'} onChange={(e) => setAddressType(e.target.value)} />
+                    <label className="form-check-label fs-7" htmlFor="workTypeCheckout">Work</label>
+                  </div>
+                </div>
 
-                <div className="d-flex gap-2">
-                  <button type="submit" className="btn btn-brand btn-sm">Save Address</button>
+                {addressError && <div className="alert alert-danger p-2 fs-8 mb-2">{addressError}</div>}
+
+                <div className="d-flex gap-2 mt-2">
+                  <button type="submit" className="btn btn-brand btn-sm py-2 px-4">Save Address</button>
                   <button 
                     type="button" 
                     onClick={() => setShowNewAddressForm(false)} 
-                    className="btn btn-brand-secondary btn-sm"
+                    className="btn btn-light btn-sm py-2 px-4 border"
                   >
                     Cancel
                   </button>
@@ -462,7 +552,7 @@ export default function CheckoutPage() {
                 <span>{shippingFee === 0 ? 'Free' : `₹${shippingFee}`}</span>
               </div>
               <div className="d-flex justify-content-between">
-                <span>GST Tax (18%)</span>
+                <span>GST Tax (5%)</span>
                 <span>₹{tax}</span>
               </div>
               <hr />
@@ -491,9 +581,7 @@ export default function CheckoutPage() {
               </h5>
               <div className="row g-3">
                 {recommendedProducts.map(product => {
-                  const activePrice = product.discount > 0 
-                    ? Math.round(product.price * (1 - product.discount / 100))
-                    : product.price;
+                  const activePrice = product.price;
 
                   let imageSrc = '/placeholder.png';
                   if (product.images && product.images.length > 0) {
@@ -517,7 +605,7 @@ export default function CheckoutPage() {
                         <div className="mb-2">
                           <span className="fw-bold fs-7 text-dark">₹{activePrice}</span>
                           {product.discount > 0 && (
-                            <span className="text-muted text-decoration-line-through fs-8 ms-1">₹{product.price}</span>
+                            <span className="text-muted text-decoration-line-through fs-8 ms-1">₹{product.purchasePrice || product.price}</span>
                           )}
                         </div>
                         <button 

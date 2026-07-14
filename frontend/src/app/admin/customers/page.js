@@ -44,8 +44,8 @@ export default function AdminCustomersPage() {
         
         // Push unique address
         if (order.deliveryAddress) {
-          const addrStr = `${order.deliveryAddress.street}, ${order.deliveryAddress.city}`;
-          const hasAddr = customerMap[email].addresses.some(a => `${a.street}, ${a.city}` === addrStr);
+          const addrStr = `${order.deliveryAddress.street || order.deliveryAddress.address || order.deliveryAddress.locality}, ${order.deliveryAddress.city}`;
+          const hasAddr = customerMap[email].addresses.some(a => `${a.street || a.address || a.locality}, ${a.city}` === addrStr);
           if (!hasAddr) {
             customerMap[email].addresses.push(order.deliveryAddress);
           }
@@ -153,7 +153,7 @@ export default function AdminCustomersPage() {
                     {selectedCustomer.addresses.map((addr, idx) => (
                       <div key={idx} className="p-2 border rounded bg-light fs-8 d-flex align-items-start gap-1">
                         <MapPin size={12} className="text-muted mt-1" />
-                        <span>{addr.street}, {addr.city}, {addr.state} - {addr.zipCode}</span>
+                        <span>{addr.street || addr.address || addr.locality}, {addr.city}, {addr.state} - {addr.zipCode || addr.pincode}</span>
                       </div>
                     ))}
                   </div>

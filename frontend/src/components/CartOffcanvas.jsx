@@ -86,9 +86,9 @@ const CartOffcanvas = () => {
                     
                     <div className="d-flex justify-content-between align-items-center mt-3">
                       <div className="input-group border rounded" style={{ width: '80px', height: '30px' }}>
-                        <button className="btn btn-sm btn-light border-0 px-2" onClick={() => handleDecrement({ _id: item.product }, item.size)}>-</button>
+                        <button className="btn btn-sm btn-light border-0 px-2" onClick={() => handleDecrement({ _id: item.product, price: item.price, name: item.name, images: [item.image], stock: item.maxStock }, item.size)}>-</button>
                         <input type="text" className="form-control form-control-sm text-center border-0 p-0 fw-bold bg-white" value={item.quantity} readOnly />
-                        <button className="btn btn-sm btn-light border-0 px-2" onClick={() => handleIncrement({ _id: item.product, price: item.price, name: item.name, images: [item.image] }, item.size)}>+</button>
+                        <button className="btn btn-sm btn-light border-0 px-2" onClick={() => handleIncrement({ _id: item.product, price: item.price, name: item.name, images: [item.image], stock: item.maxStock }, item.size)}>+</button>
                       </div>
                       <div className="text-end">
                         <div className="fw-bold fs-6">₹{(item.price * item.quantity).toFixed(2)}</div>
