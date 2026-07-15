@@ -149,7 +149,16 @@ export const createProduct = async (req, res, next) => {
       batchNumber,
       expiryDate: expiryDate ? new Date(expiryDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Default 1 year expiry
       stock: Number(stock) || 0,
-      packSizes: typeof packSizes === 'string' ? JSON.parse(packSizes) : (packSizes || [])
+      packSizes: (() => {
+        const rawSizes = typeof packSizes === 'string' ? JSON.parse(packSizes) : (packSizes || []);
+        return rawSizes
+          .filter(size => size && size.weight && size.price)
+          .map(size => ({
+            weight: Number(size.weight),
+            unit: size.unit,
+            price: Number(size.price)
+          }));
+      })()
     });
 
     const createdProduct = await product.save();
@@ -206,7 +215,14 @@ export const updateProduct = async (req, res, next) => {
       product.shippingMultiplyWithQty = req.body.shippingMultiplyWithQty !== undefined ? (req.body.shippingMultiplyWithQty === 'true' || req.body.shippingMultiplyWithQty === true) : product.shippingMultiplyWithQty;
       
       if (req.body.packSizes !== undefined) {
-        product.packSizes = typeof req.body.packSizes === 'string' ? JSON.parse(req.body.packSizes) : req.body.packSizes;
+        const rawSizes = typeof req.body.packSizes === 'string' ? JSON.parse(req.body.packSizes) : req.body.packSizes;
+        product.packSizes = (rawSizes || [])
+          .filter(size => size && size.weight && size.price)
+          .map(size => ({
+            weight: Number(size.weight),
+            unit: size.unit,
+            price: Number(size.price)
+          }));
       }
 
       product.isFeatured = req.body.isFeatured !== undefined ? (req.body.isFeatured === 'true' || req.body.isFeatured === true) : product.isFeatured;
