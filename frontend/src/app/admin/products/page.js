@@ -89,9 +89,8 @@ export default function AdminProductsPage() {
     }));
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    loadProducts();
+    dispatch(fetchAdminProducts({}));
   }, [dispatch]);
 
   const handleToggle = (id, field, value) => {
