@@ -5,6 +5,8 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
+import https from 'https';
 
 // Config imports
 import connectDB from './config/db.js';
@@ -73,9 +75,30 @@ app.get('/', (req, res) => {
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
+let server;
+
+if (process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH) {
+  try {
+    const options = {
+      key: fs.readFileSync(process.env.SSL_KEY_PATH),
+      cert: fs.readFileSync(process.env.SSL_CERT_PATH)
+    };
+    server = https.createServer(options, app).listen(PORT, () => {
+      console.log(`HTTPS Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error(`Failed to start HTTPS server: ${error.message}`);
+    console.log("Falling back to HTTP server...");
+    server = app.listen(PORT, () => {
+      console.log(`HTTP Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    });
+  }
+} else {
+  server = app.listen(PORT, () => {
+    console.log(`HTTP Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  });
+}
+
 
 // Graceful shutdown
 process.on('unhandledRejection', (err) => {

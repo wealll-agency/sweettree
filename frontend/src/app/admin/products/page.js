@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAdminProducts, addProduct, editProduct, removeProduct, toggleProductState } from '../../../store/adminSlice.js';
 import { Plus, Edit, Trash2, X, Eye, Download, Search, LayoutGrid } from 'lucide-react';
+import Image from 'next/image';
 
 export default function AdminProductsPage() {
   const dispatch = useDispatch();
@@ -37,9 +38,11 @@ export default function AdminProductsPage() {
   const [unit, setUnit] = useState('kg');
   const [unitValue, setUnitValue] = useState('');
   const [searchTags, setSearchTags] = useState('');
+  const [packSizes, setPackSizes] = useState([]); // [{ weight: 250, unit: 'g', price: 200 }]
   
-  const [price, setPrice] = useState(''); // Represents Unit Price
-  const [purchasePrice, setPurchasePrice] = useState('0');
+  const [price, setPrice] = useState(''); // Represents MRP (Unit Price)
+  const [purchasePrice, setPurchasePrice] = useState('0'); // Represents Cost Price
+  const [calculatedSellingPrice, setCalculatedSellingPrice] = useState('0');
   const [minOrderQty, setMinOrderQty] = useState('1');
   const [discount, setDiscount] = useState('0'); // Represents Discount Amount
   const [discountType, setDiscountType] = useState('Flat');
@@ -60,7 +63,7 @@ export default function AdminProductsPage() {
   const [subImagePreviews, setSubImagePreviews] = useState(['', '', '']);
 
   useEffect(() => {
-    const mrp = parseFloat(purchasePrice) || 0;
+    const mrp = parseFloat(price) || 0;
     const disc = parseFloat(discount) || 0;
     let computedPrice = mrp;
 
@@ -73,8 +76,8 @@ export default function AdminProductsPage() {
     }
 
     computedPrice = Math.max(0, computedPrice);
-    setPrice(Math.round(computedPrice).toString());
-  }, [purchasePrice, discount, discountType]);
+    setCalculatedSellingPrice(Math.round(computedPrice).toString());
+  }, [price, discount, discountType]);
 
   const loadProducts = () => {
     dispatch(fetchAdminProducts({
@@ -86,6 +89,7 @@ export default function AdminProductsPage() {
     }));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadProducts();
   }, [dispatch]);
@@ -138,6 +142,7 @@ export default function AdminProductsPage() {
     setUnit('kg');
     setUnitValue('');
     setSearchTags('');
+    setPackSizes([]);
     setPrice('');
     setPurchasePrice('0');
     setMinOrderQty('1');
@@ -174,6 +179,7 @@ export default function AdminProductsPage() {
     setUnit(product.unit || 'kg');
     setUnitValue(product.unitValue || '');
     setSearchTags(product.searchTags ? product.searchTags.join(', ') : '');
+    setPackSizes(product.packSizes || []);
     setPrice(product.price.toString());
     setPurchasePrice(product.purchasePrice ? product.purchasePrice.toString() : '0');
     setMinOrderQty(product.minOrderQty ? product.minOrderQty.toString() : '1');
@@ -248,6 +254,7 @@ export default function AdminProductsPage() {
     payload.append('batchNumber', batchNumber);
     payload.append('expiryDate', expiryDate);
     payload.append('stock', stock);
+    payload.append('packSizes', JSON.stringify(packSizes));
 
     if (imageFile) {
       payload.append('image', imageFile);
@@ -331,13 +338,17 @@ export default function AdminProductsPage() {
               <button className="btn border-0 text-muted" onClick={() => setViewingProduct(null)}><X size={20} /></button>
             </div>
             <div className="card-body text-center">
-              <img src={viewingProduct.images[0] || 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=200'} alt="product" className="img-fluid rounded mb-3" style={{ maxHeight: '200px', objectFit: 'cover' }} />
+              <Image src={viewingProduct.images[0] || 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=200'} alt="product" className="img-fluid rounded mb-3" width={200} height={200} style={{ maxHeight: '200px', objectFit: 'cover' }} />
               <h5 className="fw-bold">{viewingProduct.name}</h5>
               <p className="text-muted mb-1">Category: {viewingProduct.category}</p>
               <p className="fw-semibold text-brand fs-5 mb-1">
-                ₹{viewingProduct.price}
-                {viewingProduct.purchasePrice > viewingProduct.price && (
-                  <span className="text-muted text-decoration-line-through fs-7 ms-2">₹{viewingProduct.purchasePrice}</span>
+                ₹{viewingProduct.discount > 0 ? (
+                  viewingProduct.discountType === 'Percent' 
+                    ? Math.round(viewingProduct.price * (1 - viewingProduct.discount / 100))
+                    : Math.max(0, viewingProduct.price - viewingProduct.discount)
+                ) : viewingProduct.price}
+                {viewingProduct.discount > 0 && (
+                  <span className="text-muted text-decoration-line-through fs-7 ms-2">₹{viewingProduct.price}</span>
                 )}
               </p>
               <span className={`badge ${viewingProduct.stock > 0 ? 'bg-success' : 'bg-danger'}`}>{viewingProduct.stock} in stock</span>
@@ -545,7 +556,7 @@ export default function AdminProductsPage() {
                         />
                         {imagePreviewUrl && (
                           <div className="mt-3">
-                            <img src={imagePreviewUrl} alt="Preview" className="img-thumbnail" style={{ height: '100px', objectFit: 'cover' }} />
+                            <Image src={imagePreviewUrl} alt="Preview" className="img-thumbnail" width={100} height={100} style={{ height: '100px', objectFit: 'cover' }} />
                           </div>
                         )}
                       </div>
@@ -562,7 +573,7 @@ export default function AdminProductsPage() {
                           />
                           {subImagePreviews[index] && (
                             <div className="mt-3">
-                              <img src={subImagePreviews[index]} alt={`Sub Preview ${index + 1}`} className="img-thumbnail" style={{ height: '80px', objectFit: 'cover' }} />
+                              <Image src={subImagePreviews[index]} alt={`Sub Preview ${index + 1}`} className="img-thumbnail" width={80} height={80} style={{ height: '80px', objectFit: 'cover' }} />
                             </div>
                           )}
                         </div>
@@ -590,6 +601,61 @@ export default function AdminProductsPage() {
               </div>
             </div>
 
+            {/* Pack Sizes & Prices Card */}
+            <div className="card shadow-sm border-0 rounded-4 bg-white mb-4">
+              <div className="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <h6 className="fw-bold m-0 text-dark d-flex align-items-center gap-2">
+                  <i className="fas fa-boxes text-muted"></i> Multi-Quantity Pack Sizes (Optional)
+                </h6>
+              </div>
+              <div className="card-body">
+                <p className="text-muted fs-7 mb-3">Add different pack sizes (e.g. 250g, 500g) with their specific prices. If you leave this empty, the product will only have the default Unit Quantity and MRP Price below.</p>
+                {packSizes.map((pack, index) => (
+                  <div key={index} className="row g-2 mb-2 align-items-end">
+                    <div className="col-md-3">
+                      <label className="fs-7 mb-1">Weight / Qty</label>
+                      <input type="number" className="form-control" value={pack.weight} onChange={(e) => {
+                        const newPacks = [...packSizes];
+                        newPacks[index].weight = e.target.value;
+                        setPackSizes(newPacks);
+                      }} />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="fs-7 mb-1">Unit</label>
+                      <select className="form-select" value={pack.unit} onChange={(e) => {
+                        const newPacks = [...packSizes];
+                        newPacks[index].unit = e.target.value;
+                        setPackSizes(newPacks);
+                      }}>
+                        <option value="kg">kg</option>
+                        <option value="g">g</option>
+                        <option value="pcs">pcs</option>
+                        <option value="ltr">ltr</option>
+                        <option value="pack">pack</option>
+                      </select>
+                    </div>
+                    <div className="col-md-4">
+                      <label className="fs-7 mb-1">Specific Price (₹)</label>
+                      <input type="number" className="form-control" value={pack.price} onChange={(e) => {
+                        const newPacks = [...packSizes];
+                        newPacks[index].price = e.target.value;
+                        setPackSizes(newPacks);
+                      }} />
+                    </div>
+                    <div className="col-md-2">
+                      <button type="button" className="btn btn-outline-danger w-100" onClick={() => {
+                        const newPacks = packSizes.filter((_, i) => i !== index);
+                        setPackSizes(newPacks);
+                      }}><Trash2 size={16} /></button>
+                    </div>
+                  </div>
+                ))}
+                <button type="button" className="btn btn-sm btn-outline-brand mt-2" onClick={() => setPackSizes([...packSizes, { weight: '', unit: 'g', price: '' }])}>
+                  <Plus size={14} /> Add Pack Size
+                </button>
+              </div>
+            </div>
+
             {/* Pricing & Others Card */}
             <div className="card shadow-sm border-0 rounded-4 bg-white mb-4">
               <div className="card-header bg-white border-bottom-0 pt-4 pb-0">
@@ -601,11 +667,11 @@ export default function AdminProductsPage() {
                 <div className="row g-4">
                   <div className="col-md-3">
                     <label className="fw-medium mb-1 fs-7">MRP Price (₹)</label>
-                    <input type="number" required className="form-control" placeholder="MRP price" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} />
+                    <input type="number" required className="form-control" placeholder="MRP price" value={price} onChange={(e) => setPrice(e.target.value)} />
                   </div>
                   <div className="col-md-3 d-flex flex-column justify-content-center">
                     <span className="fw-medium mb-1 fs-7 text-muted">Discount Price</span>
-                    <span className="fw-bold fs-3 text-brand">₹{price || '0'}</span>
+                    <span className="fw-bold fs-3 text-brand">₹{calculatedSellingPrice || '0'}</span>
                   </div>
                   <div className="col-md-3">
                     <label className="fw-medium mb-1 fs-7">Minimum Order Qty</label>
@@ -687,18 +753,26 @@ export default function AdminProductsPage() {
                       <td className="text-muted">{index + 1}</td>
                       <td className="py-3">
                         <div className="d-flex align-items-center gap-2">
-                          <img
+                          <Image
                             src={prod.images[0] || 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=80'}
                             alt={prod.name}
                             className="rounded object-fit-cover"
+                            width={36}
+                            height={36}
                             style={{ width: '36px', height: '36px' }}
                           />
                           <span className="fw-bold text-dark">{prod.name}</span>
                         </div>
                       </td>
                       <td>{prod.productType || 'Physical'}</td>
-                      <td>₹{prod.purchasePrice || 0}</td>
-                      <td className="fw-semibold">₹{prod.price}</td>
+                      <td>₹{prod.price || 0}</td>
+                      <td className="fw-semibold">
+                        ₹{prod.discount > 0 ? (
+                          prod.discountType === 'Percent' 
+                            ? Math.round(prod.price * (1 - prod.discount / 100))
+                            : Math.max(0, prod.price - prod.discount)
+                        ) : prod.price}
+                      </td>
                       <td className="text-center">
                         <div className="form-check form-switch d-inline-block">
                           <input 

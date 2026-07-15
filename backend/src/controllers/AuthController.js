@@ -150,7 +150,7 @@ export const refreshTokenUser = async (req, res, next) => {
 // @access  Private
 export const getUserProfile = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
+    const user = await User.findById(req.user._id).select('-password').lean();
     if (user) {
       res.json({ success: true, user });
     } else {

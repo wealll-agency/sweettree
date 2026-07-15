@@ -3,6 +3,7 @@ import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation } from 'swiper/modules';
 import Link from 'next/link';
+import Image from 'next/image';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -27,43 +28,43 @@ const CollectionSlider = () => {
         >
           <SwiperSlide>
             <Link href="#" className="collection-card" style={{ background: '#945A45' }}>
-              <img src="/collection1.png" alt="Almond" className="collection-img" />
+              <Image src="/collection1.png" alt="Almond" width={150} height={150} className="collection-img" />
               <div className="collection-name">Almond</div>
             </Link>
           </SwiperSlide>
           <SwiperSlide>
             <Link href="#" className="collection-card" style={{ background: '#005B6E' }}>
-              <img src="/collection2.png" alt="Cashew" className="collection-img" />
+              <Image src="/collection2.png" alt="Cashew" width={150} height={150} className="collection-img" />
               <div className="collection-name">Cashew</div>
             </Link>
           </SwiperSlide>
           <SwiperSlide>
             <Link href="#" className="collection-card" style={{ background: '#525D3F' }}>
-              <img src="/collection3.png" alt="Pista" className="collection-img" />
+              <Image src="/collection3.png" alt="Pista" width={150} height={150} className="collection-img" />
               <div className="collection-name">Pista</div>
             </Link>
           </SwiperSlide>
           <SwiperSlide>
             <Link href="#" className="collection-card" style={{ background: '#C88330' }}>
-              <img src="/collection4.png" alt="Raisin" className="collection-img" />
+              <Image src="/collection4.png" alt="Raisin" width={150} height={150} className="collection-img" />
               <div className="collection-name">Raisin</div>
             </Link>
           </SwiperSlide>
           <SwiperSlide>
             <Link href="#" className="collection-card" style={{ background: '#731A2B' }}>
-              <img src="/collection5.png" alt="Walnut" className="collection-img" />
+              <Image src="/collection5.png" alt="Walnut" width={150} height={150} className="collection-img" />
               <div className="collection-name">Walnut</div>
             </Link>
           </SwiperSlide>
           <SwiperSlide>
             <Link href="#" className="collection-card" style={{ background: '#945A45' }}>
-              <img src="/collection6.png" alt="Fig" className="collection-img" />
+              <Image src="/collection6.png" alt="Fig" width={150} height={150} className="collection-img" />
               <div className="collection-name">Fig</div>
             </Link>
           </SwiperSlide>
           <SwiperSlide>
             <Link href="#" className="collection-card" style={{ background: '#005B6E' }}>
-              <img src="/collection7.png" alt="Mix" className="collection-img" />
+              <Image src="/collection7.png" alt="Mix" width={150} height={150} className="collection-img" />
               <div className="collection-name">Mix</div>
             </Link>
           </SwiperSlide>

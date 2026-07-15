@@ -2,9 +2,12 @@ import mongoose from 'mongoose';
 
 const paymentSchema = new mongoose.Schema({
   order: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true },
-  razorpayOrderId: { type: String, required: true, unique: true },
-  razorpayPaymentId: { type: String },
-  razorpaySignature: { type: String },
+  ccavenueOrderId: { type: String, required: true, unique: true },
+  ccavenueTrackingId: { type: String },
+  ccavenueBankRefNo: { type: String },
+  paymentMode: { type: String },
+  encResponse: { type: String },
+  failureMessage: { type: String },
   amount: { type: Number, required: true },
   currency: { type: String, default: 'INR' },
   status: {

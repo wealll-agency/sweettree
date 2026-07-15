@@ -114,6 +114,13 @@ const authSlice = createSlice({
     setCredentials: (state, action) => {
       state.user = action.payload;
       state.loading = false; // Hydration complete
+      if (typeof window !== 'undefined') {
+        if (action.payload) {
+          localStorage.setItem('sweettree_user', JSON.stringify(action.payload));
+        } else {
+          localStorage.removeItem('sweettree_user');
+        }
+      }
     }
   },
   extraReducers: (builder) => {
@@ -126,6 +133,9 @@ const authSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('sweettree_user', JSON.stringify(action.payload));
+        }
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
@@ -139,6 +149,9 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('sweettree_user', JSON.stringify(action.payload));
+        }
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
@@ -147,6 +160,9 @@ const authSlice = createSlice({
       // Logout
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('sweettree_user');
+        }
       })
       // Update Profile
       .addCase(updateUserProfile.pending, (state) => {
@@ -156,6 +172,9 @@ const authSlice = createSlice({
       .addCase(updateUserProfile.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('sweettree_user', JSON.stringify(action.payload));
+        }
       })
       .addCase(updateUserProfile.rejected, (state, action) => {
         state.loading = false;

@@ -12,7 +12,7 @@ const Footer = () => {
           {/* Logo and About Section */}
           <div className="col-lg-4 col-md-12 mb-4 mb-lg-0">
             <Link href="/" className="d-inline-block mb-4">
-              <Image src="/footer_logo.png" alt="Sweettree" width={200} height={56} style={{ maxWidth: '200px', height: 'auto' }} />
+              <Image src="/footer_logo.png" alt="Sweettree" width={200} height={56} style={{ maxWidth: '200px', height: 'auto', width: 'auto' }} priority />
             </Link>
             <p className="mb-4" style={{ color: '#888', fontSize: '14px', lineHeight: '1.6', maxWidth: '300px' }}>
               Sweettree brings you a collection of carefully selected foods from India and across the world.
@@ -84,15 +84,15 @@ const Footer = () => {
             Sweettree © 2026 All Rights Reserved 
             <Image src="/heart.webp" alt="love" width={14} height={14} style={{ width: '14px', height: '14px' }} /> 
             and developed by 
-            <Image src="/Wealll_new.webp" alt="We All" width={60} height={20} style={{ height: '20px', width: 'auto', objectFit: 'contain' }} />
+            <Image src="/Wealll_new.webp" alt="We All" width={60} height={20} style={{ objectFit: 'contain' }} />
           </div>
           
           <div className="d-flex align-items-center gap-2">
-            <Image src="/payment1.png" alt="Payment 1" width={40} height={24} style={{ height: '24px', width: 'auto', objectFit: 'contain' }} />
-            <Image src="/payment2.png" alt="Payment 2" width={40} height={24} style={{ height: '24px', width: 'auto', objectFit: 'contain' }} />
-            <Image src="/payment3.png" alt="Payment 3" width={40} height={24} style={{ height: '24px', width: 'auto', objectFit: 'contain' }} />
-            <Image src="/payment4.png" alt="Payment 4" width={40} height={24} style={{ height: '24px', width: 'auto', objectFit: 'contain' }} />
-            <Image src="/payment5.png" alt="Payment 5" width={40} height={24} style={{ height: '24px', width: 'auto', objectFit: 'contain' }} />
+            <Image src="/payment1.png" alt="Payment 1" width={40} height={24} style={{ objectFit: 'contain' }} />
+            <Image src="/payment2.png" alt="Payment 2" width={40} height={24} style={{ objectFit: 'contain' }} />
+            <Image src="/payment3.png" alt="Payment 3" width={40} height={24} style={{ objectFit: 'contain' }} />
+            <Image src="/payment4.png" alt="Payment 4" width={40} height={24} style={{ objectFit: 'contain' }} />
+            <Image src="/payment5.png" alt="Payment 5" width={40} height={24} style={{ objectFit: 'contain' }} />
           </div>
         </div>
       </div>

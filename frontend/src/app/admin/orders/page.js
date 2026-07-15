@@ -3,7 +3,8 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAdminOrders, updateOrderStatus, refundOrder } from '../../../store/adminSlice.js';
-import { ShoppingBag, Eye, MapPin, Check, Filter, X, Printer } from 'lucide-react';
+import { ShoppingBag, Eye, MapPin, Check, Filter, Clock, Search, X, Printer, Package, Truck, CheckCircle, CreditCard, RotateCcw, AlertTriangle } from 'lucide-react';
+import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -145,12 +146,12 @@ function AdminOrdersContent() {
   };
 
   const handleRefund = (id) => {
-    if (confirm('Are you sure you want to cancel this order and refund the payment via Razorpay?')) {
+    if (confirm('Are you sure you want to cancel this order and record it as refunded? (You must initiate the actual refund in your CCAvenue Dashboard)')) {
       setActionSuccess('');
       dispatch(refundOrder(id))
         .unwrap()
         .then((updatedOrder) => {
-          setActionSuccess('Order cancelled and fully refunded via Razorpay Gateway.');
+          setActionSuccess('Order cancelled and refund recorded. Please process actual refund via CCAvenue.');
           setSelectedOrder(updatedOrder);
           dispatch(fetchAdminOrders());
         })
@@ -419,20 +420,26 @@ function AdminOrdersContent() {
                   <div className="mb-2">
                     Current Status: <strong className="text-dark">{selectedOrder.orderStatus}</strong> | Payment Status: <strong className="text-dark">{selectedOrder.paymentStatus}</strong>
                   </div>
-                  {(selectedOrder.razorpayOrderId || selectedOrder.razorpayPaymentId) && (
+                  {(selectedOrder.ccavenueTrackingId || selectedOrder.ccavenueBankRefNo) && (
                     <div className="bg-light p-3 rounded border">
                       <h6 className="fw-bold text-dark fs-8 mb-2 text-uppercase">Transaction Details</h6>
                       <div className="d-flex flex-column gap-1">
-                        {selectedOrder.razorpayPaymentId && (
+                        {selectedOrder.ccavenueTrackingId && (
                           <div className="d-flex justify-content-between">
-                            <span>Payment ID / TXN ID:</span>
-                            <span className="text-dark fw-medium font-monospace">{selectedOrder.razorpayPaymentId}</span>
+                            <span>CCAvenue Tracking ID:</span>
+                            <span className="text-dark fw-medium font-monospace">{selectedOrder.ccavenueTrackingId}</span>
                           </div>
                         )}
-                        {selectedOrder.razorpayOrderId && (
+                        {selectedOrder.ccavenueBankRefNo && (
                           <div className="d-flex justify-content-between">
-                            <span>Gateway Order ID:</span>
-                            <span className="text-dark fw-medium font-monospace">{selectedOrder.razorpayOrderId}</span>
+                            <span>Bank Reference Number:</span>
+                            <span className="text-dark fw-medium font-monospace">{selectedOrder.ccavenueBankRefNo}</span>
+                          </div>
+                        )}
+                        {selectedOrder.paymentMode && (
+                          <div className="d-flex justify-content-between">
+                            <span>Payment Mode:</span>
+                            <span className="text-dark fw-medium font-monospace">{selectedOrder.paymentMode}</span>
                           </div>
                         )}
                         {selectedOrder.paymentStatus === 'Paid' && (
@@ -473,9 +480,11 @@ function AdminOrdersContent() {
               </div>
               <div className="col-4 text-end d-flex align-items-center justify-content-end gap-2">
                 <div style={{ fontSize: '9px', fontWeight: 'bold' }}>e-Invoice</div>
-                <img 
+                <Image 
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent('https://sweettreeon.com/invoice/' + selectedOrder._id)}`} 
                   alt="e-invoice QR" 
+                  width={60}
+                  height={60}
                   style={{ width: '60px', height: '60px' }} 
                 />
               </div>
@@ -698,9 +707,11 @@ function AdminOrdersContent() {
             <div className="row g-0 border-bottom">
               <div className="col-3 p-2 border-end d-flex flex-column align-items-center justify-content-center">
                 <div style={{ fontSize: '9px', fontWeight: 'bold', marginBottom: '4px' }}>Scan to Pay</div>
-                <img 
+                <Image 
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent('upi://pay?pa=sweettree2026@icici&pn=Sweettree%20Enterprises&am=' + selectedOrder.totalAmount + '&cu=INR')}`} 
                   alt="UPI QR Code" 
+                  width={80}
+                  height={80}
                   style={{ width: '80px', height: '80px' }} 
                 />
               </div>

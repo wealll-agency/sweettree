@@ -21,7 +21,7 @@ const shippingAddressSchema = new mongoose.Schema({
 });
 
 const orderSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   items: [orderItemSchema],
   deliveryAddress: { type: shippingAddressSchema, required: true },
   couponCode: { type: String },
@@ -33,20 +33,23 @@ const orderSchema = new mongoose.Schema({
   paymentStatus: {
     type: String,
     enum: ['Pending', 'Paid', 'Failed', 'Refunded'],
-    default: 'Pending'
+    default: 'Pending',
+    index: true
   },
   orderStatus: {
     type: String,
     enum: ['Placed', 'Confirmed', 'Packed', 'Shipped', 'Delivered', 'Cancelled'],
-    default: 'Placed'
+    default: 'Placed',
+    index: true
   },
   trackingNumber: { type: String },
   confirmedAt: { type: Date },
   packedAt: { type: Date },
   shippedAt: { type: Date },
   deliveredAt: { type: Date },
-  razorpayOrderId: { type: String, index: true },
-  razorpayPaymentId: { type: String }
+  ccavenueTrackingId: { type: String, index: true },
+  ccavenueBankRefNo: { type: String },
+  paymentMode: { type: String }
 }, {
   timestamps: true
 });

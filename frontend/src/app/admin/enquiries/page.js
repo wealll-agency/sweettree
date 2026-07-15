@@ -113,17 +113,17 @@ export default function EnquiriesPage() {
                           ? <MailOpen size={16} className="text-muted flex-shrink-0" />
                           : <Mail size={16} className="text-success flex-shrink-0" />}
                         <div className="text-start">
-                          <div className={`mb-0 ${!enq.isRead ? 'fw-bold' : ''}`} style={{ fontSize: '14px' }}>
+                          <div className={`mb-0 ${!enq.isRead || selected?._id === enq._id ? 'fw-bold' : ''} ${selected?._id === enq._id ? 'text-dark' : ''}`} style={{ fontSize: '14px' }}>
                             {enq.firstName} {enq.lastName}
                           </div>
-                          <small className="text-muted">{enq.queryType}</small>
+                          <small className={selected?._id === enq._id ? 'text-dark fw-medium' : 'text-muted'}>{enq.queryType}</small>
                         </div>
                       </div>
-                      <small className="text-muted flex-shrink-0 ms-2" style={{ fontSize: '11px' }}>
+                      <small className={`${selected?._id === enq._id ? 'text-dark fw-medium' : 'text-muted'} flex-shrink-0 ms-2`} style={{ fontSize: '11px' }}>
                         {formatDate(enq.createdAt)}
                       </small>
                     </div>
-                    <p className="text-muted mb-0 mt-1 text-truncate" style={{ fontSize: '13px' }}>{enq.message}</p>
+                    <p className={`${selected?._id === enq._id ? 'text-dark' : 'text-muted'} mb-0 mt-1 text-truncate`} style={{ fontSize: '13px' }}>{enq.message}</p>
                   </button>
                 ))}
               </div>
@@ -142,7 +142,7 @@ export default function EnquiriesPage() {
                     <span className="me-3">📧 {selected.email}</span>
                     <span>📞 {selected.phone}</span>
                   </div>
-                  <span className="badge bg-success bg-opacity-15 text-success mt-2">{selected.queryType}</span>
+                  <span className="badge bg-success text-white mt-2 py-2 px-3">{selected.queryType}</span>
                 </div>
                 <div className="d-flex gap-2">
                   {!selected.isRead && (

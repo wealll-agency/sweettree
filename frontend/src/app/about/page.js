@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-
+import Image from 'next/image';
 export default function AboutPage() {
   return (
     <>
@@ -31,7 +31,7 @@ export default function AboutPage() {
           <div className="row align-items-center gy-5">
             <div className="col-lg-6 position-relative">
               <div className="position-relative about-story-img-wrap">
-                <img src="/banner_slider_image3.jpeg" alt="Sweettree Store" className="img-fluid rounded-4 shadow-lg w-100 about-story-img" />
+                <Image src="/banner_slider_image3.jpeg" alt="Sweettree Store" width={800} height={600} style={{ width: '100%', height: 'auto' }} className="img-fluid rounded-4 shadow-lg w-100 about-story-img" />
               </div>
               <div className="position-absolute rounded-4 d-none d-lg-block about-story-bg-shape"></div>
             </div>
@@ -80,7 +80,7 @@ export default function AboutPage() {
             <div className="col-lg-3 col-md-6 col-sm-6">
               <div className="card border-0 h-100 text-center p-4 rounded-4 shadow-sm about-advantage-card">
                 <div className="mx-auto mb-4 mt-2 about-advantage-icon-box">
-                  <img src="/icon_nutrition.png" alt="Nutrition" className="about-advantage-icon" />
+                  <Image src="/icon_nutrition.png" alt="Nutrition" width={60} height={60} className="about-advantage-icon" />
                 </div>
                 <h5 className="fw-bold mb-2 about-advantage-card-title">Nutrient Rich</h5>
                 <p className="text-muted mb-0 about-advantage-card-text">Packed with essential vitamins and minerals for a healthier lifestyle.</p>
@@ -89,7 +89,7 @@ export default function AboutPage() {
             <div className="col-lg-3 col-md-6 col-sm-6">
               <div className="card border-0 h-100 text-center p-4 rounded-4 shadow-sm about-advantage-card">
                 <div className="mx-auto mb-4 mt-2 about-advantage-icon-box">
-                  <img src="/icon_heart.png" alt="Heart Healthy" className="about-advantage-icon" />
+                  <Image src="/icon_heart.png" alt="Heart Healthy" width={60} height={60} className="about-advantage-icon" />
                 </div>
                 <h5 className="fw-bold mb-2 about-advantage-card-title">Heart Healthy</h5>
                 <p className="text-muted mb-0 about-advantage-card-text">Carefully curated selections to promote exceptional cardiovascular wellness.</p>
@@ -98,7 +98,7 @@ export default function AboutPage() {
             <div className="col-lg-3 col-md-6 col-sm-6">
               <div className="card border-0 h-100 text-center p-4 rounded-4 shadow-sm about-advantage-card">
                 <div className="mx-auto mb-4 mt-2 about-advantage-icon-box">
-                  <img src="/icon_gluten.png" alt="Gluten Free" className="about-advantage-icon" />
+                  <Image src="/icon_gluten.png" alt="Gluten Free" width={60} height={60} className="about-advantage-icon" />
                 </div>
                 <h5 className="fw-bold mb-2 about-advantage-card-title">Gluten Free</h5>
                 <p className="text-muted mb-0 about-advantage-card-text">100% free of gluten, making it perfectly safe for sensitive diets.</p>
@@ -107,7 +107,7 @@ export default function AboutPage() {
             <div className="col-lg-3 col-md-6 col-sm-6">
               <div className="card border-0 h-100 text-center p-4 rounded-4 shadow-sm about-advantage-card">
                 <div className="mx-auto mb-4 mt-2 about-advantage-icon-box">
-                  <img src="/icon_cholesterol.png" alt="Cholesterol Free" className="about-advantage-icon" />
+                  <Image src="/icon_cholesterol.png" alt="Cholesterol Free" width={60} height={60} className="about-advantage-icon" />
                 </div>
                 <h5 className="fw-bold mb-2 about-advantage-card-title">Cholesterol Free</h5>
                 <p className="text-muted mb-0 about-advantage-card-text">Enjoy guilt-free snacking with zero cholesterol natural products.</p>
@@ -123,7 +123,7 @@ export default function AboutPage() {
           <div className="row align-items-center mb-5 pb-lg-4">
             <div className="col-lg-6 order-lg-2 position-relative mb-4 mb-lg-0">
               <div className="about-mission-img-wrap">
-                <img src="/banner_slider_image1.jpeg" alt="Our Mission" className="img-fluid w-100 about-mission-img" />
+                <Image src="/banner_slider_image1.jpeg" alt="Our Mission" width={800} height={600} style={{ width: '100%', height: 'auto' }} className="img-fluid w-100 about-mission-img" />
               </div>
             </div>
             <div className="col-lg-6 order-lg-1 pe-lg-5 text-center text-lg-start">
@@ -137,7 +137,7 @@ export default function AboutPage() {
           <div className="row align-items-center">
             <div className="col-lg-6 position-relative mb-4 mb-lg-0">
               <div className="about-vision-img-wrap">
-                <img src="/banner_slider_image2.jpeg" alt="Our Vision" className="img-fluid w-100 about-vision-img" />
+                <Image src="/banner_slider_image2.jpeg" alt="Our Vision" width={800} height={600} style={{ width: '100%', height: 'auto' }} className="img-fluid w-100 about-vision-img" />
               </div>
             </div>
             <div className="col-lg-6 ps-lg-5 text-center text-lg-start">
@@ -155,7 +155,7 @@ export default function AboutPage() {
       <section className="cta-banner my-5 py-md-3">
         <div className="container">
           <div className="position-relative overflow-hidden rounded-4 shadow-sm text-center text-md-start about-cta-container">
-            <img src="/wholesale-banner.jpg" alt="Wholesale" className="position-absolute w-100 h-100 about-cta-bg-img" />
+            <Image src="/wholesale-banner.jpg" alt="Wholesale" fill style={{ objectFit: 'cover' }} className="position-absolute about-cta-bg-img" />
             <div className="position-absolute w-100 h-100 about-cta-bg-overlay"></div>
             <div className="position-relative py-5 px-4 px-md-5 d-flex flex-column justify-content-center h-100 about-cta-content">
               <div className="col-md-9 col-lg-7">

@@ -3,10 +3,13 @@ import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addToCart, removeFromCart } from '../store/cartSlice';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ShoppingCart, Trash2 } from 'lucide-react';
+import Image from 'next/image';
 
 const CartOffcanvas = () => {
   const dispatch = useDispatch();
+  const router = useRouter();
   const { items, subtotal, discount, total } = useSelector((state) => state.cart);
 
   const handleIncrement = (product, size) => {
@@ -79,7 +82,7 @@ const CartOffcanvas = () => {
                   <button onClick={() => handleRemove(item.product, item.size)} className="position-absolute top-0 end-0 bg-transparent border-0 text-muted p-0" style={{ right: '-5px' }}>
                     <Trash2 size={16} />
                   </button>
-                  <img src={item.image || '/placeholder.png'} alt={item.name} className="rounded" style={{ width: '60px', height: '60px', objectFit: 'cover' }} />
+                  <Image src={item.image?.startsWith('http') || item.image?.startsWith('/') ? item.image : (item.image ? `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:7050'}${item.image}` : '/placeholder.png')} alt={item.name} width={60} height={60} className="rounded" style={{ objectFit: 'cover' }} />
                   <div className="ms-3 flex-grow-1">
                     <div className="text-primary fw-bold" style={{ fontSize: '10px' }}>SWEETTREE</div>
                     <h6 className="fw-bold m-0 mb-2" style={{ fontSize: '12px', lineHeight: '1.4' }}>{item.name}</h6>
@@ -116,7 +119,14 @@ const CartOffcanvas = () => {
               <span>Sub-Total:</span>
               <span>₹{total.toFixed(2)}</span>
             </div>
-            <button className="btn btn-dark w-100 fw-bold py-2" data-bs-dismiss="offcanvas" onClick={() => window.location.href = '/checkout'}>
+            <button className="btn btn-dark w-100 fw-bold py-2" data-bs-dismiss="offcanvas" onClick={() => {
+              const offcanvasEl = document.getElementById('cartOffcanvas');
+              if (offcanvasEl) {
+                const bsOffcanvas = window.bootstrap.Offcanvas.getInstance(offcanvasEl);
+                if (bsOffcanvas) bsOffcanvas.hide();
+              }
+              router.push('/checkout');
+            }}>
               Place Order Now
             </button>
           </div>

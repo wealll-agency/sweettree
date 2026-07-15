@@ -1,9 +1,11 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Header from './Header.jsx';
-import MobileMenu from './MobileMenu.jsx';
-import CartOffcanvas from './CartOffcanvas.jsx';
+
+const MobileMenu = dynamic(() => import('./MobileMenu.jsx'), { ssr: false });
+const CartOffcanvas = dynamic(() => import('./CartOffcanvas.jsx'), { ssr: false });
 
 export default function ConditionalHeader() {
   const pathname = usePathname();

@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import crypto from 'crypto';
-import Razorpay from 'razorpay';
+import { encrypt, decrypt } from '../utils/ccavenue.js';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import Inventory from '../models/Inventory.js';
@@ -8,23 +8,26 @@ import Payment from '../models/Payment.js';
 import Coupon from '../models/Coupon.js';
 import { logActivity } from '../middleware/logger.js';
 
-// Initialize Razorpay instance
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_T5pGWPZ0XxeNCx',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'hqPKmC832Z20q2lfgwVowWoh'
-});
+// CCAvenue configuration will be drawn directly from environment variables
 
 // Helper: Calculate order totals
 const calculateOrderTotals = async (items, couponCode) => {
   let subtotal = 0;
   
+  const productIds = items.map(item => item.product);
+  const products = await Product.find({ _id: { $in: productIds } }).lean();
+  const productMap = products.reduce((acc, product) => {
+    acc[product._id.toString()] = product;
+    return acc;
+  }, {});
+
   for (const item of items) {
     if (!mongoose.isValidObjectId(item.product)) {
       const err = new Error(`Invalid product ID format for: ${item.name}`);
       err.statusCode = 400;
       throw err;
     }
-    const product = await Product.findById(item.product);
+    const product = productMap[item.product.toString()];
     if (!product) {
       throw new Error(`Product not found: ${item.name}`);
     }
@@ -34,9 +37,22 @@ const calculateOrderTotals = async (items, couponCode) => {
       throw new Error(`Insufficient stock for ${product.name}. Available: ${product.stock}`);
     }
     
+    let basePrice = product.price;
+    // Check if a specific pack size was selected
+    if (item.size && product.packSizes && product.packSizes.length > 0) {
+      const selectedPack = product.packSizes.find(
+        p => `${p.weight} ${p.unit}` === item.size
+      );
+      if (selectedPack) {
+        basePrice = selectedPack.price;
+      } else if (item.size !== `${product.unitValue || 1} ${product.unit || 'Pack'}`) {
+        throw new Error(`Invalid pack size selected for: ${item.name}`);
+      }
+    }
+    
     const activePrice = product.discount > 0 
-      ? Math.round(product.price * (1 - product.discount / 100))
-      : product.price;
+      ? (product.discountType === 'Percent' ? Math.round(basePrice * (1 - product.discount / 100)) : Math.max(0, basePrice - product.discount))
+      : basePrice;
       
     subtotal += activePrice * item.quantity;
     item.price = activePrice; // Bind exact price paid
@@ -75,24 +91,7 @@ export const createOrder = async (req, res, next) => {
 
     const { subtotal, discount, tax, shippingFee, totalAmount, validatedItems } = await calculateOrderTotals(items, couponCode);
 
-    // 1. Initiate Razorpay Order Session FIRST to prevent inventory leaks if API fails
-    const options = {
-      amount: totalAmount * 100, // Razorpay works in paise
-      currency: 'INR',
-      receipt: `receipt_${Date.now()}` // Generate temporary receipt ID
-    };
-
-    let razorpayOrder;
-    try {
-      razorpayOrder = await razorpay.orders.create(options);
-    } catch (rzpError) {
-      // If Razorpay fails (e.g. 401 invalid keys), map it to 400 to prevent frontend from logging user out
-      const err = new Error(`Payment Gateway Error: ${rzpError.error?.description || 'Failed to connect to Razorpay'}. Please verify your API keys.`);
-      err.statusCode = 400; 
-      throw err;
-    }
-
-    // 2. Create Local Order (Pending Payment)
+    // 1. Create Local Order (Pending Payment)
     const mappedDeliveryAddress = {
       name: deliveryAddress?.name || req.user?.name || 'Customer',
       phone: deliveryAddress?.phone || req.user?.phone || '9999999999',
@@ -117,18 +116,14 @@ export const createOrder = async (req, res, next) => {
       tax,
       totalAmount,
       paymentStatus: 'Pending',
-      orderStatus: 'Placed',
-      razorpayOrderId: razorpayOrder.id
+      orderStatus: 'Placed'
     });
 
     const savedOrder = await order.save();
 
-    // 3. Reduce Stock in Inventory & Product Collections
+    // 2. Reduce Stock in Inventory & Product Collections
     for (const item of validatedItems) {
-      // Decrement Product stock
       await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } });
-      
-      // Decrement Inventory stock and record audit adjustment
       await Inventory.findOneAndUpdate(
         { product: item.product },
         { 
@@ -153,107 +148,132 @@ export const createOrder = async (req, res, next) => {
       );
     }
 
-    // 4. Create Payment ledger record
+    // 3. Create Payment ledger record
     await Payment.create({
       order: savedOrder._id,
-      razorpayOrderId: razorpayOrder.id,
+      ccavenueOrderId: savedOrder._id.toString(),
       amount: totalAmount,
       status: 'Created'
     });
 
-    await logActivity(req.user._id, 'CREATE_ORDER', `Created order ID: ${savedOrder._id}, Razorpay Order: ${razorpayOrder.id}`, req);
+    // 4. Prepare CCAvenue Payload
+    const merchant_id = process.env.CCAVENUE_MERCHANT_ID || 'M_ID';
+    const access_code = process.env.CCAVENUE_ACCESS_CODE || 'A_CODE';
+    const working_key = process.env.CCAVENUE_WORKING_KEY || 'W_KEY';
+    const redirect_url = process.env.CCAVENUE_REDIRECT_URL || 'http://localhost:7050/api/orders/ccavenue-callback';
+    const cancel_url = process.env.CCAVENUE_CANCEL_URL || 'http://localhost:7050/api/orders/ccavenue-callback';
+
+    const merchantData = `merchant_id=${merchant_id}&order_id=${savedOrder._id}&currency=INR&amount=${totalAmount}&redirect_url=${redirect_url}&cancel_url=${cancel_url}&language=EN&billing_name=${encodeURIComponent(mappedDeliveryAddress.name)}&billing_address=${encodeURIComponent(mappedDeliveryAddress.address)}&billing_city=${encodeURIComponent(mappedDeliveryAddress.city)}&billing_state=${encodeURIComponent(mappedDeliveryAddress.state)}&billing_zip=${mappedDeliveryAddress.pincode}&billing_country=India&billing_tel=${mappedDeliveryAddress.phone}`;
+
+    const encRequest = encrypt(merchantData, working_key);
+
+    await logActivity(req.user._id, 'CREATE_ORDER', `Created order ID: ${savedOrder._id}, initiating CCAvenue transaction`, req);
 
     res.status(201).json({
       success: true,
       order: savedOrder,
-      razorpayOrder
+      encRequest,
+      accessCode: access_code
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Verify Razorpay payment signature
-// @route   POST /api/orders/verify
-// @access  Private
-export const verifyPayment = async (req, res, next) => {
-  const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
-
+// @desc    Handle CCAvenue Callback (Server-to-Server form post)
+// @route   POST /api/orders/ccavenue-callback
+// @access  Public
+export const ccavenueCallback = async (req, res, next) => {
   try {
-    const shasum = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'hqPKmC832Z20q2lfgwVowWoh');
-    shasum.update(`${razorpayOrderId}|${razorpayPaymentId}`);
-    const digest = shasum.digest('hex');
+    const { encResp } = req.body;
+    if (!encResp) {
+      return res.status(400).send('Invalid response from CCAvenue');
+    }
 
-    if (digest === razorpaySignature) {
-      // Payment Successful
-      const order = await Order.findOneAndUpdate(
-        { razorpayOrderId },
-        { 
-          $set: { 
-            paymentStatus: 'Paid',
-            orderStatus: 'Confirmed',
-            confirmedAt: Date.now(),
-            razorpayPaymentId
-          } 
-        },
-        { new: true }
-      );
+    const working_key = process.env.CCAVENUE_WORKING_KEY || 'W_KEY';
+    let decryptedResp;
+    try {
+      decryptedResp = decrypt(encResp, working_key);
+    } catch (err) {
+      console.error('CCAvenue Decryption Error:', err);
+      return res.status(400).send('Failed to decrypt CCAvenue response');
+    }
 
-      if (!order) {
-        return res.status(404).json({ success: false, message: 'Associated order not found' });
+    const params = new URLSearchParams(decryptedResp);
+    const order_id = params.get('order_id');
+    const tracking_id = params.get('tracking_id');
+    const bank_ref_no = params.get('bank_ref_no');
+    const order_status = params.get('order_status'); 
+    const payment_mode = params.get('payment_mode');
+    const failure_message = params.get('failure_message');
+
+    const order = await Order.findById(order_id);
+    if (!order) {
+      return res.status(404).send('Order not found');
+    }
+
+    const payment = await Payment.findOne({ ccavenueOrderId: order_id });
+
+    if (order_status === 'Success') {
+      order.paymentStatus = 'Paid';
+      order.orderStatus = 'Confirmed';
+      order.confirmedAt = Date.now();
+      order.ccavenueTrackingId = tracking_id;
+      order.ccavenueBankRefNo = bank_ref_no;
+      order.paymentMode = payment_mode;
+      await order.save();
+
+      if (payment) {
+        payment.status = 'Captured';
+        payment.ccavenueTrackingId = tracking_id;
+        payment.ccavenueBankRefNo = bank_ref_no;
+        payment.paymentMode = payment_mode;
+        payment.encResponse = encResp;
+        await payment.save();
       }
 
-      await Payment.findOneAndUpdate(
-        { razorpayOrderId },
-        { 
-          $set: { 
-            status: 'Captured',
-            razorpayPaymentId,
-            razorpaySignature
-          } 
-        }
-      );
-
-      await logActivity(req.user._id, 'VERIFY_PAYMENT', `Verified payment for Order ID: ${order._id}`, req);
-
-      res.json({ success: true, message: 'Payment verified and captured', order });
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      return res.redirect(`${frontendUrl}/user/orders/${order._id}?success=true`);
     } else {
-      // Payment Signature Check Failed
-      const order = await Order.findOneAndUpdate(
-        { razorpayOrderId },
-        { $set: { paymentStatus: 'Failed' } },
-        { new: true }
-      );
-      
-      await Payment.findOneAndUpdate(
-        { razorpayOrderId },
-        { $set: { status: 'Failed' } }
-      );
+      order.paymentStatus = 'Failed';
+      order.ccavenueTrackingId = tracking_id;
+      order.ccavenueBankRefNo = bank_ref_no;
+      order.paymentMode = payment_mode;
+      await order.save();
 
-      // Restore stocks since transaction failed
-      if (order) {
-        for (const item of order.items) {
-          await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
-          await Inventory.findOneAndUpdate(
-            { product: item.product },
-            { 
-              $inc: { stockQuantity: item.quantity },
-              $push: {
-                adjustments: {
-                  quantityChanged: item.quantity,
-                  type: 'AuditAdjustment',
-                  reason: `Payment Failure Stock Restoral (Order ID: ${order._id})`,
-                  adjustedBy: req.user._id
-                }
+      if (payment) {
+        payment.status = 'Failed';
+        payment.ccavenueTrackingId = tracking_id;
+        payment.ccavenueBankRefNo = bank_ref_no;
+        payment.paymentMode = payment_mode;
+        payment.failureMessage = failure_message;
+        payment.encResponse = encResp;
+        await payment.save();
+      }
+
+      for (const item of order.items) {
+        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
+        await Inventory.findOneAndUpdate(
+          { product: item.product },
+          { 
+            $inc: { stockQuantity: item.quantity },
+            $push: {
+              adjustments: {
+                quantityChanged: item.quantity,
+                type: 'AuditAdjustment',
+                reason: `Payment Failure Stock Restoral (Order ID: ${order._id})`,
+                adjustedBy: order.user
               }
             }
-          );
-        }
+          }
+        );
       }
 
-      res.status(400).json({ success: false, message: 'Invalid payment signature, transaction failed' });
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent(failure_message || 'Payment Failed')}`);
     }
   } catch (error) {
+    console.error('CCAvenue Callback Error:', error);
     next(error);
   }
 };
@@ -265,7 +285,8 @@ export const getMyOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ user: req.user._id })
       .populate('items.product', 'images name')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
     res.json({ success: true, orders });
   } catch (error) {
     next(error);
@@ -279,7 +300,8 @@ export const getOrderById = async (req, res, next) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate('user', 'name email phone')
-      .populate('items.product', 'images name');
+      .populate('items.product', 'images name')
+      .lean();
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
@@ -301,8 +323,27 @@ export const getOrderById = async (req, res, next) => {
 // @access  Private/Admin/Manager/Staff
 export const getAllOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find({}).populate('user', 'name email').sort({ createdAt: -1 });
-    res.json({ success: true, orders });
+    const { page = 1, limit = 20 } = req.query;
+    
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    const total = await Order.countDocuments({});
+    const orders = await Order.find({})
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .lean();
+
+    res.json({
+      success: true,
+      total,
+      pages: Math.ceil(total / limitNum),
+      currentPage: pageNum,
+      orders
+    });
   } catch (error) {
     next(error);
   }
@@ -368,7 +409,7 @@ export const updateOrderStatus = async (req, res, next) => {
   }
 };
 
-// @desc    Process refund via Razorpay
+// @desc    Process refund
 // @route   POST /api/orders/:id/refund
 // @access  Private/Admin
 export const processRefund = async (req, res, next) => {
@@ -385,19 +426,14 @@ export const processRefund = async (req, res, next) => {
 
     const payment = await Payment.findOne({ order: order._id });
 
-    if (!payment || !payment.razorpayPaymentId) {
-      return res.status(400).json({ success: false, message: 'Razorpay transaction record missing' });
+    if (!payment) {
+      return res.status(400).json({ success: false, message: 'Transaction record missing' });
     }
 
-    // Trigger Razorpay Refund
-    const refund = await razorpay.payments.refund(payment.razorpayPaymentId, {
-      amount: order.totalAmount * 100, // fully refund
-      notes: { reason: 'Customer Cancelled/Admin Initiated Refund' }
-    });
-
+    // CCAvenue refunds are typically initiated from the merchant dashboard manually
     payment.status = 'Refunded';
     payment.refundDetails = {
-      refundId: refund.id,
+      refundId: 'MANUAL_CCAVENUE_REFUND_' + Date.now(),
       amount: order.totalAmount,
       reason: 'Admin Initiated Refund',
       processedAt: new Date()
@@ -412,9 +448,9 @@ export const processRefund = async (req, res, next) => {
     };
     await Order.findByIdAndUpdate(order._id, updateQuery);
 
-    await logActivity(req.user._id, 'PROCESS_REFUND', `Processed refund for Order ID ${order._id}`, req);
+    await logActivity(req.user._id, 'PROCESS_REFUND', `Processed manual refund record for Order ID ${order._id}`, req);
 
-    res.json({ success: true, message: 'Refund processed successfully', order });
+    res.json({ success: true, message: 'Refund recorded successfully. Note: You must actually initiate the refund in your CCAvenue Dashboard.', order });
   } catch (error) {
     next(error);
   }

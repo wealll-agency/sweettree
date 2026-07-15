@@ -60,7 +60,8 @@ export const getProducts = async (req, res, next) => {
     const products = await Product.find(query)
       .sort(sortBy)
       .skip(skip)
-      .limit(limitNum);
+      .limit(limitNum)
+      .lean();
 
     res.json({
       success: true,
@@ -79,7 +80,7 @@ export const getProducts = async (req, res, next) => {
 // @access  Public
 export const getProductById = async (req, res, next) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id).lean();
     if (product) {
       res.json({ success: true, product });
     } else {
@@ -98,7 +99,7 @@ export const createProduct = async (req, res, next) => {
     name, category, subCategory, subSubCategory, brand, productType, sku, unit, unitValue, searchTags, 
     price, purchasePrice, minOrderQty, discount, discountType, taxAmount, taxCalculation, 
     shippingCost, shippingMultiplyWithQty, isFeatured, isActive,
-    description, ingredients, benefits, images, videos, batchNumber, expiryDate, stock 
+    description, ingredients, benefits, images, videos, batchNumber, expiryDate, stock, packSizes
   } = req.body;
 
   try {
@@ -147,7 +148,8 @@ export const createProduct = async (req, res, next) => {
       videos: videos || [],
       batchNumber,
       expiryDate: expiryDate ? new Date(expiryDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Default 1 year expiry
-      stock: Number(stock) || 0
+      stock: Number(stock) || 0,
+      packSizes: typeof packSizes === 'string' ? JSON.parse(packSizes) : (packSizes || [])
     });
 
     const createdProduct = await product.save();
@@ -201,9 +203,14 @@ export const updateProduct = async (req, res, next) => {
       product.taxAmount = req.body.taxAmount !== undefined ? req.body.taxAmount : product.taxAmount;
       product.taxCalculation = req.body.taxCalculation || product.taxCalculation;
       product.shippingCost = req.body.shippingCost !== undefined ? req.body.shippingCost : product.shippingCost;
-      product.shippingMultiplyWithQty = req.body.shippingMultiplyWithQty !== undefined ? req.body.shippingMultiplyWithQty : product.shippingMultiplyWithQty;
-      product.isFeatured = req.body.isFeatured !== undefined ? req.body.isFeatured : product.isFeatured;
-      product.isActive = req.body.isActive !== undefined ? req.body.isActive : product.isActive;
+      product.shippingMultiplyWithQty = req.body.shippingMultiplyWithQty !== undefined ? (req.body.shippingMultiplyWithQty === 'true' || req.body.shippingMultiplyWithQty === true) : product.shippingMultiplyWithQty;
+      
+      if (req.body.packSizes !== undefined) {
+        product.packSizes = typeof req.body.packSizes === 'string' ? JSON.parse(req.body.packSizes) : req.body.packSizes;
+      }
+
+      product.isFeatured = req.body.isFeatured !== undefined ? (req.body.isFeatured === 'true' || req.body.isFeatured === true) : product.isFeatured;
+      product.isActive = req.body.isActive !== undefined ? (req.body.isActive !== 'false' && req.body.isActive !== false) : product.isActive;
       product.description = req.body.description || product.description;
       product.ingredients = typeof req.body.ingredients === 'string' ? req.body.ingredients.split(',').map(i => i.trim()).filter(Boolean) : (req.body.ingredients || product.ingredients);
       product.benefits = typeof req.body.benefits === 'string' ? req.body.benefits.split(',').map(b => b.trim()).filter(Boolean) : (req.body.benefits || product.benefits);

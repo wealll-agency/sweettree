@@ -1,6 +1,9 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
+const userCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export const protect = async (req, res, next) => {
   let token = req.cookies?.token;
 
@@ -14,10 +17,19 @@ export const protect = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'super_secret_jwt_key_for_sweettree_2026_enterprise');
-    req.user = await User.findById(decoded.id).select('-password');
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: 'User no longer exists' });
+    
+    const cachedUser = userCache.get(decoded.id);
+    if (cachedUser && (Date.now() - cachedUser.timestamp < CACHE_TTL)) {
+      req.user = cachedUser.data;
+    } else {
+      const user = await User.findById(decoded.id).select('-password');
+      if (!user) {
+        return res.status(401).json({ success: false, message: 'User no longer exists' });
+      }
+      userCache.set(decoded.id, { data: user, timestamp: Date.now() });
+      req.user = user;
     }
+    
     next();
   } catch (error) {
     console.error(`JWT validation error: ${error.message}`);

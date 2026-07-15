@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { Home, ShoppingBag, Gift, Info, BookOpen, Phone, User, Heart, MessageCircle } from 'lucide-react';
 
 const MobileMenu = () => {
   const closeMenu = () => {
@@ -23,41 +24,47 @@ const MobileMenu = () => {
       <div className="offcanvas-body p-0">
         <ul className="list-group list-group-flush mobile-nav-links">
           <li className="list-group-item">
-            <Link href="/" className="d-block py-2 text-dark text-decoration-none fw-bold" onClick={closeMenu}>
-              <i className="fas fa-home me-2 text-muted"></i>HOME
+            <Link href="/" className="d-flex align-items-center py-2 text-dark text-decoration-none fw-bold gap-2" onClick={closeMenu}>
+              <Home size={18} className="text-muted" />HOME
             </Link>
           </li>
           <li className="list-group-item">
-            <Link className="d-flex justify-content-between align-items-center py-2 text-dark text-decoration-none fw-bold" href="/shop" onClick={closeMenu}>
-              <span><i className="fas fa-shopping-bag me-2 text-muted"></i>SHOP</span>
+            <Link className="d-flex align-items-center py-2 text-dark text-decoration-none fw-bold gap-2" href="/shop" onClick={closeMenu}>
+              <ShoppingBag size={18} className="text-muted" />SHOP
             </Link>
           </li>
           <li className="list-group-item">
-            <Link href="/build-combo" className="d-block py-2 text-dark text-decoration-none fw-bold" onClick={closeMenu}>
-              <i className="fas fa-gift me-2 text-muted"></i>COMBO GIFT BOX
+            <Link href="/build-combo" className="d-flex align-items-center py-2 text-dark text-decoration-none fw-bold gap-2" onClick={closeMenu}>
+              <Gift size={18} className="text-muted" />COMBO GIFT BOX
             </Link>
           </li>
           <li className="list-group-item">
-            <Link href="/about" className="d-block py-2 text-dark text-decoration-none fw-bold" onClick={closeMenu}>
-              <i className="fas fa-info-circle me-2 text-muted"></i>ABOUT
+            <Link href="/about" className="d-flex align-items-center py-2 text-dark text-decoration-none fw-bold gap-2" onClick={closeMenu}>
+              <Info size={18} className="text-muted" />ABOUT
             </Link>
           </li>
           <li className="list-group-item">
-            <Link href="/blog" className="d-block py-2 text-dark text-decoration-none fw-bold" onClick={closeMenu}>
-              <i className="fas fa-blog me-2 text-muted"></i>BLOG
+            <Link href="/blog" className="d-flex align-items-center py-2 text-dark text-decoration-none fw-bold gap-2" onClick={closeMenu}>
+              <BookOpen size={18} className="text-muted" />BLOG
             </Link>
           </li>
           <li className="list-group-item">
-            <Link href="/contact" className="d-block py-2 text-dark text-decoration-none fw-bold" onClick={closeMenu}>
-              <i className="fas fa-phone-alt me-2 text-muted"></i>CONTACT
+            <Link href="/contact" className="d-flex align-items-center py-2 text-dark text-decoration-none fw-bold gap-2" onClick={closeMenu}>
+              <Phone size={18} className="text-muted" />CONTACT
             </Link>
           </li>
         </ul>
         <div className="p-3 bg-light mt-3">
           <div className="d-flex justify-content-around">
-            <Link href="/user/profile" className="text-dark bg-white rounded-circle p-2 shadow-sm" onClick={closeMenu}><i className="far fa-user"></i></Link>
-            <Link href="/wishlist" className="text-dark bg-white rounded-circle p-2 shadow-sm" onClick={closeMenu}><i className="far fa-heart"></i></Link>
-            <a href="https://wa.me/919748724689" target="_blank" rel="noopener noreferrer" className="text-dark bg-white rounded-circle p-2 shadow-sm" onClick={closeMenu}><i className="fab fa-whatsapp"></i></a>
+            <Link href="/user/profile" className="text-dark bg-white rounded-circle p-2 shadow-sm d-flex align-items-center justify-content-center" onClick={closeMenu} style={{ width: '38px', height: '38px' }}>
+              <User size={18} />
+            </Link>
+            <Link href="/wishlist" className="text-dark bg-white rounded-circle p-2 shadow-sm d-flex align-items-center justify-content-center" onClick={closeMenu} style={{ width: '38px', height: '38px' }}>
+              <Heart size={18} />
+            </Link>
+            <a href="https://wa.me/919748724689" target="_blank" rel="noopener noreferrer" className="text-dark bg-white rounded-circle p-2 shadow-sm d-flex align-items-center justify-content-center" onClick={closeMenu} style={{ width: '38px', height: '38px' }}>
+              <MessageCircle size={18} />
+            </a>
           </div>
         </div>
       </div>

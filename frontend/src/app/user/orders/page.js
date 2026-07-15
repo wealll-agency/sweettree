@@ -6,6 +6,7 @@ import { fetchMyOrders } from '../../../store/ordersSlice.js';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingBag, Eye } from 'lucide-react';
+import Image from 'next/image';
 
 export default function OrderHistoryPage() {
   const dispatch = useDispatch();
@@ -44,21 +45,33 @@ export default function OrderHistoryPage() {
     );
   }
 
-  if (orderLoading) {
-    return (
-      <div className="container py-5 d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
-        <div className="spinner-border text-success" role="status">
-          <span className="visually-hidden">Loading orders...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container py-5">
       <h1 className="fw-bold mb-4" style={{ color: '#203d74' }}>My Orders</h1>
 
-      {orders.length === 0 ? (
+      {orderLoading ? (
+        <div className="d-flex flex-column gap-4">
+          {[1, 2].map((i) => (
+            <div key={i} className="bg-white p-4 rounded-4 shadow-sm border" style={{ minHeight: '220px', opacity: 0.6 }}>
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                <div>
+                  <div className="bg-light rounded" style={{ width: '180px', height: '20px' }}></div>
+                  <div className="bg-light rounded mt-2" style={{ width: '100px', height: '14px' }}></div>
+                </div>
+                <div className="bg-light rounded" style={{ width: '80px', height: '20px' }}></div>
+              </div>
+              <div className="d-flex align-items-center gap-3">
+                <div className="bg-light rounded" style={{ width: '80px', height: '80px', flexShrink: 0 }}></div>
+                <div className="flex-grow-1">
+                  <div className="bg-light rounded" style={{ width: '120px', height: '14px', marginBottom: '8px' }}></div>
+                  <div className="bg-light rounded" style={{ width: '200px', height: '16px', marginBottom: '8px' }}></div>
+                  <div className="bg-light rounded" style={{ width: '70px', height: '18px' }}></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : orders.length === 0 ? (
         <div className="text-center py-5 card border-0 shadow-sm max-w-lg mx-auto">
           <i className="fas fa-shopping-bag fa-3x text-muted mb-3 mx-auto d-block"></i>
           <h4 className="fw-bold mb-2">No Orders Placed Yet</h4>
@@ -93,9 +106,11 @@ export default function OrderHistoryPage() {
                       style={{ width: '80px', height: '80px', flexShrink: 0, overflow: 'hidden', border: '1px solid #eee', borderRadius: '4px' }}
                     >
                       {item.product && item.product.images && item.product.images.length > 0 ? (
-                        <img 
+                        <Image 
                           src={item.product.images[0].replace('/assets/images/', '/')} 
                           alt={item.name} 
+                          width={80}
+                          height={80}
                           style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} 
                         />
                       ) : (

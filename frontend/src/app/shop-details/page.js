@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../store/cartSlice';
 import { fetchProducts, fetchProductDetails, fetchProductReviews, submitProductReview } from '../../store/productsSlice';
@@ -62,12 +63,30 @@ function ShopDetailsContent() {
     }
   }, [dispatch, realProduct, productIdParam]);
 
+  const defaultPackName = realProduct ? `${realProduct.unitValue || 1} ${realProduct.unit || 'Pack'}` : '';
   const [selectedPack, setSelectedPack] = useState('');
   useEffect(() => {
     if (realProduct) {
-      setSelectedPack(`${realProduct.unitValue || 1} ${realProduct.unit || 'Pack'}`);
+      setSelectedPack(defaultPackName);
     }
-  }, [realProduct]);
+  }, [realProduct, defaultPackName]);
+
+  let basePrice = realProduct ? realProduct.price : 0;
+  if (realProduct && selectedPack !== defaultPackName && realProduct.packSizes && realProduct.packSizes.length > 0) {
+    const selectedPackObj = realProduct.packSizes.find(p => `${p.weight} ${p.unit}` === selectedPack);
+    if (selectedPackObj) {
+      basePrice = selectedPackObj.price;
+    }
+  }
+
+  let finalPrice = basePrice;
+  if (realProduct && realProduct.discount > 0) {
+    if (realProduct.discountType === 'Percent') {
+      finalPrice = Math.round(basePrice * (1 - realProduct.discount / 100));
+    } else {
+      finalPrice = Math.max(0, basePrice - realProduct.discount);
+    }
+  }
 
   if (!realProduct) {
     return (
@@ -81,7 +100,6 @@ function ShopDetailsContent() {
   }
 
   const handleAddToCart = () => {
-    const finalPrice = realProduct.discountedPrice !== undefined ? realProduct.discountedPrice : realProduct.price;
     const mockProduct = {
       _id: realProduct._id,
       name: realProduct.name,
@@ -94,7 +112,7 @@ function ShopDetailsContent() {
     dispatch(addToCart({
       product: mockProduct,
       quantity,
-      size: selectedPack || `${realProduct.unitValue || 1} ${realProduct.unit || 'Pack'}`
+      size: selectedPack || defaultPackName
     }));
 
     if (typeof window !== 'undefined' && window.bootstrap) {
@@ -138,7 +156,6 @@ function ShopDetailsContent() {
 
   const isInWishlist = wishlistItems.some(item => item._id === realProduct._id);
   const images = realProduct.images && realProduct.images.length > 0 ? realProduct.images : ['/top_product1.png'];
-  const finalPrice = realProduct.discountedPrice !== undefined ? realProduct.discountedPrice : realProduct.price;
 
   return (
     <div className="container py-4 mt-2 bg-white animate-fade-in">
@@ -154,9 +171,11 @@ function ShopDetailsContent() {
         <div className="col-lg-5">
           <div className="mb-3 position-relative text-center border rounded-2 p-4">
              {realProduct.isFeatured && <span className="badge bg-primary position-absolute top-0 start-0 m-3">PREMIUM</span>}
-            <img
-              src={images[activeImageIndex]}
+            <Image
+              src={images[activeImageIndex]?.startsWith('http') ? images[activeImageIndex] : (images[activeImageIndex] ? `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:7050'}${images[activeImageIndex]}` : '/top_product1.png')}
               alt={realProduct.name}
+              width={500}
+              height={400}
               className="img-fluid object-fit-contain"
               style={{ maxHeight: '400px', width: '100%' }}
             />
@@ -170,26 +189,26 @@ function ShopDetailsContent() {
                 style={{ width: '60px', height: '60px' }}
                 onClick={() => setActiveImageIndex(index)}
               >
-                  <img src={imgUrl} className="img-fluid h-100 object-fit-contain" alt={`Thumbnail ${index}`} />
+                  <Image src={imgUrl.startsWith('http') ? imgUrl : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:7050'}${imgUrl}`} width={60} height={60} className="img-fluid h-100 object-fit-contain" alt={`Thumbnail ${index}`} />
               </div>
             ))}
           </div>
 
           <div className="d-flex justify-content-between text-center px-3 border-top pt-4">
              <div>
-                <img src="/icon_heart.png" alt="Healthy" height="30" className="mb-2" />
+                <Image src="/icon_heart.png" alt="Healthy" width={30} height={30} className="mb-2" />
                 <p style={{ fontSize: '11px', color: '#666' }}>100% Healthy</p>
              </div>
              <div>
-                <img src="/icon_gluten.png" alt="Gluten Free" height="30" className="mb-2" />
+                <Image src="/icon_gluten.png" alt="Gluten Free" width={30} height={30} className="mb-2" />
                 <p style={{ fontSize: '11px', color: '#666' }}>Gluten Free</p>
              </div>
              <div>
-                <img src="/icon_nutrition.png" alt="Nutrition" height="30" className="mb-2" />
+                <Image src="/icon_nutrition.png" alt="Nutrition" width={30} height={30} className="mb-2" />
                 <p style={{ fontSize: '11px', color: '#666' }}>Powerful Nutrition</p>
              </div>
              <div>
-                <img src="/icon_cholesterol.png" alt="Cholesterol" height="30" className="mb-2" />
+                <Image src="/icon_cholesterol.png" alt="Cholesterol" width={30} height={30} className="mb-2" />
                 <p style={{ fontSize: '11px', color: '#666' }}>Cholesterol Free</p>
              </div>
           </div>
@@ -233,11 +252,29 @@ function ShopDetailsContent() {
              </div>
               <div className="col-md-9">
                  <p className="fw-bold mb-2" style={{ fontSize: '14px' }}>Select Pack Size</p>
-                 <div className="d-flex gap-3">
-                      <div onClick={() => setSelectedPack(`${realProduct.unitValue || 1} ${realProduct.unit || 'Pack'}`)} className={`border rounded p-2 text-center cursor-pointer ${selectedPack === `${realProduct.unitValue || 1} ${realProduct.unit || 'Pack'}` ? 'border-primary border-2' : ''}`} style={{ minWidth: '120px' }}>
-                         <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{realProduct.unitValue || 1} {realProduct.unit || 'Pack'}</div>
-                         <div style={{ fontSize: '12px', color: '#005B6E' }}>₹{finalPrice}</div>
+                 <div className="d-flex gap-3 flex-wrap">
+                      <div onClick={() => setSelectedPack(defaultPackName)} className={`border rounded p-2 text-center cursor-pointer ${selectedPack === defaultPackName ? 'border-primary border-2' : ''}`} style={{ minWidth: '120px' }}>
+                         <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{defaultPackName}</div>
+                         <div style={{ fontSize: '12px', color: '#005B6E' }}>₹{realProduct.discountedPrice || realProduct.price}</div>
                       </div>
+                      
+                      {realProduct.packSizes && realProduct.packSizes.map((pack, i) => {
+                         const pName = `${pack.weight} ${pack.unit}`;
+                         let pPrice = pack.price;
+                         if (realProduct.discount > 0) {
+                           if (realProduct.discountType === 'Percent') {
+                             pPrice = Math.round(pack.price * (1 - realProduct.discount / 100));
+                           } else {
+                             pPrice = Math.max(0, pack.price - realProduct.discount);
+                           }
+                         }
+                         return (
+                           <div key={i} onClick={() => setSelectedPack(pName)} className={`border rounded p-2 text-center cursor-pointer ${selectedPack === pName ? 'border-primary border-2' : ''}`} style={{ minWidth: '120px' }}>
+                             <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{pName}</div>
+                             <div style={{ fontSize: '12px', color: '#005B6E' }}>₹{pPrice}</div>
+                           </div>
+                         );
+                      })}
                  </div>
               </div>
           </div>

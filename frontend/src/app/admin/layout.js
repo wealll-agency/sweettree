@@ -26,7 +26,7 @@ export default function AdminLayout({ children }) {
       const currentPath = pathname ? pathname.replace(/^\//, '') : 'admin/dashboard';
       router.push(`/login?redirect=${currentPath}`);
     }
-  }, [user, loading, router, isMounted]);
+  }, [user, loading, router, isMounted, pathname]);
 
   if (!isMounted) return null;
 

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -127,11 +128,12 @@ export default function CartPage() {
                   <tr key={`${item.product}-${item.size}`} className="border-bottom">
                     <td className="py-3">
                       <div className="d-flex align-items-center gap-3">
-                        <img
-                          src={item.image || 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=100'}
+                        <Image
+                          src={item.image?.startsWith('http') ? item.image : (item.image ? `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:7050'}${item.image}` : 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=100')}
                           alt={item.name}
+                          width={60}
+                          height={60}
                           className="rounded object-fit-cover"
-                          style={{ width: '60px', height: '60px' }}
                         />
                         <div>
                           <Link href={`/shop-details?name=${encodeURIComponent(item.name)}`} className="fw-bold text-dark text-decoration-none hover-green">

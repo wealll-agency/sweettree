@@ -6,6 +6,7 @@ import { fetchOrderDetails } from '../../../../store/ordersSlice.js';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ShieldCheck, MapPin, Truck, Check, Calendar, ArrowLeft, ShoppingBag } from 'lucide-react';
+import Image from 'next/image';
 
 export default function OrderTrackingPage() {
   const { id } = useParams();
@@ -48,21 +49,11 @@ export default function OrderTrackingPage() {
     );
   }
 
-  if (orderLoading || !order) {
-    return (
-      <div className="container py-5 text-center">
-        <div className="spinner-border text-success" role="status">
-          <span className="visually-hidden">Loading order details...</span>
-        </div>
-      </div>
-    );
-  }
-
-  // steps list
   const steps = ['Placed', 'Confirmed', 'Packed', 'Shipped', 'Delivered'];
-  const currentStepIndex = steps.indexOf(order.orderStatus);
+  const currentStepIndex = order ? steps.indexOf(order.orderStatus) : 0;
 
   const getStepStatus = (index) => {
+    if (!order) return 'pending';
     if (order.orderStatus === 'Cancelled') {
       return 'cancelled';
     }
@@ -72,7 +63,7 @@ export default function OrderTrackingPage() {
   };
 
   return (
-    <div className="container py-5 animate-fade-in">
+    <div className="container py-5">
       
       {/* Success banner */}
       {isNewSuccess && (
@@ -92,7 +83,34 @@ export default function OrderTrackingPage() {
         </Link>
       </div>
 
-      <div className="row g-5">
+      {orderLoading || !order ? (
+        <div className="row g-5">
+          <div className="col-lg-8">
+            <div className="bg-white p-4 rounded-4 shadow-sm border mb-4" style={{ minHeight: '180px', opacity: 0.6 }}>
+              <div className="bg-light rounded mb-3" style={{ width: '150px', height: '24px' }}></div>
+              <div className="d-flex justify-content-between gap-2 mt-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="text-center" style={{ flex: 1 }}>
+                    <div className="bg-light rounded-circle mx-auto mb-2" style={{ width: '32px', height: '32px' }}></div>
+                    <div className="bg-light rounded mx-auto" style={{ width: '50px', height: '12px' }}></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-white p-4 rounded-4 shadow-sm border" style={{ minHeight: '150px', opacity: 0.6 }}>
+              <div className="bg-light rounded mb-3" style={{ width: '120px', height: '20px' }}></div>
+              <div className="bg-light rounded" style={{ width: '100%', height: '50px' }}></div>
+            </div>
+          </div>
+          <div className="col-lg-4">
+            <div className="bg-white p-4 rounded-4 shadow-sm border" style={{ minHeight: '200px', opacity: 0.6 }}>
+              <div className="bg-light rounded mb-3" style={{ width: '100px', height: '20px' }}></div>
+              <div className="bg-light rounded mt-2" style={{ width: '100%', height: '100px' }}></div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="row g-5">
         
         {/* Left Side */}
         <div className="col-lg-8">
@@ -143,9 +161,11 @@ export default function OrderTrackingPage() {
                       style={{ width: '80px', height: '80px', flexShrink: 0, overflow: 'hidden', border: '1px solid #eee', borderRadius: '4px' }}
                     >
                       {item.product && item.product.images && item.product.images.length > 0 ? (
-                        <img 
+                        <Image 
                           src={item.product.images[0].replace('/assets/images/', '/')} 
                           alt={item.name} 
+                          width={80}
+                          height={80}
                           style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} 
                         />
                       ) : (
@@ -283,8 +303,8 @@ export default function OrderTrackingPage() {
             )}
           </div>
         </div>
-
       </div>
+      )}
     </div>
   );
 }

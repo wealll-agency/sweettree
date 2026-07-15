@@ -5,6 +5,25 @@ import { useSelector, useDispatch } from 'react-redux';
 import { logoutUser } from '../store/authSlice';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { 
+  Home, 
+  Store, 
+  Gift, 
+  Leaf, 
+  BookOpen, 
+  Envelope, 
+  Search, 
+  X, 
+  User, 
+  Heart, 
+  ShoppingBag, 
+  Menu,
+  LayoutDashboard,
+  Package,
+  LogOut,
+  LogIn,
+  Mail
+} from 'lucide-react';
 
 const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -40,7 +59,7 @@ const Header = () => {
           {/* Logo */}
           <div className="col-lg-2 col-5">
             <Link href="/">
-              <Image src="/logo.png" alt="Sweettree Logo" width={180} height={50} priority={true} className="brand-logo" style={{ width: 'auto', height: '100%', objectFit: 'contain' }} />
+              <Image src="/logo.png" alt="Sweettree Logo" width={180} height={50} priority={true} className="brand-logo" style={{ objectFit: 'contain' }} />
             </Link>
           </div>
 
@@ -49,37 +68,37 @@ const Header = () => {
             <ul className="d-flex justify-content-center align-items-center m-0 p-0" style={{ listStyle: 'none', gap: '6px' }}>
               <li>
                 <Link href="/" className="premium-nav-link">
-                  <span className="nav-icon"><i className="fas fa-home"></i></span>
+                  <span className="nav-icon"><Home size={16} /></span>
                   <span className="nav-text">HOME</span>
                 </Link>
               </li>
               <li>
                 <Link href="/shop" className="premium-nav-link">
-                  <span className="nav-icon"><i className="fas fa-store"></i></span>
+                  <span className="nav-icon"><Store size={16} /></span>
                   <span className="nav-text">SHOP</span>
                 </Link>
               </li>
               <li>
                 <Link href="/build-combo" className="premium-nav-link">
-                  <span className="nav-icon"><i className="fas fa-gift"></i></span>
+                  <span className="nav-icon"><Gift size={16} /></span>
                   <span className="nav-text">COMBO BOX</span>
                 </Link>
               </li>
               <li>
                 <Link href="/about" className="premium-nav-link">
-                  <span className="nav-icon"><i className="fas fa-leaf"></i></span>
+                  <span className="nav-icon"><Leaf size={16} /></span>
                   <span className="nav-text">ABOUT</span>
                 </Link>
               </li>
               <li>
                 <Link href="/blog" className="premium-nav-link">
-                  <span className="nav-icon"><i className="fas fa-book-open"></i></span>
+                  <span className="nav-icon"><BookOpen size={16} /></span>
                   <span className="nav-text">BLOG</span>
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="premium-nav-link">
-                  <span className="nav-icon"><i className="fas fa-envelope"></i></span>
+                  <span className="nav-icon"><Mail size={16} /></span>
                   <span className="nav-text">CONTACT</span>
                 </Link>
               </li>
@@ -104,7 +123,7 @@ const Header = () => {
                   onClick={() => setIsSearchOpen(!isSearchOpen)}
                   title="Search"
                 >
-                  <i className={isSearchOpen ? "fas fa-times" : "fas fa-search"}></i>
+                  {isSearchOpen ? <X size={18} /> : <Search size={18} />}
                 </button>
               </form>
             </div>
@@ -112,7 +131,7 @@ const Header = () => {
             {/* User Dropdown */}
             <div className="dropdown d-none d-md-flex">
               <button className="header-action-btn" data-bs-toggle="dropdown" aria-expanded="false" title="Account">
-                <i className="far fa-user"></i>
+                <User size={18} />
               </button>
               {user ? (
                 <ul className="dropdown-menu dropdown-menu-end premium-dropdown" aria-label="user menu">
@@ -124,24 +143,24 @@ const Header = () => {
                   {(user?.role === 'Super Admin' || user?.role === 'Manager' || user?.role === 'Staff') && (
                     <li>
                       <Link href="/admin/dashboard" className="dropdown-item premium-dropdown-item">
-                        <i className="fas fa-tachometer-alt me-2 text-success"></i> Admin Panel
+                        <LayoutDashboard size={16} className="me-2 text-success" /> Admin Panel
                       </Link>
                     </li>
                   )}
                   <li>
                     <Link href="/user/profile" className="dropdown-item premium-dropdown-item">
-                      <i className="far fa-user-circle me-2 text-primary"></i> My Profile
+                      <User size={16} className="me-2 text-primary" /> My Profile
                     </Link>
                   </li>
                   <li>
                     <Link href="/user/orders" className="dropdown-item premium-dropdown-item">
-                      <i className="fas fa-box me-2 text-warning"></i> My Orders
+                      <Package size={16} className="me-2 text-warning" /> My Orders
                     </Link>
                   </li>
                   <li><hr className="dropdown-divider my-1" /></li>
                   <li>
                     <button onClick={handleLogout} className="dropdown-item premium-dropdown-item text-danger">
-                      <i className="fas fa-sign-out-alt me-2"></i> Log Out
+                      <LogOut size={16} className="me-2" /> Log Out
                     </button>
                   </li>
                 </ul>
@@ -149,12 +168,12 @@ const Header = () => {
                 <ul className="dropdown-menu dropdown-menu-end premium-dropdown" aria-label="user menu">
                   <li>
                     <Link href="/login" className="dropdown-item premium-dropdown-item">
-                      <i className="fas fa-sign-in-alt me-2 text-success"></i> Sign In
+                      <LogIn size={16} className="me-2 text-success" /> Sign In
                     </Link>
                   </li>
                   <li>
                     <Link href="/register" className="dropdown-item premium-dropdown-item">
-                      <i className="far fa-user-circle me-2 text-primary"></i> Sign Up
+                      <User size={16} className="me-2 text-primary" /> Sign Up
                     </Link>
                   </li>
                 </ul>
@@ -163,7 +182,7 @@ const Header = () => {
 
             {/* Wishlist */}
             <Link href="/wishlist" className="header-action-btn d-none d-md-flex text-decoration-none position-relative" title="Wishlist">
-              <i className="far fa-heart"></i>
+              <Heart size={18} />
               {wishlistCount > 0 && (
                 <span className="header-badge">{wishlistCount}</span>
               )}
@@ -178,13 +197,13 @@ const Header = () => {
               data-bs-target="#cartOffcanvas"
               title="Cart"
             >
-              <i className="fas fa-shopping-basket"></i>
+              <ShoppingBag size={18} />
               <span className="header-badge">{cartCount}</span>
             </a>
 
             {/* Mobile Hamburger */}
             <Link href="#" className="header-action-btn d-lg-none text-decoration-none" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
-              <i className="fas fa-bars"></i>
+              <Menu size={18} />
             </Link>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Inter } from 'next/font/google';
+import { Inter, Outfit } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
 import ReduxProvider from '../components/ReduxProvider';
@@ -8,7 +8,8 @@ import ConditionalFooter from '../components/ConditionalFooter';
 import ScrollToTop from '../components/ScrollToTop';
 
 
-const inter = Inter({ subsets: ['latin'], display: 'swap' });
+const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-inter' });
+const outfit = Outfit({ subsets: ['latin'], display: 'swap', variable: '--font-outfit' });
 
 export const metadata = {
   title: 'Sweettree',
@@ -32,7 +33,7 @@ export default function RootLayout({ children }) {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <link rel="stylesheet" href="/assets/css/style.css" />
       </head>
-      <body className={`${inter.className} d-flex flex-column min-vh-100`}>
+      <body className={`${inter.variable} ${outfit.variable} ${inter.className} d-flex flex-column min-vh-100`}>
         <ReduxProvider>
           <Suspense fallback={null}>
             <ScrollToTop />

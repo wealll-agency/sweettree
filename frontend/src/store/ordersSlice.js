@@ -28,17 +28,7 @@ export const createOrder = createAsyncThunk(
   }
 );
 
-export const verifyPayment = createAsyncThunk(
-  'orders/verifyPayment',
-  async (paymentDetails, { rejectWithValue }) => {
-    try {
-      const response = await axios.post(`${API_URL}/verify`, paymentDetails, getConfig());
-      return response.data; // contains paid order
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Payment verification failed');
-    }
-  }
-);
+
 
 export const fetchMyOrders = createAsyncThunk(
   'orders/fetchAllMy',
@@ -69,7 +59,7 @@ const ordersSlice = createSlice({
   initialState: {
     list: [],
     activeOrder: null,
-    razorpayMetadata: null,
+    ccavenuePayload: null,
     loading: false,
     orderLoading: false,
     error: null
@@ -77,7 +67,7 @@ const ordersSlice = createSlice({
   reducers: {
     clearActiveOrder: (state) => {
       state.activeOrder = null;
-      state.razorpayMetadata = null;
+      state.ccavenuePayload = null;
     }
   },
   extraReducers: (builder) => {
@@ -90,21 +80,12 @@ const ordersSlice = createSlice({
       .addCase(createOrder.fulfilled, (state, action) => {
         state.loading = false;
         state.activeOrder = action.payload.order;
-        state.razorpayMetadata = action.payload.razorpayOrder;
+        state.ccavenuePayload = {
+          encRequest: action.payload.encRequest,
+          accessCode: action.payload.accessCode
+        };
       })
       .addCase(createOrder.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      // Verify Payment
-      .addCase(verifyPayment.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(verifyPayment.fulfilled, (state, action) => {
-        state.loading = false;
-        state.activeOrder = action.payload.order;
-      })
-      .addCase(verifyPayment.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

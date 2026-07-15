@@ -2,7 +2,7 @@
 
 import { Provider, useDispatch } from 'react-redux';
 import { store } from '../store/index.js';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { setCredentials } from '../store/authSlice.js';
 import { hydrateCart } from '../store/cartSlice.js';
 import { hydrateWishlist } from '../store/wishlistSlice.js';
@@ -12,9 +12,11 @@ import axios from 'axios';
 function StateHydrator() {
   const dispatch = useDispatch();
 
+  const hasInitialized = useRef(false);
+
   useEffect(() => {
-    // Auth Hydration
-    // Handled purely by initAuth() now via HttpOnly cookies
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
     
     // Cart Hydration
     const cart = localStorage.getItem('sweettree_cart');
@@ -42,11 +44,24 @@ function StateHydrator() {
     // Session Restoration on Startup
     const initAuth = async () => {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api';
+      
+      // Optimistic session restoration from localStorage
+      const localUser = localStorage.getItem('sweettree_user');
+      if (localUser) {
+        try {
+          dispatch(setCredentials(JSON.parse(localUser)));
+        } catch (e) {
+          localStorage.removeItem('sweettree_user');
+        }
+      } else {
+        dispatch(setCredentials(null));
+      }
+
       try {
         const profileRes = await axios.get(`${apiUrl}/auth/profile`, { withCredentials: true });
         dispatch(setCredentials(profileRes.data.user));
       } catch (e) {
-        // No valid session or guest user
+        // Session invalid, clear it
         dispatch(setCredentials(null));
       }
     };
@@ -72,6 +87,7 @@ function StateHydrator() {
           } catch(err) {
              // Refresh failed, user is definitely logged out
              dispatch(setCredentials(null));
+             return Promise.reject(err);
           }
         }
         return Promise.reject(error);

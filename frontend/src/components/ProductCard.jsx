@@ -1,6 +1,7 @@
 import React, { useEffect, memo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Star, Heart } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../store/cartSlice';
 import { toggleWishlist } from '../store/wishlistSlice';
@@ -9,7 +10,7 @@ import { fetchProducts } from '../store/productsSlice';
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
   const wishlistItems = useSelector((state) => state.wishlist?.items || []);
-  const { items: dbProducts } = useSelector((state) => state.products || { items: [] });
+  const dbProducts = useSelector((state) => state.products?.items || []);
 
   // Dynamically load products if this is a static card with no ID and DB products aren't loaded yet
   useEffect(() => {
@@ -78,8 +79,8 @@ const ProductCard = ({ product }) => {
     <div className="item h-100 px-2 py-3">
       <div className="Sweettree-product-card">
         <div className="product-tags d-flex justify-content-between">
-          {product.tagLeft && <span className={`tag-left ${product.tagLeftClass}`}>{product.tagLeft}</span>}
-          {product.tagRight && <span className={`tag-right ${product.tagRightClass} ms-auto`}>{product.tagRight}</span>}
+          {(product.tagLeft || (resolvedProduct.discount > 0 ? 'PREMIUM' : '')) && <span className={`tag-left ${product.tagLeftClass || ''}`}>{product.tagLeft || (resolvedProduct.discount > 0 ? 'PREMIUM' : '')}</span>}
+          {(product.tagRight || (resolvedProduct.discount > 0 ? `${resolvedProduct.discount}% OFF` : '')) && <span className={`tag-right ${product.tagRightClass || ''} ms-auto`}>{product.tagRight || (resolvedProduct.discount > 0 ? `${resolvedProduct.discount}% OFF` : '')}</span>}
         </div>
         <Link href={`/shop-details?name=${encodeURIComponent(resolvedProduct.name)}`} style={{ textDecoration: 'none', color: 'inherit' }}>
           <div className="product-img-box position-relative" style={{ minHeight: '200px' }}>
@@ -89,13 +90,22 @@ const ProductCard = ({ product }) => {
           <div className="product-meta d-flex justify-content-between align-items-center">
             <span className="brand-text">{resolvedProduct.brand || 'Sweettree'}</span>
             <div className="rating-heart d-flex align-items-center gap-2">
-              {resolvedProduct.rating && <span className="rating-badge"><i className="fas fa-star"></i> {resolvedProduct.rating}</span>}
+              {resolvedProduct.rating && (
+                <span className="rating-badge d-flex align-items-center gap-1">
+                  <Star size={12} fill="#ffb800" stroke="#ffb800" /> {resolvedProduct.rating}
+                </span>
+              )}
               <button 
                 onClick={handleToggleWishlist} 
-                className="btn btn-link p-0 border-0 m-0 text-decoration-none" 
+                className="btn btn-link p-0 border-0 m-0 text-decoration-none d-flex align-items-center" 
                 style={{ zIndex: 10, position: 'relative' }}
               >
-                <i className={`${isWishlisted ? 'fas text-danger' : 'far text-muted'} fa-heart`} style={{ fontSize: '18px', transition: 'color 0.2s ease' }}></i>
+                <Heart 
+                  size={18} 
+                  fill={isWishlisted ? "var(--primary-color)" : "none"} 
+                  className={isWishlisted ? "text-danger" : "text-muted"} 
+                  style={{ transition: 'color 0.2s ease, fill 0.2s ease' }} 
+                />
               </button>
             </div>
           </div>

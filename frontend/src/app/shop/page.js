@@ -341,17 +341,7 @@ function ShopContent() {
                   const finalPrice = product.discountedPrice !== undefined ? product.discountedPrice : product.price;
                   return viewType === 'grid' ? (
                     <div className="col" key={product._id}>
-                      <ProductCard 
-                        product={{
-                          ...product,
-                          image: product.images?.[0] || product.image || '/placeholder.png',
-                          mrp: product.price, // original base price
-                          price: finalPrice, // selling price
-                          brand: product.brand || 'Sweettree',
-                          tagLeft: product.discount > 0 ? 'PREMIUM' : '',
-                          tagRight: product.discount > 0 ? `${product.discount}% OFF` : '',
-                        }} 
-                      />
+                      <ProductCard product={product} />
                     </div>
                   ) : (
                     <div className="col-12" key={product._id}>

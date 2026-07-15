@@ -3,11 +3,12 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { createOrder, verifyPayment } from '../../store/ordersSlice.js';
+import { createOrder } from '../../store/ordersSlice.js';
 import { clearCart, addToCart, applyCouponCode } from '../../store/cartSlice.js';
 import axios from 'axios';
 import { addAddress } from '../../store/authSlice.js';
 import Link from 'next/link';
+import Image from 'next/image';
 import { MapPin, CreditCard, ShoppingBag, Plus } from 'lucide-react';
 
 export default function CheckoutPage() {
@@ -22,6 +23,7 @@ export default function CheckoutPage() {
   const [selectedAddressIndex, setSelectedAddressIndex] = useState(0);
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
   const [recommendedProducts, setRecommendedProducts] = useState([]);
 
   // Coupon states
@@ -44,6 +46,15 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setIsMounted(true);
+    
+    // Parse error from URL if redirected from CCAvenue failure
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('error')) {
+        setPaymentError(params.get('error'));
+      }
+    }
+
     // Fetch recommended products
     const fetchRecommended = async () => {
       try {
@@ -143,70 +154,33 @@ export default function CheckoutPage() {
     };
 
     try {
-      // 1. Create order on backend (returns local order and Razorpay order options)
+      // 1. Create order on backend (returns local order and CCAvenue payload)
       const orderResult = await dispatch(createOrder(orderData)).unwrap();
-      const { order, razorpayOrder } = orderResult;
+      const { encRequest, accessCode } = orderResult;
+      
+      // Clear cart before redirecting
+      dispatch(clearCart());
 
-      // 2. Configure Razorpay SDK
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_T5pGWPZ0XxeNCx', // Public Razorpay Key ID
-        amount: razorpayOrder.amount,
-        currency: razorpayOrder.currency,
-        name: 'Sweettree Enterprises',
-        description: `Payment for Order #${order._id.substring(0, 8)}`,
-        order_id: razorpayOrder.id,
-        handler: async function (response) {
-          // Cryptographic verify response in backend
-          const verifyData = {
-            razorpayOrderId: response.razorpay_order_id,
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpaySignature: response.razorpay_signature
-          };
-
-          const verifyResult = await dispatch(verifyPayment(verifyData)).unwrap();
-          if (verifyResult.success) {
-            dispatch(clearCart());
-            router.push(`/user/orders/${verifyResult.order._id}?success=true`);
-          }
-        },
-        prefill: {
-          name: user.name,
-          email: user.email,
-          contact: user.phone || '9999999999'
-        },
-        theme: {
-          color: '#1E3F20'
-        },
-        modal: {
-          ondismiss: function () {
-            alert('Payment cancelled. Please try checkout again or contact support.');
-          }
-        }
-      };
-
-      // 3. Open Razorpay iframe overlay
-      const loadRazorpay = () => {
-        return new Promise((resolve) => {
-          if (window.Razorpay) {
-            resolve(true);
-            return;
-          }
-          const script = document.createElement('script');
-          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-          script.onload = () => resolve(true);
-          script.onerror = () => resolve(false);
-          document.body.appendChild(script);
-        });
-      };
-
-      const isLoaded = await loadRazorpay();
-
-      if (isLoaded && window.Razorpay) {
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      } else {
-        alert('Razorpay SDK failed to load. Please check your internet connection.');
-      }
+      // 2. Redirect to CCAvenue via POST
+      const form = document.createElement('form');
+      form.method = 'POST';
+      // Use test or production URL based on env (default to production format)
+      form.action = process.env.NEXT_PUBLIC_CCAVENUE_URL || 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+      
+      const encInput = document.createElement('input');
+      encInput.type = 'hidden';
+      encInput.name = 'encRequest';
+      encInput.value = encRequest;
+      form.appendChild(encInput);
+      
+      const accessInput = document.createElement('input');
+      accessInput.type = 'hidden';
+      accessInput.name = 'access_code';
+      accessInput.value = accessCode;
+      form.appendChild(accessInput);
+      
+      document.body.appendChild(form);
+      form.submit();
     } catch (err) {
       alert(err || 'Failed to place order');
     }
@@ -454,12 +428,12 @@ export default function CheckoutPage() {
             )}
 
             {/* Display locally saved guest address if filled */}
-            {!user && street && city && !showNewAddressForm && (
+            {!user && address && city && !showNewAddressForm && (
               <div className="mt-3 p-3 rounded border border-success bg-light d-flex justify-content-between align-items-start">
                 <div>
                   <h6 className="fw-bold mb-1">Guest Details</h6>
-                  <p className="m-0 text-muted fs-7">{street}, {city}</p>
-                  <p className="m-0 text-muted fs-7">{stateName} - {zipCode}, {country}</p>
+                  <p className="m-0 text-muted fs-7">{address}, {city}</p>
+                  <p className="m-0 text-muted fs-7">{stateName} - {pincode}</p>
                 </div>
                 <span className="badge bg-success">Ready for Checkout</span>
               </div>
@@ -474,7 +448,7 @@ export default function CheckoutPage() {
             <div className="p-3 rounded border border-success bg-light d-flex align-items-center gap-3">
               <input type="radio" checked readOnly className="form-check-input" />
               <div>
-                <h6 className="fw-bold m-0 text-success">Razorpay Payment Gateway</h6>
+                <h6 className="fw-bold m-0 text-success">CCAvenue Secure Payment</h6>
                 <small className="text-muted">Pay securely using Cards, Net Banking, UPI, or Wallets.</small>
               </div>
             </div>
@@ -563,10 +537,11 @@ export default function CheckoutPage() {
             </div>
 
             {error && <div className="alert alert-danger p-2 fs-8 mt-3">{error}</div>}
+            {paymentError && <div className="alert alert-danger p-2 fs-8 mt-3"><i className="fas fa-exclamation-triangle me-1"></i> {paymentError}</div>}
 
             <button
               onClick={handlePlaceOrder}
-              disabled={loading || (user && user.addresses?.length === 0) || (!user && (!street || !city))}
+              disabled={loading || (user && user.addresses?.length === 0) || (!user && (!address || !city))}
               className="btn btn-brand w-100 py-3 mt-4 fw-bold fs-6 d-flex align-items-center justify-content-center gap-2"
             >
               {loading ? 'Processing Order...' : 'Pay Now'}
@@ -593,11 +568,13 @@ export default function CheckoutPage() {
                   return (
                     <div key={product._id} className="col-6 col-md-4">
                       <div className="p-2 bg-white border rounded shadow-sm h-100 d-flex flex-column align-items-center text-center">
-                        <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#f8f9fa', marginBottom: '8px' }}>
-                          <img 
+                        <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#f8f9fa', marginBottom: '8px', position: 'relative' }}>
+                          <Image 
                             src={imageSrc} 
                             alt={product.name}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            fill
+                            sizes="(max-width: 768px) 100vw, 33vw"
+                            style={{ objectFit: 'cover' }}
                             onError={(e) => { e.target.src = 'https://via.placeholder.com/60?text=No+Image'; }}
                           />
                         </div>

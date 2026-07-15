@@ -3,9 +3,9 @@ import mongoose from 'mongoose';
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   category: { type: String, required: true, index: true },
-  subCategory: { type: String, default: '' },
+  subCategory: { type: String, default: '', index: true },
   subSubCategory: { type: String, default: '' },
-  brand: { type: String, default: '' },
+  brand: { type: String, default: '', index: true },
   productType: { type: String, enum: ['Physical', 'Digital'], default: 'Physical' },
   sku: { type: String, default: '' },
   unit: { type: String, default: 'kg' },
@@ -22,8 +22,14 @@ const productSchema = new mongoose.Schema({
   shippingCost: { type: Number, default: 0, min: 0 },
   shippingMultiplyWithQty: { type: Boolean, default: false },
   
+  packSizes: [{
+    weight: { type: Number, required: true },
+    unit: { type: String, required: true },
+    price: { type: Number, required: true, min: 0 }
+  }],
+  
   isFeatured: { type: Boolean, default: false },
-  isActive: { type: Boolean, default: true },
+  isActive: { type: Boolean, default: true, index: true },
   
   description: { type: String, required: true },
   ingredients: [{ type: String }],
@@ -55,6 +61,8 @@ productSchema.set('toObject', { virtuals: true });
 
 // Create text index for search
 productSchema.index({ name: 'text', category: 'text', description: 'text' });
+productSchema.index({ createdAt: -1 });
+productSchema.index({ price: 1 });
 
 const Product = mongoose.model('Product', productSchema);
 export default Product;

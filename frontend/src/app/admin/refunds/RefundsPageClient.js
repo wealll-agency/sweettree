@@ -84,23 +84,28 @@ export default function RefundsPageClient({ status }) {
           <table className="table table-hover align-middle mb-0 text-center" style={{ minWidth: '800px' }}>
             <thead className="table-light">
               <tr>
-                <th className="py-3 text-muted fw-bold border-bottom-0" style={{ fontSize: '0.85rem' }}>SL</th>
-                <th className="py-3 text-muted fw-bold border-bottom-0" style={{ fontSize: '0.85rem' }}>Order Id</th>
-                <th className="py-3 text-muted fw-bold border-bottom-0" style={{ fontSize: '0.85rem' }}>Product Info</th>
-                <th className="py-3 text-muted fw-bold border-bottom-0" style={{ fontSize: '0.85rem' }}>Customer Info</th>
-                <th className="py-3 text-muted fw-bold border-bottom-0" style={{ fontSize: '0.85rem' }}>Total Amount</th>
-                <th className="py-3 text-muted fw-bold border-bottom-0" style={{ fontSize: '0.85rem' }}>Refund Status</th>
-                <th className="py-3 text-muted fw-bold border-bottom-0" style={{ fontSize: '0.85rem' }}>Action</th>
+                <th className="py-3 text-muted fw-bold border-bottom-0" style={{ fontSize: '0.85rem', width: '60px' }}>SL</th>
+                <th className="py-3 text-muted fw-bold border-bottom-0" style={{ fontSize: '0.85rem', width: '180px' }}>Order Id</th>
+                <th className="py-3 text-muted fw-bold border-bottom-0" style={{ fontSize: '0.85rem', width: '220px' }}>Product Info</th>
+                <th className="py-3 text-muted fw-bold border-bottom-0" style={{ fontSize: '0.85rem', width: '220px' }}>Customer Info</th>
+                <th className="py-3 text-muted fw-bold border-bottom-0" style={{ fontSize: '0.85rem', width: '130px' }}>Total Amount</th>
+                <th className="py-3 text-muted fw-bold border-bottom-0" style={{ fontSize: '0.85rem', width: '160px' }}>Refund Status</th>
+                <th className="py-3 text-muted fw-bold border-bottom-0" style={{ fontSize: '0.85rem', width: '100px' }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {refundsLoading ? (
-                <tr>
-                  <td colSpan="7" className="text-center py-5 text-muted">
-                    <div className="spinner-border spinner-border-sm me-2 text-primary" role="status"></div>
-                    Loading...
-                  </td>
-                </tr>
+                [1, 2, 3].map((i) => (
+                  <tr key={i} className="border-bottom" style={{ opacity: 0.5 }}>
+                    <td className="py-3"><div className="bg-light rounded mx-auto" style={{ width: '20px', height: '18px' }}></div></td>
+                    <td className="py-3"><div className="bg-light rounded mx-auto" style={{ width: '120px', height: '18px' }}></div></td>
+                    <td className="py-3"><div className="bg-light rounded" style={{ width: '150px', height: '18px' }}></div></td>
+                    <td className="py-3"><div className="bg-light rounded" style={{ width: '120px', height: '18px' }}></div></td>
+                    <td className="py-3"><div className="bg-light rounded mx-auto" style={{ width: '60px', height: '18px' }}></div></td>
+                    <td className="py-3"><div className="bg-light rounded mx-auto" style={{ width: '80px', height: '24px', borderRadius: '50px' }}></div></td>
+                    <td className="py-3"><div className="bg-light rounded-circle mx-auto" style={{ width: '32px', height: '32px' }}></div></td>
+                  </tr>
+                ))
               ) : filteredRefunds.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="text-center py-5">

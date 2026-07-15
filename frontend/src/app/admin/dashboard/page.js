@@ -23,46 +23,29 @@ export default function DashboardPage() {
     dispatch(fetchDashboardStats());
   }, [dispatch]);
 
-  if (loading) {
-    return (
-      <div className="text-center py-5">
-        <div className="spinner-border text-success" role="status">
-          <span className="visually-hidden">Loading dashboard metrics...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !stats) {
-    return (
-      <div className="text-center py-5">
-        <div className="alert alert-danger d-inline-block">
-          Failed to load dashboard metrics. {error || 'No data available.'}
-        </div>
-      </div>
-    );
-  }
-
-  // Draw custom SVG chart path based on monthly sales data
-  const chartHeight = 180;
-  const chartWidth = 500;
-  const padding = 30;
-
-  const points = salesOverview.length > 0 ? salesOverview.map((item, idx) => {
-    const maxVal = Math.max(...salesOverview.map(s => s.revenue), 1000);
-    const x = padding + (idx * (chartWidth - padding * 2)) / (salesOverview.length - 1 || 1);
-    const y = chartHeight - padding - (item.revenue * (chartHeight - padding * 2)) / maxVal;
-    return `${x},${y}`;
-  }).join(' ') : '';
-
   return (
     <div className="animate-fade-in">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h1 className="fw-bold m-0 display-font">Console Dashboard</h1>
-          <p className="text-muted m-0">Welcome back, {user.name}. Here is what is happening today.</p>
+          <p className="text-muted m-0">Welcome back, {user?.name || 'Admin'}. Here is what is happening today.</p>
         </div>
       </div>
+
+      {loading ? (
+        <div className="text-center py-5 mt-5">
+          <div className="spinner-border text-success" role="status">
+            <span className="visually-hidden">Loading dashboard metrics...</span>
+          </div>
+        </div>
+      ) : error || !stats ? (
+        <div className="text-center py-5">
+          <div className="alert alert-danger d-inline-block">
+            Failed to load dashboard metrics. {error || 'No data available.'}
+          </div>
+        </div>
+      ) : (
+        <>
 
       {/* Business Analytics */}
       <h5 className="fw-bold mb-3 d-flex align-items-center gap-2">
@@ -217,6 +200,8 @@ export default function DashboardPage() {
 
 
 
+        </>
+      )}
     </div>
   );
 }

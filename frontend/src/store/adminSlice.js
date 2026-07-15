@@ -38,10 +38,12 @@ export const fetchAdminProducts = createAsyncThunk(
       if (filters.subCategory) queryParams.append('subCategory', filters.subCategory);
       if (filters.subSubCategory) queryParams.append('subSubCategory', filters.subSubCategory);
       if (filters.keyword) queryParams.append('keyword', filters.keyword);
+      if (filters.page) queryParams.append('page', filters.page);
+      if (filters.limit) queryParams.append('limit', filters.limit);
 
       const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
       const response = await axios.get(`${PRODUCTS_URL}${queryString}`, getConfig());
-      return response.data.products;
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch products');
     }
@@ -98,10 +100,15 @@ export const removeProduct = createAsyncThunk(
 
 export const fetchAdminOrders = createAsyncThunk(
   'admin/fetchOrders',
-  async (_, { rejectWithValue }) => {
+  async (filters = {}, { rejectWithValue }) => {
     try {
-      const response = await axios.get(ORDERS_URL, getConfig());
-      return response.data.orders;
+      const queryParams = new URLSearchParams();
+      if (filters.page) queryParams.append('page', filters.page);
+      if (filters.limit) queryParams.append('limit', filters.limit);
+
+      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+      const response = await axios.get(`${ORDERS_URL}${queryString}`, getConfig());
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch orders');
     }
@@ -165,7 +172,11 @@ const adminSlice = createSlice({
     topProducts: [],
     lowStockDetails: [],
     products: [],
+    productsTotalPages: 1,
+    productsCurrentPage: 1,
     orders: [],
+    ordersTotalPages: 1,
+    ordersCurrentPage: 1,
     refunds: [],
     loading: false,
     ordersLoading: false,
@@ -201,7 +212,9 @@ const adminSlice = createSlice({
       })
       .addCase(fetchAdminProducts.fulfilled, (state, action) => {
         state.productsLoading = false;
-        state.products = action.payload;
+        state.products = action.payload.products || action.payload;
+        state.productsTotalPages = action.payload.pages || 1;
+        state.productsCurrentPage = action.payload.currentPage || 1;
       })
       // Add product
       .addCase(addProduct.fulfilled, (state, action) => {
@@ -231,7 +244,9 @@ const adminSlice = createSlice({
       })
       .addCase(fetchAdminOrders.fulfilled, (state, action) => {
         state.ordersLoading = false;
-        state.orders = action.payload;
+        state.orders = action.payload.orders || action.payload;
+        state.ordersTotalPages = action.payload.pages || 1;
+        state.ordersCurrentPage = action.payload.currentPage || 1;
       })
       // Update order status
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
