@@ -633,13 +633,30 @@ export default function AdminProductsPage() {
                         <option value="pack">pack</option>
                       </select>
                     </div>
-                    <div className="col-md-4">
-                      <label className="fs-7 mb-1">Specific Price (₹)</label>
+                    <div className="col-md-2">
+                      <label className="fs-7 mb-1">MRP Price (₹)</label>
                       <input type="number" className="form-control" value={pack.price} onChange={(e) => {
                         const newPacks = [...packSizes];
                         newPacks[index].price = e.target.value;
                         setPackSizes(newPacks);
                       }} />
+                    </div>
+                    <div className="col-md-2 d-flex flex-column justify-content-end pb-1">
+                      <label className="fs-8 text-muted mb-1">Selling Price</label>
+                      <span className="fw-bold text-success fs-5">
+                        ₹{(() => {
+                          const p = parseFloat(pack.price) || 0;
+                          const d = parseFloat(discount) || 0;
+                          if (d > 0) {
+                            if (discountType === 'Percent') {
+                              return Math.max(0, Math.round(p * (1 - d / 100)));
+                            } else {
+                              return Math.max(0, Math.round(p - d));
+                            }
+                          }
+                          return Math.round(p);
+                        })()}
+                      </span>
                     </div>
                     <div className="col-md-2">
                       <button type="button" className="btn btn-outline-danger w-100" onClick={() => {
