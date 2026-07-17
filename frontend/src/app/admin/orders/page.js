@@ -760,10 +760,10 @@ function AdminOrdersContent() {
             </div>
 
             {/* Footer Declarations & Signatures */}
-            <table className="invoice-table" style={{ border: 'none' }}>
+            <table className="invoice-table" style={{ border: 'none', pageBreakInside: 'avoid' }}>
               <tbody>
                 <tr style={{ border: 'none' }}>
-                  <td style={{ width: '55%', border: 'none', borderRight: '1px solid #000' }}>
+                  <td style={{ width: '55%', border: 'none', borderRight: '1px solid #000', verticalAlign: 'top', padding: '10px' }}>
                     <div className="fw-bold" style={{ fontSize: '9px', textTransform: 'uppercase' }}>Declaration:</div>
                     <div style={{ fontSize: '10px' }}>We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.</div>
                     
@@ -773,13 +773,13 @@ function AdminOrdersContent() {
                     <div>A/c No.: <strong>339505000253</strong></div>
                     <div>Branch & IFS Code: <strong>POSTA BRANCH & ICIC0003395</strong></div>
                     
-                    <div style={{ borderTop: '1px solid #000', marginTop: '30px', paddingTop: '5px', width: '150px' }} className="text-center">
+                    <div style={{ borderTop: '1px solid #000', marginTop: '40px', paddingTop: '5px', width: '150px' }} className="text-center">
                       Customer's Seal and Signature
                     </div>
                   </td>
-                  <td style={{ width: '45%', border: 'none' }} className="text-end d-flex flex-column align-items-end justify-content-between">
-                    <div className="fw-bold text-end" style={{ width: '100%' }}>for Sweettree Enterprises</div>
-                    <div style={{ marginTop: '60px', borderTop: '1px solid #000', paddingTop: '5px', width: '180px' }} className="text-center fw-bold">
+                  <td style={{ width: '45%', border: 'none', verticalAlign: 'top', padding: '10px', textAlign: 'right' }}>
+                    <div className="fw-bold text-end">for Sweettree Enterprises</div>
+                    <div style={{ marginTop: '140px', borderTop: '1px solid #000', paddingTop: '5px', width: '180px', display: 'inline-block' }} className="text-center fw-bold">
                       Authorised Signatory
                     </div>
                   </td>

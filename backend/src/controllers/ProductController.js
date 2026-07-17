@@ -149,16 +149,7 @@ export const createProduct = async (req, res, next) => {
       batchNumber,
       expiryDate: expiryDate ? new Date(expiryDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Default 1 year expiry
       stock: Number(stock) || 0,
-      packSizes: (() => {
-        const rawSizes = typeof packSizes === 'string' ? JSON.parse(packSizes) : (packSizes || []);
-        return rawSizes
-          .filter(size => size && size.weight && size.price)
-          .map(size => ({
-            weight: Number(size.weight),
-            unit: size.unit,
-            price: Number(size.price)
-          }));
-      })()
+      packSizes: (typeof packSizes === 'string' ? JSON.parse(packSizes) : (packSizes || [])).filter(p => p.weight !== '' && p.weight !== null && p.weight !== undefined && p.price !== '' && p.price !== null && p.price !== undefined)
     });
 
     const createdProduct = await product.save();
@@ -215,14 +206,10 @@ export const updateProduct = async (req, res, next) => {
       product.shippingMultiplyWithQty = req.body.shippingMultiplyWithQty !== undefined ? (req.body.shippingMultiplyWithQty === 'true' || req.body.shippingMultiplyWithQty === true) : product.shippingMultiplyWithQty;
       
       if (req.body.packSizes !== undefined) {
-        const rawSizes = typeof req.body.packSizes === 'string' ? JSON.parse(req.body.packSizes) : req.body.packSizes;
-        product.packSizes = (rawSizes || [])
-          .filter(size => size && size.weight && size.price)
-          .map(size => ({
-            weight: Number(size.weight),
-            unit: size.unit,
-            price: Number(size.price)
-          }));
+        let parsed = typeof req.body.packSizes === 'string' ? JSON.parse(req.body.packSizes) : req.body.packSizes;
+        parsed = (parsed || []).filter(p => p.weight !== '' && p.weight !== null && p.weight !== undefined && p.price !== '' && p.price !== null && p.price !== undefined);
+        product.packSizes = parsed;
+        product.markModified('packSizes');
       }
 
       product.isFeatured = req.body.isFeatured !== undefined ? (req.body.isFeatured === 'true' || req.body.isFeatured === true) : product.isFeatured;

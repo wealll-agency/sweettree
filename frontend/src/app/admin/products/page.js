@@ -253,8 +253,7 @@ export default function AdminProductsPage() {
     payload.append('batchNumber', batchNumber);
     payload.append('expiryDate', expiryDate);
     payload.append('stock', stock);
-    const validPackSizes = packSizes.filter(p => p.weight && p.price);
-    payload.append('packSizes', JSON.stringify(validPackSizes));
+    payload.append('packSizes', JSON.stringify(packSizes));
 
     if (imageFile) {
       payload.append('image', imageFile);

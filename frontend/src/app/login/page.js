@@ -22,6 +22,7 @@ function LoginContent() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { user, loading, error } = useSelector((state) => state.auth);
   const redirect = searchParams.get('redirect') || '';
@@ -39,12 +40,14 @@ function LoginContent() {
     dispatch(clearError());
   }, [user, redirect, router, dispatch]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       return;
     }
-    dispatch(loginUser({ email, password }));
+    setIsSubmitting(true);
+    await dispatch(loginUser({ email, password }));
+    setIsSubmitting(false);
   };
 
   return (
@@ -95,10 +98,10 @@ function LoginContent() {
 
           <button 
             type="submit" 
-            disabled={loading}
+            disabled={isSubmitting}
             className="btn btn-brand w-100 py-3 mt-2 fw-semibold fs-6"
           >
-            {loading ? 'Logging In...' : 'Log In'}
+            {isSubmitting ? 'Logging In...' : 'Log In'}
           </button>
         </form>
 
