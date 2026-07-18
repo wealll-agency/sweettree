@@ -131,7 +131,7 @@ export default function AdminSidebar() {
         <div className={`px-3 mb-5 ${isCollapsed ? 'text-center' : 'px-4'}`}>
           {!isCollapsed ? (
             <>
-              <span className="fs-3 fw-bold display-font text-white">Sweettree Admin</span>
+              <span className="fs-3 fw-bold display-font text-white">Sweettree<sup style={{ fontSize: '11px', verticalAlign: 'super', textTransform: 'lowercase', marginLeft: '1px' }}>on</sup> Admin</span>
               <div className="badge bg-success bg-opacity-25 text-success border border-success border-opacity-20 mt-1 fs-8">
                 {user.role} System
               </div>
