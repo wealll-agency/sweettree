@@ -41,7 +41,13 @@ connectDB();
 app.use(helmet({
   crossOriginResourcePolicy: false // Allows loading local static upload files in local frontend/admin images
 }));
-const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:7051'];
+const allowedOrigins = [
+  'http://localhost:3000', 
+  'http://localhost:3001', 
+  'http://localhost:7051',
+  'https://sweettreeon.com',
+  'https://www.sweettreeon.com'
+];
 if (process.env.FRONTEND_URL) {
   allowedOrigins.push(...process.env.FRONTEND_URL.split(',').map(url => url.trim()));
 }

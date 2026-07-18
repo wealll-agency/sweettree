@@ -24,6 +24,7 @@ export default function CheckoutPage() {
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [paymentError, setPaymentError] = useState('');
+  const [addressError, setAddressError] = useState('');
   const [recommendedProducts, setRecommendedProducts] = useState([]);
 
   // Coupon states
@@ -141,6 +142,9 @@ export default function CheckoutPage() {
         setSelectedAddressIndex(addresses.length - 1);
         setAddrName(''); setAddrPhone(''); setPincode(''); setLocality('');
         setAddress(''); setCity(''); setStateName(''); setLandmark(''); setAltPhone('');
+      })
+      .catch((err) => {
+        setAddressError(err || 'Failed to save address. Please try again.');
       });
   };
 

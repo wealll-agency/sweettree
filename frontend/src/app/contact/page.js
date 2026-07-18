@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
 
 export default function ContactPage() {
   const [form, setForm] = useState({ firstName: '', lastName: '', phone: '', email: '', queryType: 'Order Related Queries', message: '' });

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Tag, Trash2, PlusCircle, AlertCircle } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
 
 const getConfig = () => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;

@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { Mail, MailOpen, Trash2, RefreshCw } from 'lucide-react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
 
 export default function EnquiriesPage() {
   const { user } = useSelector((state) => state.auth);

@@ -96,14 +96,15 @@ export const logoutUser = async (req, res, next) => {
     if (req.user) {
       await logActivity(req.user._id, 'LOGOUT', `User logged out`, req);
     }
-    res.cookie('token', '', {
+    const cookieOptions = {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      ...(process.env.NODE_ENV === 'production' && { domain: '.sweettreeon.com' }),
       expires: new Date(0)
-    });
-    res.cookie('refreshToken', '', {
-      httpOnly: true,
-      expires: new Date(0)
-    });
+    };
+    res.cookie('token', '', cookieOptions);
+    res.cookie('refreshToken', '', cookieOptions);
     res.status(200).json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
     next(error);

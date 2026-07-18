@@ -172,7 +172,7 @@ function ShopDetailsContent() {
           <div className="mb-3 position-relative text-center border rounded-2 p-4">
              {realProduct.isFeatured && <span className="badge bg-primary position-absolute top-0 start-0 m-3">PREMIUM</span>}
             <Image
-              src={images[activeImageIndex]?.startsWith('http') ? images[activeImageIndex] : (images[activeImageIndex] ? `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:7050'}${images[activeImageIndex]}` : '/top_product1.png')}
+              src={images[activeImageIndex]?.startsWith('http') ? images[activeImageIndex] : (images[activeImageIndex] ? `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'https://sweettreeon.com'}${images[activeImageIndex]}` : '/top_product1.png')}
               alt={realProduct.name}
               width={500}
               height={400}
@@ -189,7 +189,7 @@ function ShopDetailsContent() {
                 style={{ width: '60px', height: '60px' }}
                 onClick={() => setActiveImageIndex(index)}
               >
-                  <Image src={imgUrl.startsWith('http') ? imgUrl : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:7050'}${imgUrl}`} width={60} height={60} className="img-fluid h-100 object-fit-contain" alt={`Thumbnail ${index}`} />
+                  <Image src={imgUrl.startsWith('http') ? imgUrl : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'https://sweettreeon.com'}${imgUrl}`} width={60} height={60} className="img-fluid h-100 object-fit-contain" alt={`Thumbnail ${index}`} />
               </div>
             ))}
           </div>
