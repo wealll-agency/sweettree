@@ -177,7 +177,7 @@ export default function Home() {
       <div className="healthy-snacks-section py-5">
          <ProductCarouselSection title="Healthy Snacks" products={healthySnacking} />
       </div>
-      <HealthyCombo />
+      {/* <HealthyCombo /> */}
       <ShopByPurpose />
       <CashewsBanner />
       <RecentBlogs />
