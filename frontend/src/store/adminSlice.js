@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const PRODUCTS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/products` : 'http://localhost:7050/api/products';
-const ORDERS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/orders` : 'http://localhost:7050/api/orders';
-const REPORTS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/reports` : 'http://localhost:7050/api/reports';
-const REFUNDS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/refunds` : 'http://localhost:7050/api/refunds';
-const DELHIVERY_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/delhivery` : 'http://localhost:7050/api/delhivery';
-const WAREHOUSES_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/warehouses` : 'http://localhost:7050/api/warehouses';
+const PRODUCTS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/products` : 'https://sweettreeon.com/api/products';
+const ORDERS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/orders` : 'https://sweettreeon.com/api/orders';
+const REPORTS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/reports` : 'https://sweettreeon.com/api/reports';
+const REFUNDS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/refunds` : 'https://sweettreeon.com/api/refunds';
+const DELHIVERY_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/delhivery` : 'https://sweettreeon.com/api/delhivery';
+const WAREHOUSES_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/warehouses` : 'https://sweettreeon.com/api/warehouses';
 
 axios.defaults.withCredentials = true;
 

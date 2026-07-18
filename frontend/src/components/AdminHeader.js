@@ -7,7 +7,7 @@ import { logoutUser } from '../store/authSlice.js';
 import { clearCart } from '../store/cartSlice.js';
 import { Home, Bell, User, LogOut, ShoppingCart, RotateCcw, MessageSquare, Truck, CheckCircle, ChevronRight } from 'lucide-react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
 
 const TYPE_CONFIG = {
   new_order:       { icon: <ShoppingCart size={15} />, color: '#3b82f6', bg: '#eff6ff' },

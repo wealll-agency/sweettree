@@ -56,7 +56,7 @@ export default function CheckoutPage() {
 
     const fetchGlobalSettings = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
         const res = await axios.get(`${apiUrl}/auth/settings?t=${Date.now()}`);
         if (res.data.success) {
           setHasCodPermission(res.data.settings.cod !== false);
@@ -78,7 +78,7 @@ export default function CheckoutPage() {
     // Fetch recommended products
     const fetchRecommended = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
         const res = await axios.get(`${apiUrl}/products`);
         if (res.data.success) {
           // Exclude products already in cart, get top 3
@@ -233,7 +233,7 @@ export default function CheckoutPage() {
         withCredentials: true
       };
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
       const response = await axios.post(`${apiUrl}/coupons/apply`, { code: couponInput.trim() }, config);
       
       const applicableProducts = response.data.applicableProducts || [];

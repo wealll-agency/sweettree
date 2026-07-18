@@ -10,7 +10,7 @@ export default function CustomerAccessPage() {
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null); // { type: 'success' | 'danger', text: '' }
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api';
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
 
   const fetchSettings = async () => {
     setLoading(true);

@@ -25,7 +25,7 @@ export default function AdminSidebar() {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
         if (!token) return;
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api'}/enquiries`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api'}/enquiries`, {
           headers: { Authorization: `Bearer ${token}` },
           credentials: 'include'
         });
@@ -38,7 +38,7 @@ export default function AdminSidebar() {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
         if (!token) return;
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api'}/refunds?status=Pending`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api'}/refunds?status=Pending`, {
           headers: { Authorization: `Bearer ${token}` },
           credentials: 'include'
         });

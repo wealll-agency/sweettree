@@ -1,9 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/orders` : 'http://localhost:7050/api/orders';
-const DELHIVERY_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/delhivery` : 'http://localhost:7050/api/delhivery';
-const REFUND_API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/refunds` : 'http://localhost:7050/api/refunds';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/orders` : 'https://sweettreeon.com/api/orders';
+const DELHIVERY_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/delhivery` : 'https://sweettreeon.com/api/delhivery';
+const REFUND_API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/refunds` : 'https://sweettreeon.com/api/refunds';
 
 // Configure axios to support cookies
 axios.defaults.withCredentials = true;
