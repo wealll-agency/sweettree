@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
 import { logActivity } from '../middleware/logger.js';
 import jwt from 'jsonwebtoken';
+import SystemSetting from '../models/SystemSetting.js';
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -41,7 +42,8 @@ export const registerUser = async (req, res, next) => {
           email: user.email,
           phone: user.phone,
           role: user.role,
-          addresses: user.addresses
+          addresses: user.addresses,
+          permissions: user.permissions instanceof Map ? Object.fromEntries(user.permissions) : user.permissions
         }
       });
     } else {
@@ -56,13 +58,13 @@ export const registerUser = async (req, res, next) => {
 // @route   POST /api/auth/login
 // @access  Public
 export const loginUser = async (req, res, next) => {
-  const { email, password } = req.body;
+  const { email, password, rememberMe } = req.body;
 
   try {
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
-      const token = generateToken(res, user._id);
+      const token = generateToken(res, user._id, rememberMe !== false);
       await logActivity(user._id, 'LOGIN', `User logged in`, req);
 
       res.json({
@@ -74,7 +76,8 @@ export const loginUser = async (req, res, next) => {
           email: user.email,
           phone: user.phone,
           role: user.role,
-          addresses: user.addresses
+          addresses: user.addresses,
+          permissions: user.permissions instanceof Map ? Object.fromEntries(user.permissions) : user.permissions
         }
       });
     } else {
@@ -128,14 +131,14 @@ export const refreshTokenUser = async (req, res, next) => {
     const accessToken = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET || 'super_secret_jwt_key_for_sweettree_2026_enterprise',
-      { expiresIn: '15m' }
+      { expiresIn: '7d' }
     );
 
     res.cookie('token', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 15 * 60 * 1000 // 15 minutes
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
     res.json({ success: true, token: accessToken });
@@ -321,6 +324,70 @@ export const deleteAddress = async (req, res, next) => {
     } else {
       res.status(404).json({ success: false, message: 'User not found' });
     }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get system settings
+// @route   GET /api/auth/settings
+// @access  Public
+export const getSystemSettings = async (req, res, next) => {
+  try {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    const codSetting = await SystemSetting.findOne({ key: 'cod' });
+    const refundSetting = await SystemSetting.findOne({ key: 'refund' });
+
+    res.json({
+      success: true,
+      settings: {
+        cod: codSetting ? codSetting.value : true,
+        refund: refundSetting ? refundSetting.value : true
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update system settings
+// @route   PUT /api/auth/settings
+// @access  Private/Admin
+export const updateSystemSettings = async (req, res, next) => {
+  const { settings } = req.body;
+  console.log('updateSystemSettings called! body settings:', settings);
+
+  try {
+    if (settings && typeof settings === 'object') {
+      if (settings.cod !== undefined) {
+        await SystemSetting.findOneAndUpdate(
+          { key: 'cod' },
+          { value: Boolean(settings.cod) },
+          { upsert: true, new: true }
+        );
+      }
+      if (settings.refund !== undefined) {
+        await SystemSetting.findOneAndUpdate(
+          { key: 'refund' },
+          { value: Boolean(settings.refund) },
+          { upsert: true, new: true }
+        );
+      }
+    }
+
+    await logActivity(req.user._id, 'UPDATE_SYSTEM_SETTINGS', `Updated global access settings`, req);
+
+    const codSetting = await SystemSetting.findOne({ key: 'cod' });
+    const refundSetting = await SystemSetting.findOne({ key: 'refund' });
+
+    res.json({
+      success: true,
+      message: 'System settings updated successfully',
+      settings: {
+        cod: codSetting ? codSetting.value : true,
+        refund: refundSetting ? refundSetting.value : true
+      }
+    });
   } catch (error) {
     next(error);
   }

@@ -12,22 +12,22 @@ const connectDB = async () => {
     connectTimeoutMS: 15000,
   };
 
+  // Bind connection events before connecting
+  mongoose.connection.on('disconnected', () => {
+    console.warn('MongoDB disconnected! Attempting to reconnect...');
+  });
+
+  mongoose.connection.on('reconnected', () => {
+    console.log('MongoDB reconnected!');
+  });
+
+  mongoose.connection.on('error', (err) => {
+    console.error('MongoDB connection error in pool:', err.message);
+  });
+
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/sweettree', options);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
-
-    mongoose.connection.on('disconnected', () => {
-      console.warn('MongoDB disconnected! Attempting to reconnect...');
-    });
-
-    mongoose.connection.on('reconnected', () => {
-      console.log('MongoDB reconnected!');
-    });
-
-    mongoose.connection.on('error', (err) => {
-      console.error('MongoDB connection error in pool:', err.message);
-    });
-
   } catch (error) {
     console.error(`MongoDB connection error during startup: ${error.message}`);
     process.exit(1);

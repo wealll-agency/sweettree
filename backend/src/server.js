@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import https from 'https';
+import mongoose from 'mongoose';
 
 // Config imports
 import connectDB from './config/db.js';
@@ -23,6 +24,8 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import refundRoutes from './routes/refundRoutes.js';
 import enquiryRoutes from './routes/enquiryRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import delhiveryRoutes from './routes/delhivery.routes.js';
+import warehouseRoutes from './routes/warehouse.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -65,6 +68,8 @@ app.use('/api/uploads', uploadRoutes);
 app.use('/api/refunds', refundRoutes);
 app.use('/api/enquiries', enquiryRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/delhivery', delhiveryRoutes);
+app.use('/api/warehouses', warehouseRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -100,8 +105,39 @@ if (process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH) {
 }
 
 
-// Graceful shutdown
+// Graceful Shutdown Handler
+const gracefulShutdown = () => {
+  console.log('Initiating graceful shutdown...');
+  server.close(async () => {
+    console.log('HTTP/HTTPS server closed.');
+    try {
+      await mongoose.connection.close(false);
+      console.log('MongoDB connection closed.');
+      process.exit(0);
+    } catch (err) {
+      console.error('Error closing MongoDB connection:', err);
+      process.exit(1);
+    }
+  });
+  
+  // Force shutdown if it takes too long (10s)
+  setTimeout(() => {
+    console.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
+};
+
+// Listen for termination signals (e.g., from Docker, PM2, or Ctrl+C)
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+
 process.on('unhandledRejection', (err) => {
   console.error(`Unhandled Rejection: ${err.message}`);
-  server.close(() => process.exit(1));
+  gracefulShutdown();
 });
+
+// Trigger reload for nodemon configuration updates.
+
+// Reload trigger 2
+
+// Reload trigger 3

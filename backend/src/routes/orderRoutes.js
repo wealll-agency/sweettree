@@ -6,7 +6,9 @@ import {
   getOrderById,
   getAllOrders,
   updateOrderStatus,
-  processRefund
+  processRefund,
+  getAdminShipments,
+  getShipmentByWaybill
 } from '../controllers/OrderController.js';
 import { protect, authorizeRoles } from '../middleware/auth.js';
 import { auditRoute } from '../middleware/logger.js';
@@ -16,6 +18,12 @@ const router = express.Router();
 router.route('/')
   .post(protect, createOrder)
   .get(protect, authorizeRoles('Super Admin', 'Manager', 'Staff'), getAllOrders);
+
+router.route('/shipments')
+  .get(protect, authorizeRoles('Super Admin', 'Manager', 'Staff'), getAdminShipments);
+
+router.route('/shipments/:waybill')
+  .get(protect, authorizeRoles('Super Admin', 'Manager', 'Staff'), getShipmentByWaybill);
 
 router.post('/ccavenue-callback', ccavenueCallback);
 router.get('/my-orders', protect, getMyOrders);

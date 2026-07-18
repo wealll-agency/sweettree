@@ -38,7 +38,8 @@ const productSchema = new mongoose.Schema({
   videos: [{ type: String }],
   batchNumber: { type: String, required: true },
   expiryDate: { type: Date, required: true },
-  stock: { type: Number, required: true, default: 0, min: 0 }
+  stock: { type: Number, required: true, default: 0, min: 0 },
+  warehouse: { type: mongoose.Schema.Types.ObjectId, ref: 'Warehouse' }
 }, {
   timestamps: true
 });

@@ -42,10 +42,30 @@ export default function CheckoutPage() {
   const [landmark, setLandmark] = useState('');
   const [altPhone, setAltPhone] = useState('');
   const [addressType, setAddressType] = useState('Home');
-  const [addressError, setAddressError] = useState('');
+    const [paymentMode, setPaymentMode] = useState('CCAvenue');
+  const [hasCodPermission, setHasCodPermission] = useState(true);
+
+  useEffect(() => {
+    if (!hasCodPermission && paymentMode === 'COD') {
+      setPaymentMode('CCAvenue');
+    }
+  }, [hasCodPermission, paymentMode]);
 
   useEffect(() => {
     setIsMounted(true);
+
+    const fetchGlobalSettings = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api';
+        const res = await axios.get(`${apiUrl}/auth/settings?t=${Date.now()}`);
+        if (res.data.success) {
+          setHasCodPermission(res.data.settings.cod !== false);
+        }
+      } catch (err) {
+        console.error('Failed to fetch system settings', err);
+      }
+    };
+    fetchGlobalSettings();
     
     // Parse error from URL if redirected from CCAvenue failure
     if (typeof window !== 'undefined') {
@@ -130,8 +150,8 @@ export default function CheckoutPage() {
       return;
     }
 
-    const address = user.addresses ? user.addresses[selectedAddressIndex] : null;
-    if (!address) {
+    const addressObj = user.addresses ? user.addresses[selectedAddressIndex] : null;
+    if (!addressObj) {
       alert('Please select or add a shipping address');
       return;
     }
@@ -139,18 +159,19 @@ export default function CheckoutPage() {
     const orderData = {
       items: items.map(i => ({ product: i.product, name: i.name, quantity: i.quantity, price: i.price })),
       deliveryAddress: {
-        name: address.name || user.name || 'Guest Customer',
-        phone: address.phone || user.phone || '9999999999',
-        pincode: address.pincode || address.zipCode || '',
-        locality: address.locality || address.street || address.address || address.city || '',
-        address: address.address || address.street || address.locality || '',
-        city: address.city || '',
-        state: address.state || '',
-        landmark: address.landmark || '',
-        alternatePhone: address.alternatePhone || address.phone || user.phone || '',
-        addressType: address.addressType || 'Home'
+        name: addressObj.name || user.name || 'Guest Customer',
+        phone: addressObj.phone || user.phone || '9999999999',
+        pincode: addressObj.pincode || addressObj.zipCode || '',
+        locality: addressObj.locality || addressObj.street || addressObj.address || addressObj.city || '',
+        address: addressObj.address || addressObj.street || addressObj.locality || '',
+        city: addressObj.city || '',
+        state: addressObj.state || '',
+        landmark: addressObj.landmark || '',
+        alternatePhone: addressObj.alternatePhone || addressObj.phone || user.phone || '',
+        addressType: addressObj.addressType || 'Home'
       },
-      couponCode: couponCode || undefined
+      couponCode: couponCode || undefined,
+      paymentMode: paymentMode
     };
 
     try {
@@ -160,6 +181,13 @@ export default function CheckoutPage() {
       
       // Clear cart before redirecting
       dispatch(clearCart());
+
+      // If COD, skip CCAvenue redirection and go to user profile
+      if (paymentMode === 'COD' || !encRequest) {
+        alert('Order placed successfully via Cash on Delivery!');
+        router.push('/user/profile');
+        return;
+      }
 
       // 2. Redirect to CCAvenue via POST
       const form = document.createElement('form');
@@ -445,12 +473,31 @@ export default function CheckoutPage() {
             <h5 className="fw-bold mb-3 d-flex align-items-center gap-2">
               <CreditCard size={20} color="var(--primary-color)" /> Payment Method
             </h5>
-            <div className="p-3 rounded border border-success bg-light d-flex align-items-center gap-3">
-              <input type="radio" checked readOnly className="form-check-input" />
-              <div>
-                <h6 className="fw-bold m-0 text-success">CCAvenue Secure Payment</h6>
-                <small className="text-muted">Pay securely using Cards, Net Banking, UPI, or Wallets.</small>
+            <div className="d-flex flex-column gap-3">
+              <div 
+                className={`p-3 rounded border cursor-pointer d-flex align-items-center gap-3 ${paymentMode === 'CCAvenue' ? 'border-success bg-light' : ''}`}
+                onClick={() => setPaymentMode('CCAvenue')}
+                style={{ cursor: 'pointer' }}
+              >
+                <input type="radio" checked={paymentMode === 'CCAvenue'} readOnly className="form-check-input mt-0" />
+                <div>
+                  <h6 className="fw-bold m-0 text-dark">CCAvenue Secure Payment</h6>
+                  <small className="text-muted">Pay securely using Cards, Net Banking, UPI, or Wallets.</small>
+                </div>
               </div>
+              {hasCodPermission && (
+                <div 
+                  className={`p-3 rounded border cursor-pointer d-flex align-items-center gap-3 ${paymentMode === 'COD' ? 'border-success bg-light' : ''}`}
+                  onClick={() => setPaymentMode('COD')}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <input type="radio" checked={paymentMode === 'COD'} readOnly className="form-check-input mt-0" />
+                  <div>
+                    <h6 className="fw-bold m-0 text-dark">Cash on Delivery (COD)</h6>
+                    <small className="text-muted">Pay in cash when your order is delivered to your door.</small>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

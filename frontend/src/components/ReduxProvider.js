@@ -61,8 +61,11 @@ function StateHydrator() {
         const profileRes = await axios.get(`${apiUrl}/auth/profile`, { withCredentials: true });
         dispatch(setCredentials(profileRes.data.user));
       } catch (e) {
-        // Session invalid, clear it
-        dispatch(setCredentials(null));
+        // Only clear session if server explicitly says unauthorized (401/403)
+        // If it's a network error (no response) or 500 error, keep the user logged in
+        if (e.response && (e.response.status === 401 || e.response.status === 403)) {
+          dispatch(setCredentials(null));
+        }
       }
     };
     initAuth();

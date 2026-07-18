@@ -1,33 +1,31 @@
 import jwt from 'jsonwebtoken';
 
-const generateToken = (res, userId) => {
+const generateToken = (res, userId, rememberMe = true) => {
   const accessToken = jwt.sign(
     { id: userId },
     process.env.JWT_SECRET || 'super_secret_jwt_key_for_sweettree_2026_enterprise',
-    { expiresIn: '15m' }
+    { expiresIn: rememberMe ? '7d' : '1d' }
   );
 
   const refreshToken = jwt.sign(
     { id: userId },
     process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'super_secret_jwt_key_for_sweettree_2026_enterprise',
-    { expiresIn: '7d' }
+    { expiresIn: rememberMe ? '30d' : '1d' }
   );
 
-  // Set HTTP-only cookie for access token
-  res.cookie('token', accessToken, {
+  const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 15 * 60 * 1000 // 15 minutes
-  });
+  };
 
-  // Set HTTP-only cookie for refresh token
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  });
+  if (rememberMe) {
+    res.cookie('token', accessToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.cookie('refreshToken', refreshToken, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
+  } else {
+    res.cookie('token', accessToken, cookieOptions);
+    res.cookie('refreshToken', refreshToken, cookieOptions);
+  }
 
   return accessToken;
 };

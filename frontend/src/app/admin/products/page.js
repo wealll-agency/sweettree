@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAdminProducts, addProduct, editProduct, removeProduct, toggleProductState } from '../../../store/adminSlice.js';
+import { fetchAdminProducts, addProduct, editProduct, removeProduct, toggleProductState, fetchWarehouses } from '../../../store/adminSlice.js';
 import { Plus, Edit, Trash2, X, Eye, Download, Search, LayoutGrid } from 'lucide-react';
 import Image from 'next/image';
 
 export default function AdminProductsPage() {
   const dispatch = useDispatch();
   
-  const { products, productsLoading } = useSelector((state) => state.admin);
+  const { products, productsLoading, warehouses } = useSelector((state) => state.admin);
   const { user } = useSelector((state) => state.auth);
 
   // Form toggles
@@ -34,6 +34,7 @@ export default function AdminProductsPage() {
   const [subSubCategory, setSubSubCategory] = useState('');
   const [brand, setBrand] = useState('');
   const [productType, setProductType] = useState('Physical');
+  const [warehouse, setWarehouse] = useState('');
   const [sku, setSku] = useState('');
   const [unit, setUnit] = useState('kg');
   const [unitValue, setUnitValue] = useState('');
@@ -91,6 +92,7 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     dispatch(fetchAdminProducts({}));
+    dispatch(fetchWarehouses());
   }, [dispatch]);
 
   const handleToggle = (id, field, value) => {
@@ -137,6 +139,7 @@ export default function AdminProductsPage() {
     setSubSubCategory('');
     setBrand('');
     setProductType('Physical');
+    setWarehouse('');
     setSku('');
     setUnit('kg');
     setUnitValue('');
@@ -174,6 +177,7 @@ export default function AdminProductsPage() {
     setSubSubCategory(product.subSubCategory || '');
     setBrand(product.brand || '');
     setProductType(product.productType || 'Physical');
+    setWarehouse(product.warehouse ? product.warehouse.toString() : '');
     setSku(product.sku || '');
     setUnit(product.unit || 'kg');
     setUnitValue(product.unitValue || '');
@@ -225,6 +229,7 @@ export default function AdminProductsPage() {
     payload.append('subSubCategory', subSubCategory);
     payload.append('brand', brand);
     payload.append('productType', productType);
+    if (warehouse) payload.append('warehouse', warehouse);
     payload.append('sku', sku);
     payload.append('unit', unit);
     payload.append('unitValue', unitValue);
@@ -494,6 +499,16 @@ export default function AdminProductsPage() {
                     <input type="text" required className="form-control" placeholder="Product Name" value={name} onChange={(e) => setName(e.target.value)} />
                   </div>
                   
+                  <div className="col-md-6">
+                    <label className="fw-medium mb-1 fs-7">Warehouse Link</label>
+                    <select className="form-select" value={warehouse} onChange={(e) => setWarehouse(e.target.value)}>
+                      <option value="">No Warehouse (Default)</option>
+                      {warehouses && warehouses.map(w => (
+                        <option key={w._id} value={w._id}>{w.name} ({w.delhiveryPickupLocationName})</option>
+                      ))}
+                    </select>
+                  </div>
+                  
                   <div className="col-md-4">
                     <label className="fw-medium mb-1 fs-7">Category</label>
                     <select className="form-select" value={category} onChange={(e) => setCategory(e.target.value)}>
@@ -609,63 +624,65 @@ export default function AdminProductsPage() {
               </div>
               <div className="card-body">
                 <p className="text-muted fs-7 mb-3">Add different pack sizes (e.g. 250g, 500g) with their specific prices. If you leave this empty, the product will only have the default Unit Quantity and MRP Price below.</p>
-                {packSizes.map((pack, index) => (
-                  <div key={index} className="row g-2 mb-2 align-items-end">
-                    <div className="col-md-3">
-                      <label className="fs-7 mb-1">Weight / Qty</label>
-                      <input type="number" className="form-control" value={pack.weight} onChange={(e) => {
-                        const newPacks = [...packSizes];
-                        newPacks[index].weight = e.target.value;
-                        setPackSizes(newPacks);
-                      }} />
+                {packSizes.map((pack, index) => {
+                  const p = parseFloat(pack.price) || 0;
+                  const d = parseFloat(discount) || 0;
+                  let sellingPrice = Math.round(p);
+                  if (d > 0) {
+                    if (discountType === 'Percent') {
+                      sellingPrice = Math.max(0, Math.round(p * (1 - d / 100)));
+                    } else {
+                      sellingPrice = Math.max(0, Math.round(p - d));
+                    }
+                  }
+
+                  return (
+                    <div key={index} className="row g-2 mb-2 align-items-end">
+                      <div className="col-md-3">
+                        <label className="fs-7 mb-1">Weight / Qty</label>
+                        <input type="number" className="form-control" value={pack.weight} onChange={(e) => {
+                          const newPacks = [...packSizes];
+                          newPacks[index].weight = e.target.value;
+                          setPackSizes(newPacks);
+                        }} />
+                      </div>
+                      <div className="col-md-3">
+                        <label className="fs-7 mb-1">Unit</label>
+                        <select className="form-select" value={pack.unit} onChange={(e) => {
+                          const newPacks = [...packSizes];
+                          newPacks[index].unit = e.target.value;
+                          setPackSizes(newPacks);
+                        }}>
+                          <option value="kg">kg</option>
+                          <option value="g">g</option>
+                          <option value="pcs">pcs</option>
+                          <option value="ltr">ltr</option>
+                          <option value="pack">pack</option>
+                        </select>
+                      </div>
+                      <div className="col-md-2">
+                        <label className="fs-7 mb-1">MRP Price (₹)</label>
+                        <input type="number" className="form-control" value={pack.price} onChange={(e) => {
+                          const newPacks = [...packSizes];
+                          newPacks[index].price = e.target.value;
+                          setPackSizes(newPacks);
+                        }} />
+                      </div>
+                      <div className="col-md-2 d-flex flex-column justify-content-end pb-1">
+                        <label className="fs-8 text-muted mb-1">Selling Price</label>
+                        <span className="fw-bold text-success fs-5">
+                          ₹{sellingPrice}
+                        </span>
+                      </div>
+                      <div className="col-md-2">
+                        <button type="button" className="btn btn-outline-danger w-100" onClick={() => {
+                          const newPacks = packSizes.filter((_, i) => i !== index);
+                          setPackSizes(newPacks);
+                        }}><Trash2 size={16} /></button>
+                      </div>
                     </div>
-                    <div className="col-md-3">
-                      <label className="fs-7 mb-1">Unit</label>
-                      <select className="form-select" value={pack.unit} onChange={(e) => {
-                        const newPacks = [...packSizes];
-                        newPacks[index].unit = e.target.value;
-                        setPackSizes(newPacks);
-                      }}>
-                        <option value="kg">kg</option>
-                        <option value="g">g</option>
-                        <option value="pcs">pcs</option>
-                        <option value="ltr">ltr</option>
-                        <option value="pack">pack</option>
-                      </select>
-                    </div>
-                    <div className="col-md-2">
-                      <label className="fs-7 mb-1">MRP Price (₹)</label>
-                      <input type="number" className="form-control" value={pack.price} onChange={(e) => {
-                        const newPacks = [...packSizes];
-                        newPacks[index].price = e.target.value;
-                        setPackSizes(newPacks);
-                      }} />
-                    </div>
-                    <div className="col-md-2 d-flex flex-column justify-content-end pb-1">
-                      <label className="fs-8 text-muted mb-1">Selling Price</label>
-                      <span className="fw-bold text-success fs-5">
-                        ₹{(() => {
-                          const p = parseFloat(pack.price) || 0;
-                          const d = parseFloat(discount) || 0;
-                          if (d > 0) {
-                            if (discountType === 'Percent') {
-                              return Math.max(0, Math.round(p * (1 - d / 100)));
-                            } else {
-                              return Math.max(0, Math.round(p - d));
-                            }
-                          }
-                          return Math.round(p);
-                        })()}
-                      </span>
-                    </div>
-                    <div className="col-md-2">
-                      <button type="button" className="btn btn-outline-danger w-100" onClick={() => {
-                        const newPacks = packSizes.filter((_, i) => i !== index);
-                        setPackSizes(newPacks);
-                      }}><Trash2 size={16} /></button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 <button type="button" className="btn btn-sm btn-outline-brand mt-2" onClick={() => setPackSizes([...packSizes, { weight: '', unit: 'g', price: '' }])}>
                   <Plus size={14} /> Add Pack Size
                 </button>

@@ -2,6 +2,8 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/orders` : 'http://localhost:7050/api/orders';
+const DELHIVERY_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/delhivery` : 'http://localhost:7050/api/delhivery';
+const REFUND_API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/refunds` : 'http://localhost:7050/api/refunds';
 
 // Configure axios to support cookies
 axios.defaults.withCredentials = true;
@@ -50,6 +52,30 @@ export const fetchOrderDetails = createAsyncThunk(
       return response.data.order;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch order details');
+    }
+  }
+);
+
+export const trackDelhiveryShipment = createAsyncThunk(
+  'orders/trackDelhiveryShipment',
+  async (waybill, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${DELHIVERY_URL}/track/${waybill}`, getConfig());
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to track shipment');
+    }
+  }
+);
+
+export const createRefundRequest = createAsyncThunk(
+  'orders/createRefundRequest',
+  async ({ orderId, reason, customerComment }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${REFUND_API_URL}/request/${orderId}`, { reason, customerComment }, getConfig());
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to submit refund request');
     }
   }
 );

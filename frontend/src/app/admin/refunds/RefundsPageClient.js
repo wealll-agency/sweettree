@@ -143,7 +143,7 @@ export default function RefundsPageClient({ status }) {
                       </div>
                     </td>
                     <td className="py-3">
-                      <span className="fw-medium text-dark">${ref.amount?.toFixed(2)}</span>
+                      <span className="fw-medium text-dark">₹{ref.amount?.toFixed(2)}</span>
                     </td>
                     <td className="py-3">
                       <span className={`badge bg-opacity-10 rounded-pill px-3 py-2 ${

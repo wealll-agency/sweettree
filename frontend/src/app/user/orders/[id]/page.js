@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchOrderDetails } from '../../../../store/ordersSlice.js';
+import { fetchOrderDetails, trackDelhiveryShipment, createRefundRequest } from '../../../../store/ordersSlice.js';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ShieldCheck, MapPin, Truck, Check, Calendar, ArrowLeft, ShoppingBag } from 'lucide-react';
@@ -17,12 +17,33 @@ export default function OrderTrackingPage() {
   const { activeOrder: order, orderLoading } = useSelector((state) => state.orders);
   const { user, loading: authLoading } = useSelector((state) => state.auth);
   
+  const [trackingData, setTrackingData] = useState({});
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(null); // 'cancel' or 'refund'
+  const [refundReason, setRefundReason] = useState('');
+  const [refundSubmitting, setRefundSubmitting] = useState(false);
+  const [hasRefundPermission, setHasRefundPermission] = useState(true);
+  
   const isNewSuccess = searchParams.get('success') === 'true';
 
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+
+    const fetchGlobalSettings = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api';
+        const res = await fetch(`${apiUrl}/auth/settings?t=${Date.now()}`);
+        const data = await res.json();
+        if (data.success) {
+          setHasRefundPermission(data.settings.refund !== false);
+        }
+      } catch (err) {
+        console.error('Failed to fetch system settings', err);
+      }
+    };
+    fetchGlobalSettings();
   }, []);
 
   useEffect(() => {
@@ -37,6 +58,47 @@ export default function OrderTrackingPage() {
       dispatch(fetchOrderDetails(id));
     }
   }, [dispatch, id, user, authLoading]);
+
+  useEffect(() => {
+    if (order && order.shipments && order.shipments.length > 0) {
+      setTrackingLoading(true);
+      
+      const promises = order.shipments.map(shipment => 
+        dispatch(trackDelhiveryShipment(shipment.waybill)).unwrap()
+          .then(res => {
+            if (res && res.tracking && res.tracking.ShipmentData && res.tracking.ShipmentData.length > 0) {
+              setTrackingData(prev => ({
+                ...prev,
+                [shipment.waybill]: res.tracking.ShipmentData[0].Shipment
+              }));
+            }
+          })
+          .catch(err => console.error(err))
+      );
+
+      Promise.all(promises).finally(() => setTrackingLoading(false));
+    }
+  }, [dispatch, order]);
+
+  const handleRefundSubmit = async () => {
+    if (!refundReason.trim()) return;
+    setRefundSubmitting(true);
+    try {
+      await dispatch(createRefundRequest({ 
+        orderId: id, 
+        reason: showRefundModal === 'cancel' ? 'Cancellation' : 'Refund', 
+        customerComment: refundReason 
+      })).unwrap();
+      setShowRefundModal(null);
+      setRefundReason('');
+      dispatch(fetchOrderDetails(id));
+      alert('Request submitted successfully.');
+    } catch (err) {
+      alert(err || 'Failed to submit request');
+    } finally {
+      setRefundSubmitting(false);
+    }
+  };
 
   if (!mounted || authLoading || !user) {
     return (
@@ -224,6 +286,30 @@ export default function OrderTrackingPage() {
               </div>
             </div>
           </div>
+
+          {/* Cancel / Refund Action */}
+          {(!['Cancelled', 'Refunded'].includes(order.orderStatus)) && hasRefundPermission && (
+            <div className="bg-white p-4 rounded-4 shadow-sm border mb-4 text-center mt-4">
+              <h6 className="fw-bold mb-3">Need help with your order?</h6>
+              {(['Placed', 'Confirmed', 'Packed'].includes(order.orderStatus)) ? (
+                <button 
+                  className="btn btn-outline-danger px-5"
+                  onClick={() => setShowRefundModal('cancel')}
+                >
+                  Cancel Order
+                </button>
+              ) : order.orderStatus === 'Delivered' ? (
+                <button 
+                  className="btn btn-outline-warning px-5"
+                  onClick={() => setShowRefundModal('refund')}
+                >
+                  Request Refund
+                </button>
+              ) : (
+                <p className="text-muted small m-0">Your order is currently in transit. You can request a refund once it is delivered.</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right Side: Order Status Timeline Progress */}
@@ -301,9 +387,95 @@ export default function OrderTrackingPage() {
                 })}
               </div>
             )}
+
+            {/* Delhivery Live Tracking */}
+            {order.shipments && order.shipments.length > 0 && (
+              <div className="mt-4 pt-4 border-top">
+                <h5 className="fw-bold mb-3 d-flex align-items-center gap-2"><Truck size={18} /> Live Carrier Tracking</h5>
+                {trackingLoading ? (
+                  <p className="text-muted fs-7">Fetching live status from couriers...</p>
+                ) : (
+                  <div className="d-flex flex-column gap-3">
+                    {order.shipments.map(shipment => {
+                      const tData = trackingData[shipment.waybill];
+                      return (
+                        <div key={shipment.waybill} className="bg-light p-3 rounded border">
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <p className="m-0 fw-bold text-primary">{tData?.Status?.Status || shipment.status || 'Manifested'}</p>
+                            {shipment.warehouse && (
+                              <span className="badge bg-secondary">Part of order</span>
+                            )}
+                          </div>
+                          <small className="text-muted d-block mb-3">
+                            Waybill: <span className="font-monospace fw-bold">{shipment.waybill}</span> ({shipment.courierName})
+                            {tData?.ExpectedDeliveryDate && (
+                              <span className="d-block mt-1 text-success">
+                                <Calendar size={12} className="me-1"/> Expected Delivery: {new Date(tData.ExpectedDeliveryDate).toLocaleDateString()}
+                              </span>
+                            )}
+                          </small>
+                          
+                          {tData?.Scans && tData.Scans.length > 0 && (
+                            <div className="tracking-scans" style={{ maxHeight: '250px', overflowY: 'auto' }}>
+                              {tData.Scans.map((scan, i) => (
+                                <div key={i} className="mb-2 pb-2 border-bottom">
+                                  <strong className="d-block fs-8 text-dark">{scan.ScanDetail.Instructions}</strong>
+                                  <small className="text-muted" style={{fontSize: '11px'}}>
+                                    {new Date(scan.ScanDetail.ScanDateTime).toLocaleString()} - {scan.ScanDetail.ScannedLocation}
+                                  </small>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         </div>
       </div>
+      )}
+
+      {showRefundModal && (
+        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 rounded-4 shadow">
+              <div className="modal-header border-bottom-0 pb-0">
+                <h5 className="modal-title fw-bold">
+                  {showRefundModal === 'cancel' ? 'Cancel Order' : 'Request Refund'}
+                </h5>
+                <button type="button" className="btn-close shadow-none" onClick={() => setShowRefundModal(null)}></button>
+              </div>
+              <div className="modal-body">
+                <p className="text-muted mb-3">
+                  Please provide a reason for {showRefundModal === 'cancel' ? 'cancelling' : 'refunding'} this order.
+                </p>
+                <textarea 
+                  className="form-control shadow-none bg-light"
+                  rows="4"
+                  placeholder="Tell us why..."
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                ></textarea>
+              </div>
+              <div className="modal-footer border-top-0 pt-0">
+                <button type="button" className="btn btn-light rounded px-4" onClick={() => setShowRefundModal(null)}>Close</button>
+                <button 
+                  type="button" 
+                  className={`btn ${showRefundModal === 'cancel' ? 'btn-danger' : 'btn-warning'} px-4 rounded`}
+                  onClick={handleRefundSubmit}
+                  disabled={refundSubmitting || !refundReason.trim()}
+                >
+                  {refundSubmitting ? 'Submitting...' : 'Submit Request'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

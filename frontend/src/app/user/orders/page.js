@@ -135,9 +135,6 @@ export default function OrderHistoryPage() {
                   <small className="text-muted d-block" style={{ fontSize: '12px' }}>Total Paid</small>
                   <span className="current-price fs-5">₹{order.totalAmount}</span>
                 </div>
-                <div className="Sweettree-btn-cart px-4 text-center rounded-1" style={{ width: 'auto', display: 'inline-block' }}>
-                  View Details
-                </div>
               </div>
             </Link>
           ))}

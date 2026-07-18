@@ -22,6 +22,7 @@ function LoginContent() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { user, loading, error } = useSelector((state) => state.auth);
@@ -46,7 +47,7 @@ function LoginContent() {
       return;
     }
     setIsSubmitting(true);
-    await dispatch(loginUser({ email, password }));
+    await dispatch(loginUser({ email, password, rememberMe }));
     setIsSubmitting(false);
   };
 
@@ -92,6 +93,19 @@ function LoginContent() {
               />
               <Key className="text-muted position-absolute start-0 top-50 translate-middle-y ms-3" size={18} />
             </div>
+          </div>
+
+          <div className="form-check fs-7 mt-1">
+            <input 
+              className="form-check-input shadow-none cursor-pointer" 
+              type="checkbox" 
+              id="rememberMeCheck" 
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <label className="form-check-label text-muted cursor-pointer" htmlFor="rememberMeCheck">
+              Remember me
+            </label>
           </div>
 
           {error && <div className="alert alert-danger p-2 fs-8 mb-0 mt-1">{error}</div>}

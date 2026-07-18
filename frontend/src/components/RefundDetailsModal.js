@@ -30,9 +30,10 @@ export default function RefundDetailsModal({ refund, onClose }) {
   };
 
   return (
-    <div className="modal-backdrop fade show" style={{ zIndex: 1050, backgroundColor: 'rgba(0,0,0,0.5)' }}>
-      <div className="modal d-block" tabIndex="-1" style={{ zIndex: 1055 }}>
-        <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <>
+      <div className="modal-backdrop fade show" style={{ zIndex: 1050 }} onClick={onClose}></div>
+      <div className="modal d-block" tabIndex="-1" style={{ zIndex: 1055 }} onClick={onClose}>
+        <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" onClick={e => e.stopPropagation()}>
           <div className="modal-content shadow-lg border-0 rounded-4">
             
             {/* Header */}
@@ -93,7 +94,7 @@ export default function RefundDetailsModal({ refund, onClose }) {
                         <Package size={16} className="text-muted" /> Order: <strong className="font-monospace text-primary">{refund.order?._id}</strong>
                       </div>
                       <div className="d-flex align-items-center gap-2 mb-2">
-                        <CreditCard size={16} className="text-muted" /> Amount Requested: <strong className="text-danger">${refund.amount?.toFixed(2)}</strong>
+                        <CreditCard size={16} className="text-muted" /> Amount Requested: <strong className="text-danger">₹{refund.amount?.toFixed(2)}</strong>
                       </div>
                       <div className="d-flex align-items-center gap-2">
                         <CheckCircle size={16} className="text-muted" /> Order Status: <span>{refund.order?.orderStatus}</span>
@@ -126,7 +127,7 @@ export default function RefundDetailsModal({ refund, onClose }) {
                                 <span style={{ fontSize: '0.9rem' }}>{item.product?.name || item.name}</span>
                               </div>
                             </td>
-                            <td className="py-2 text-end pe-3 fw-medium" style={{ fontSize: '0.9rem' }}>${item.price?.toFixed(2)}</td>
+                            <td className="py-2 text-end pe-3 fw-medium" style={{ fontSize: '0.9rem' }}>₹{item.price?.toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -206,6 +207,6 @@ export default function RefundDetailsModal({ refund, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

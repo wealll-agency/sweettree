@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAdminOrders, updateOrderStatus, refundOrder } from '../../../store/adminSlice.js';
+import { fetchAdminOrders, updateOrderStatus, refundOrder, createDelhiveryShipment, cancelDelhiveryShipment, getDelhiveryLabel, fetchWarehouses } from '../../../store/adminSlice.js';
 import { ShoppingBag, Eye, MapPin, Check, Filter, Clock, Search, X, Printer, Package, Truck, CheckCircle, CreditCard, RotateCcw, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -84,7 +84,7 @@ function AdminOrdersContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const filterStatus = searchParams.get('status');
-  const { orders, ordersLoading } = useSelector((state) => state.admin);
+  const { orders, ordersLoading, warehouses } = useSelector((state) => state.admin);
   const { user } = useSelector((state) => state.auth);
 
   // Selected order modal details
@@ -129,6 +129,7 @@ function AdminOrdersContent() {
 
   useEffect(() => {
     dispatch(fetchAdminOrders());
+    dispatch(fetchWarehouses());
   }, [dispatch]);
 
   const handleStatusChange = (id, status) => {
@@ -159,6 +160,118 @@ function AdminOrdersContent() {
           alert(err || 'Refund processing failed');
         });
     }
+  };
+
+  const handleCreateDelhiveryShipment = (orderId) => {
+    if(confirm('Are you sure you want to create shipments for this order based on warehouses?')) {
+      setActionSuccess('');
+      dispatch(createDelhiveryShipment(orderId))
+        .unwrap()
+        .then((res) => {
+          setActionSuccess('Shipments created successfully!');
+          dispatch(fetchAdminOrders());
+          // Update local selectedOrder with new shipments
+          const updated = {...selectedOrder, shipments: res.shipments, orderStatus: 'Shipped'};
+          setSelectedOrder(updated);
+        })
+        .catch(err => alert(err || 'Failed to create shipments'));
+    }
+  };
+
+  const handleCancelDelhiveryShipment = (waybill) => {
+    if(confirm('Cancel this shipment?')) {
+      setActionSuccess('');
+      dispatch(cancelDelhiveryShipment(waybill))
+        .unwrap()
+        .then(() => {
+          setActionSuccess('Shipment cancelled.');
+          dispatch(fetchAdminOrders());
+          // Update the specific shipment in the local object
+          const updatedShipments = selectedOrder.shipments.map(s => s.waybill === waybill ? { ...s, status: 'Cancelled' } : s);
+          const updated = {...selectedOrder, shipments: updatedShipments};
+          if (updatedShipments.every(s => s.status === 'Cancelled')) {
+            updated.orderStatus = 'Cancelled';
+          }
+          setSelectedOrder(updated);
+        })
+        .catch(err => alert(err || 'Cancellation failed'));
+    }
+  };
+  
+  const handleGetLabel = (waybill) => {
+    dispatch(getDelhiveryLabel(waybill))
+      .unwrap()
+      .then((res) => {
+        const pkg = res.label?.packages?.[0];
+        if (pkg && pkg.pdf_download_link) {
+          window.open(pkg.pdf_download_link, '_blank');
+        } else if (pkg) {
+          // Generate a dynamic HTML label since PDF link is not provided
+          const printWindow = window.open('', '_blank', 'width=600,height=800');
+          printWindow.document.write(`
+            <html>
+              <head>
+                <title>Shipping Label - ${pkg.wbn}</title>
+                <style>
+                  body { font-family: Arial, sans-serif; padding: 20px; color: #000; }
+                  .label-box { border: 2px solid #000; width: 400px; margin: 0 auto; padding: 15px; }
+                  .header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
+                  .barcode-container { text-align: center; margin: 15px 0; border-bottom: 2px solid #000; padding-bottom: 15px; }
+                  .barcode-container img { max-width: 100%; height: 60px; }
+                  .section { border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px; }
+                  .fw-bold { font-weight: bold; }
+                  .fs-lg { font-size: 24px; }
+                </style>
+              </head>
+              <body>
+                <div class="label-box">
+                  <div class="header">
+                    <div>
+                      <h2>DELHIVERY</h2>
+                      <div class="fw-bold fs-lg">${pkg.sort_code || ''}</div>
+                    </div>
+                    <div style="text-align: right;">
+                      <div class="fw-bold fs-lg">${pkg.pt}</div>
+                      <div class="fw-bold">₹ ${pkg.rs}</div>
+                    </div>
+                  </div>
+                  
+                  <div class="barcode-container">
+                    ${pkg.barcode ? `<img src="${pkg.barcode}" alt="Barcode"/>` : ''}
+                    <div class="fw-bold" style="letter-spacing: 2px; margin-top: 5px;">${pkg.wbn}</div>
+                  </div>
+
+                  <div class="section">
+                    <div class="fw-bold">Deliver To:</div>
+                    <div>${pkg.consignee_name || ''}</div>
+                    <div>${pkg.radd}</div>
+                    <div>${pkg.rcty}, ${pkg.rst} - <span class="fw-bold fs-lg">${pkg.rpin}</span></div>
+                    <div>Ph: ${pkg.rph || ''}</div>
+                  </div>
+
+                  <div class="section">
+                    <div class="fw-bold">Shipped By:</div>
+                    <div>${pkg.snm}</div>
+                    <div>${pkg.sadd}</div>
+                  </div>
+
+                  <div>
+                    <div class="fw-bold">Product:</div>
+                    <small>${pkg.prd}</small>
+                  </div>
+                </div>
+                <script>
+                  setTimeout(() => { window.print(); }, 500);
+                </script>
+              </body>
+            </html>
+          `);
+          printWindow.document.close();
+        } else {
+          alert('Label not available or generated yet.');
+        }
+      })
+      .catch(err => alert(err || 'Failed to get label'));
   };
 
   const closeDetailsModal = () => {
@@ -375,6 +488,49 @@ function AdminOrdersContent() {
                     <span>Order Total</span>
                     <span>₹{selectedOrder.totalAmount}</span>
                   </div>
+                </div>
+
+                {/* Logistics Integration (Multi-Shipment) */}
+                <h6 className="fw-bold text-muted uppercase fs-8 mb-2">Shipments (Delhivery)</h6>
+                <div className="bg-light p-3 rounded border mb-4 d-flex flex-column gap-3">
+                  {(!selectedOrder.shipments || selectedOrder.shipments.length === 0) ? (
+                    <div>
+                      <p className="fs-7 text-muted m-0 mb-2">No active shipments for this order.</p>
+                      {(selectedOrder.orderStatus === 'Packed' || selectedOrder.orderStatus === 'Confirmed' || selectedOrder.orderStatus === 'Placed') && (
+                        <button onClick={() => handleCreateDelhiveryShipment(selectedOrder._id)} className="btn btn-sm btn-dark d-flex align-items-center gap-2">
+                          <Truck size={14} /> {warehouses && warehouses.length > 1 ? 'Generate Split Shipments' : 'Generate Shipment'}
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="d-flex flex-column gap-3">
+                      {selectedOrder.shipments.map((shipment, index) => (
+                        <div key={shipment._id || index} className="p-2 border rounded bg-white">
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <span className="fs-7">
+                              Waybill: <strong className="font-monospace">{shipment.waybill}</strong>
+                            </span>
+                            <span className="badge bg-primary bg-opacity-10 text-primary">
+                              {shipment.status || 'Manifested'}
+                            </span>
+                          </div>
+                          <div className="fs-8 text-muted mb-2">
+                            Courier: {shipment.courierName} | Shipped: {new Date(shipment.shippedAt).toLocaleDateString()}
+                          </div>
+                          <div className="d-flex gap-2">
+                            <button onClick={() => handleGetLabel(shipment.waybill)} className="btn btn-sm btn-outline-dark d-flex align-items-center gap-1">
+                              <Printer size={14} /> Shipping Label
+                            </button>
+                            {shipment.status !== 'Cancelled' && shipment.status !== 'Delivered' && (
+                               <button onClick={() => handleCancelDelhiveryShipment(shipment.waybill)} className="btn btn-sm btn-outline-danger">
+                                 Cancel
+                               </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Status flow advances */}

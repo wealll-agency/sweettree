@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import crypto from 'crypto';
 import { encrypt, decrypt } from '../utils/ccavenue.js';
 import Order from '../models/Order.js';
+import SystemSetting from '../models/SystemSetting.js';
 import Product from '../models/Product.js';
 import Inventory from '../models/Inventory.js';
 import Payment from '../models/Payment.js';
@@ -82,11 +83,19 @@ const calculateOrderTotals = async (items, couponCode) => {
 // @route   POST /api/orders
 // @access  Private
 export const createOrder = async (req, res, next) => {
-  const { items, deliveryAddress, couponCode } = req.body;
+  const { items, deliveryAddress, couponCode, paymentMode = 'CCAvenue' } = req.body;
 
   try {
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: 'No items in order' });
+    }
+
+    if (paymentMode === 'COD') {
+      const codSetting = await SystemSetting.findOne({ key: 'cod' });
+      const hasCodPermission = codSetting ? codSetting.value : true;
+      if (!hasCodPermission) {
+        return res.status(403).json({ success: false, message: 'Cash on Delivery (COD) is currently disabled globally.' });
+      }
     }
 
     const { subtotal, discount, tax, shippingFee, totalAmount, validatedItems } = await calculateOrderTotals(items, couponCode);
@@ -115,6 +124,7 @@ export const createOrder = async (req, res, next) => {
       shippingFee,
       tax,
       totalAmount,
+      paymentMode,
       paymentStatus: 'Pending',
       orderStatus: 'Placed'
     });
@@ -148,7 +158,25 @@ export const createOrder = async (req, res, next) => {
       );
     }
 
-    // 3. Create Payment ledger record
+    // If COD, we can skip CCAvenue processing
+    if (paymentMode === 'COD') {
+      await Payment.create({
+        order: savedOrder._id,
+        amount: totalAmount,
+        status: 'Created',
+        method: 'COD'
+      });
+
+      await logActivity(req.user._id, 'CREATE_ORDER', `Created COD order ID: ${savedOrder._id}`, req);
+
+      return res.status(201).json({
+        success: true,
+        order: savedOrder,
+        message: 'Order placed successfully'
+      });
+    }
+
+    // 3. Create Payment ledger record for CCAvenue
     await Payment.create({
       order: savedOrder._id,
       ccavenueOrderId: savedOrder._id.toString(),
@@ -451,6 +479,137 @@ export const processRefund = async (req, res, next) => {
     await logActivity(req.user._id, 'PROCESS_REFUND', `Processed manual refund record for Order ID ${order._id}`, req);
 
     res.json({ success: true, message: 'Refund recorded successfully. Note: You must actually initiate the refund in your CCAvenue Dashboard.', order });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all shipments for admin panel
+// @route   GET /api/orders/shipments
+// @access  Private/Admin
+export const getAdminShipments = async (req, res, next) => {
+  try {
+    const { pageNumber, keyword, status } = req.query;
+    const page = Number(pageNumber) || 1;
+    const pageSize = 50;
+    const skip = (page - 1) * pageSize;
+
+    const pipeline = [
+      { $match: { 'shipments.0': { $exists: true } } },
+      { $unwind: '$shipments' },
+      { 
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'userDetails'
+        }
+      },
+      { $unwind: { path: '$userDetails', preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          orderIdStr: { $toString: '$_id' }
+        }
+      },
+      ...(status ? [{ $match: { 'shipments.status': status } }] : []),
+      ...(keyword ? [{
+        $match: {
+          $or: [
+            { 'shipments.waybill': { $regex: keyword, $options: 'i' } },
+            { 'shipments.trackingId': { $regex: keyword, $options: 'i' } },
+            { 'userDetails.name': { $regex: keyword, $options: 'i' } },
+            { 'userDetails.phone': { $regex: keyword, $options: 'i' } },
+            { 'deliveryAddress.phone': { $regex: keyword, $options: 'i' } },
+            { 'orderIdStr': { $regex: keyword, $options: 'i' } }
+          ]
+        }
+      }] : []),
+      {
+        $lookup: {
+          from: 'warehouses',
+          localField: 'shipments.warehouse',
+          foreignField: '_id',
+          as: 'warehouseDetails'
+        }
+      },
+      { $unwind: { path: '$warehouseDetails', preserveNullAndEmptyArrays: true } },
+      { $sort: { 'shipments.shippedAt': -1, createdAt: -1 } },
+      {
+        $project: {
+          _id: '$shipments._id',
+          orderId: '$_id',
+          customerName: { $ifNull: ['$userDetails.name', 'Guest'] },
+          customerEmail: '$userDetails.email',
+          deliveryAddress: '$deliveryAddress',
+          orderDate: '$createdAt',
+          paymentStatus: '$paymentStatus',
+          waybill: '$shipments.waybill',
+          trackingId: '$shipments.trackingId',
+          status: '$shipments.status',
+          courierName: '$shipments.courierName',
+          shippedAt: '$shipments.shippedAt',
+          warehouse: {
+            _id: '$warehouseDetails._id',
+            name: '$warehouseDetails.name',
+            delhiveryPickupLocationName: '$warehouseDetails.delhiveryPickupLocationName'
+          }
+        }
+      },
+      {
+        $facet: {
+          metadata: [{ $count: 'total' }],
+          data: [{ $skip: skip }, { $limit: pageSize }]
+        }
+      }
+    ];
+
+    const result = await Order.aggregate(pipeline);
+    
+    const count = result[0].metadata[0] ? result[0].metadata[0].total : 0;
+    const paginatedShipments = result[0].data;
+
+    res.json({
+      shipments: paginatedShipments,
+      page,
+      pages: Math.ceil(count / pageSize),
+      totalShipments: count
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get single shipment details by waybill
+// @route   GET /api/orders/shipments/:waybill
+// @access  Private/Admin
+export const getShipmentByWaybill = async (req, res, next) => {
+  try {
+    const { waybill } = req.params;
+    const order = await Order.findOne({ 'shipments.waybill': waybill })
+      .populate('user', 'name email phone')
+      .populate('items.product', 'name sku price images category')
+      .populate('shipments.warehouse', 'name address city state pincode phone delhiveryPickupLocationName');
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Shipment not found' });
+    }
+
+    const shipment = order.shipments.find(s => s.waybill === waybill);
+
+    res.json({
+      success: true,
+      order: {
+        _id: order._id,
+        createdAt: order.createdAt,
+        paymentStatus: order.paymentStatus,
+        paymentMode: order.paymentMode,
+        deliveryAddress: order.deliveryAddress,
+        items: order.items,
+        user: order.user,
+        totalAmount: order.totalAmount
+      },
+      shipment
+    });
   } catch (error) {
     next(error);
   }

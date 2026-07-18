@@ -5,6 +5,8 @@ const PRODUCTS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLI
 const ORDERS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/orders` : 'http://localhost:7050/api/orders';
 const REPORTS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/reports` : 'http://localhost:7050/api/reports';
 const REFUNDS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/refunds` : 'http://localhost:7050/api/refunds';
+const DELHIVERY_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/delhivery` : 'http://localhost:7050/api/delhivery';
+const WAREHOUSES_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/warehouses` : 'http://localhost:7050/api/warehouses';
 
 axios.defaults.withCredentials = true;
 
@@ -86,6 +88,66 @@ export const editProduct = createAsyncThunk(
   }
 );
 
+export const deleteReview = createAsyncThunk(
+  'admin/deleteReview',
+  async (id, { rejectWithValue }) => {
+    try {
+      await axios.delete(`/api/reviews/${id}`, { withCredentials: true });
+      return id;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete review');
+    }
+  }
+);
+
+export const fetchWarehouses = createAsyncThunk(
+  'admin/fetchWarehouses',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(WAREHOUSES_URL, getConfig());
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch warehouses');
+    }
+  }
+);
+
+export const createWarehouse = createAsyncThunk(
+  'admin/createWarehouse',
+  async (warehouseData, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(WAREHOUSES_URL, warehouseData, getConfig());
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to create warehouse');
+    }
+  }
+);
+
+export const updateWarehouse = createAsyncThunk(
+  'admin/updateWarehouse',
+  async ({ id, warehouseData }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${WAREHOUSES_URL}/${id}`, warehouseData, getConfig());
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update warehouse');
+    }
+  }
+);
+
+export const deleteWarehouse = createAsyncThunk(
+  'admin/deleteWarehouse',
+  async (id, { rejectWithValue }) => {
+    try {
+      await axios.delete(`${WAREHOUSES_URL}/${id}`, getConfig());
+      return id;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete warehouse');
+    }
+  }
+);
+
 export const removeProduct = createAsyncThunk(
   'admin/removeProduct',
   async (productId, { rejectWithValue }) => {
@@ -98,8 +160,36 @@ export const removeProduct = createAsyncThunk(
   }
 );
 
+export const fetchAdminShipments = createAsyncThunk(
+  'admin/fetchAdminShipments',
+  async ({ pageNumber = 1, keyword = '', status = '' } = {}, { rejectWithValue }) => {
+    try {
+      let url = `${ORDERS_URL}/shipments?pageNumber=${pageNumber}&keyword=${keyword}`;
+      if (status) {
+        url += `&status=${status}`;
+      }
+      const { data } = await axios.get(url, getConfig());
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch shipments');
+    }
+  }
+);
+
+export const fetchShipmentByWaybill = createAsyncThunk(
+  'admin/fetchShipmentByWaybill',
+  async (waybill, { rejectWithValue }) => {
+    try {
+      const { data } = await axios.get(`${ORDERS_URL}/shipments/${waybill}`, getConfig());
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch shipment details');
+    }
+  }
+);
+
 export const fetchAdminOrders = createAsyncThunk(
-  'admin/fetchOrders',
+  'admin/fetchAdminOrders',
   async (filters = {}, { rejectWithValue }) => {
     try {
       const queryParams = new URLSearchParams();
@@ -164,6 +254,43 @@ export const updateRefundRequestStatus = createAsyncThunk(
   }
 );
 
+// Delhivery Integrations
+export const createDelhiveryShipment = createAsyncThunk(
+  'admin/createDelhiveryShipment',
+  async (orderId, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${DELHIVERY_URL}/create/${orderId}`, {}, getConfig());
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to create Delhivery shipment');
+    }
+  }
+);
+
+export const cancelDelhiveryShipment = createAsyncThunk(
+  'admin/cancelDelhiveryShipment',
+  async (waybill, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${DELHIVERY_URL}/cancel/${waybill}`, {}, getConfig());
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to cancel Delhivery shipment');
+    }
+  }
+);
+
+export const getDelhiveryLabel = createAsyncThunk(
+  'admin/getDelhiveryLabel',
+  async (waybill, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${DELHIVERY_URL}/label/${waybill}`, getConfig());
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to generate shipping label');
+    }
+  }
+);
+
 const adminSlice = createSlice({
   name: 'admin',
   initialState: {
@@ -178,6 +305,11 @@ const adminSlice = createSlice({
     ordersTotalPages: 1,
     ordersCurrentPage: 1,
     refunds: [],
+    shipments: [],
+    shipmentsTotalPages: 1,
+    shipmentsCurrentPage: 1,
+    selectedShipment: null,
+    warehouses: [],
     loading: false,
     ordersLoading: false,
     productsLoading: false,
@@ -194,6 +326,7 @@ const adminSlice = createSlice({
       // Dashboard stats
       .addCase(fetchDashboardStats.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchDashboardStats.fulfilled, (state, action) => {
         state.loading = false;
@@ -248,6 +381,30 @@ const adminSlice = createSlice({
         state.ordersTotalPages = action.payload.pages || 1;
         state.ordersCurrentPage = action.payload.currentPage || 1;
       })
+      .addCase(fetchAdminShipments.pending, (state) => {
+        state.ordersLoading = true;
+      })
+      .addCase(fetchAdminShipments.fulfilled, (state, action) => {
+        state.ordersLoading = false;
+        state.shipments = action.payload.shipments;
+        state.shipmentsTotalPages = action.payload.pages;
+        state.shipmentsCurrentPage = action.payload.page;
+      })
+      .addCase(fetchAdminShipments.rejected, (state, action) => {
+        state.ordersLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchShipmentByWaybill.pending, (state) => {
+        state.ordersLoading = true;
+      })
+      .addCase(fetchShipmentByWaybill.fulfilled, (state, action) => {
+        state.ordersLoading = false;
+        state.selectedShipment = action.payload;
+      })
+      .addCase(fetchShipmentByWaybill.rejected, (state, action) => {
+        state.ordersLoading = false;
+        state.error = action.payload;
+      })
       // Update order status
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
         const index = state.orders.findIndex(o => o._id === action.payload._id);
@@ -276,6 +433,29 @@ const adminSlice = createSlice({
         if (index > -1) {
           state.refunds[index] = action.payload;
         }
+      })
+      
+      // Warehouse Reducers
+      .addCase(fetchWarehouses.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchWarehouses.fulfilled, (state, action) => {
+        state.loading = false;
+        state.warehouses = action.payload;
+      })
+      .addCase(fetchWarehouses.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(createWarehouse.fulfilled, (state, action) => {
+        state.warehouses.unshift(action.payload);
+      })
+      .addCase(updateWarehouse.fulfilled, (state, action) => {
+        const index = state.warehouses.findIndex(w => w._id === action.payload._id);
+        if (index !== -1) {
+          state.warehouses[index] = action.payload;
+        }
+      })
+      .addCase(deleteWarehouse.fulfilled, (state, action) => {
+        state.warehouses = state.warehouses.filter(w => w._id !== action.payload);
       });
   }
 });

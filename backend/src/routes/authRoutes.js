@@ -8,9 +8,11 @@ import {
   updateUserProfile,
   addAddress,
   updateAddress,
-  deleteAddress
+  deleteAddress,
+  getSystemSettings,
+  updateSystemSettings
 } from '../controllers/AuthController.js';
-import { protect } from '../middleware/auth.js';
+import { protect, authorizeRoles } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
@@ -27,5 +29,9 @@ router.route('/addresses')
 router.route('/addresses/:id')
   .put(protect, updateAddress)
   .delete(protect, deleteAddress);
+
+router.route('/settings')
+  .get(getSystemSettings)
+  .put(protect, authorizeRoles('Super Admin', 'Manager'), updateSystemSettings);
 
 export default router;

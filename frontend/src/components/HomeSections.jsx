@@ -464,6 +464,8 @@ export const StoreLocator = () => {
 };
 
 export const HealthyCombo = () => {
+  const [playVideo, setPlayVideo] = React.useState({});
+
   return (
     <section className="combo-section position-relative py-4 mt-4">
       <div className="combo-bg-shape"></div>
@@ -494,7 +496,47 @@ export const HealthyCombo = () => {
               <div className="social-card">
                 <div className="social-media-box">
                   <span className="social-badge-top">VALUE OFFER</span>
-                  <iframe src="https://www.youtube-nocookie.com/embed/VLysJeyNBIk?controls=0&rel=0&autoplay=1&mute=1&loop=1&playlist=VLysJeyNBIk" title="YouTube reel" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe>
+                  {!playVideo[0] ? (
+                    <>
+                      <img 
+                        src="https://img.youtube.com/vi/VLysJeyNBIk/hqdefault.jpg" 
+                        alt="YouTube reel thumbnail" 
+                        onClick={() => setPlayVideo(prev => ({ ...prev, 0: true }))}
+                        style={{ cursor: 'pointer' }}
+                      />
+                      <div 
+                        className="youtube-play-btn-overlay" 
+                        onClick={() => setPlayVideo(prev => ({ ...prev, 0: true }))}
+                        style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          width: '60px',
+                          height: '60px',
+                          backgroundColor: 'rgba(0,0,0,0.7)',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontSize: '24px',
+                          cursor: 'pointer',
+                          zIndex: 10,
+                          pointerEvents: 'auto'
+                        }}
+                      >
+                        <i className="fas fa-play" style={{ marginLeft: '4px' }}></i>
+                      </div>
+                    </>
+                  ) : (
+                    <iframe 
+                      src="https://www.youtube-nocookie.com/embed/VLysJeyNBIk?controls=0&rel=0&autoplay=1&mute=1&loop=1&playlist=VLysJeyNBIk" 
+                      title="YouTube reel" 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                      allowFullScreen
+                    ></iframe>
+                  )}
                   <div className="social-rating-float"><i className="fas fa-star"></i> 5.0</div>
                   <div className="social-actions-float">
                     <div className="social-action-btn"><i className="far fa-heart"></i></div>
@@ -521,7 +563,47 @@ export const HealthyCombo = () => {
               <div className="social-card">
                 <div className="social-media-box">
                   <span className="social-badge-top">BESTSELLER</span>
-                  <iframe src="https://www.youtube-nocookie.com/embed/VLysJeyNBIk?controls=0&rel=0&autoplay=1&mute=1&loop=1&playlist=VLysJeyNBIk" title="YouTube reel" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe>
+                  {!playVideo[1] ? (
+                    <>
+                      <img 
+                        src="https://img.youtube.com/vi/VLysJeyNBIk/hqdefault.jpg" 
+                        alt="YouTube reel thumbnail" 
+                        onClick={() => setPlayVideo(prev => ({ ...prev, 1: true }))}
+                        style={{ cursor: 'pointer' }}
+                      />
+                      <div 
+                        className="youtube-play-btn-overlay" 
+                        onClick={() => setPlayVideo(prev => ({ ...prev, 1: true }))}
+                        style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          width: '60px',
+                          height: '60px',
+                          backgroundColor: 'rgba(0,0,0,0.7)',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontSize: '24px',
+                          cursor: 'pointer',
+                          zIndex: 10,
+                          pointerEvents: 'auto'
+                        }}
+                      >
+                        <i className="fas fa-play" style={{ marginLeft: '4px' }}></i>
+                      </div>
+                    </>
+                  ) : (
+                    <iframe 
+                      src="https://www.youtube-nocookie.com/embed/VLysJeyNBIk?controls=0&rel=0&autoplay=1&mute=1&loop=1&playlist=VLysJeyNBIk" 
+                      title="YouTube reel" 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                      allowFullScreen
+                    ></iframe>
+                  )}
                   <div className="social-rating-float"><i className="fas fa-star"></i> 4.9</div>
                   <div className="social-actions-float">
                     <div className="social-action-btn"><i className="far fa-heart"></i></div>
@@ -548,7 +630,47 @@ export const HealthyCombo = () => {
               <div className="social-card">
                 <div className="social-media-box">
                   <span className="social-badge-top">PREMIUM PACK</span>
-                  <iframe src="https://www.youtube-nocookie.com/embed/VLysJeyNBIk?controls=0&rel=0&autoplay=1&mute=1&loop=1&playlist=VLysJeyNBIk" title="YouTube reel" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe>
+                  {!playVideo[2] ? (
+                    <>
+                      <img 
+                        src="https://img.youtube.com/vi/VLysJeyNBIk/hqdefault.jpg" 
+                        alt="YouTube reel thumbnail" 
+                        onClick={() => setPlayVideo(prev => ({ ...prev, 2: true }))}
+                        style={{ cursor: 'pointer' }}
+                      />
+                      <div 
+                        className="youtube-play-btn-overlay" 
+                        onClick={() => setPlayVideo(prev => ({ ...prev, 2: true }))}
+                        style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          width: '60px',
+                          height: '60px',
+                          backgroundColor: 'rgba(0,0,0,0.7)',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontSize: '24px',
+                          cursor: 'pointer',
+                          zIndex: 10,
+                          pointerEvents: 'auto'
+                        }}
+                      >
+                        <i className="fas fa-play" style={{ marginLeft: '4px' }}></i>
+                      </div>
+                    </>
+                  ) : (
+                    <iframe 
+                      src="https://www.youtube-nocookie.com/embed/VLysJeyNBIk?controls=0&rel=0&autoplay=1&mute=1&loop=1&playlist=VLysJeyNBIk" 
+                      title="YouTube reel" 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                      allowFullScreen
+                    ></iframe>
+                  )}
                   <div className="social-rating-float"><i className="fas fa-star"></i> 4.7</div>
                   <div className="social-actions-float">
                     <div className="social-action-btn"><i className="far fa-heart"></i></div>
@@ -575,7 +697,47 @@ export const HealthyCombo = () => {
               <div className="social-card">
                 <div className="social-media-box">
                   <span className="social-badge-top">VALUE OFFER</span>
-                  <iframe src="https://www.youtube-nocookie.com/embed/VLysJeyNBIk?controls=0&rel=0&autoplay=1&mute=1&loop=1&playlist=VLysJeyNBIk" title="YouTube reel" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen></iframe>
+                  {!playVideo[3] ? (
+                    <>
+                      <img 
+                        src="https://img.youtube.com/vi/VLysJeyNBIk/hqdefault.jpg" 
+                        alt="YouTube reel thumbnail" 
+                        onClick={() => setPlayVideo(prev => ({ ...prev, 3: true }))}
+                        style={{ cursor: 'pointer' }}
+                      />
+                      <div 
+                        className="youtube-play-btn-overlay" 
+                        onClick={() => setPlayVideo(prev => ({ ...prev, 3: true }))}
+                        style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          width: '60px',
+                          height: '60px',
+                          backgroundColor: 'rgba(0,0,0,0.7)',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontSize: '24px',
+                          cursor: 'pointer',
+                          zIndex: 10,
+                          pointerEvents: 'auto'
+                        }}
+                      >
+                        <i className="fas fa-play" style={{ marginLeft: '4px' }}></i>
+                      </div>
+                    </>
+                  ) : (
+                    <iframe 
+                      src="https://www.youtube-nocookie.com/embed/VLysJeyNBIk?controls=0&rel=0&autoplay=1&mute=1&loop=1&playlist=VLysJeyNBIk" 
+                      title="YouTube reel" 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                      allowFullScreen
+                    ></iframe>
+                  )}
                   <div className="social-rating-float"><i className="fas fa-star"></i> 5.0</div>
                   <div className="social-actions-float">
                     <div className="social-action-btn"><i className="far fa-heart"></i></div>

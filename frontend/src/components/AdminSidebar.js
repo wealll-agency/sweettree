@@ -6,19 +6,20 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../store/authSlice.js';
 import { clearCart } from '../store/cartSlice.js';
-import { LayoutDashboard, ShoppingBag, ClipboardList, ShoppingCart, Users, Receipt, LogOut, Tag, ChevronLeft, ChevronRight, RotateCcw, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, ClipboardList, ShoppingCart, Users, Receipt, LogOut, Tag, ChevronLeft, ChevronRight, RotateCcw, ChevronDown, ChevronUp, MessageSquare, MapPin, Package, Shield } from 'lucide-react';
 
 export default function AdminSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isRefundOpen, setIsRefundOpen] = useState(false);
   const [unreadEnquiries, setUnreadEnquiries] = useState(0);
+  const [pendingRefunds, setPendingRefunds] = useState(0);
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useDispatch();
 
   const { user } = useSelector((state) => state.auth);
 
-  // Poll for new enquiries every 30 seconds
+  // Poll for new enquiries and refund requests every 30 seconds
   useEffect(() => {
     const fetchUnread = async () => {
       try {
@@ -32,8 +33,26 @@ export default function AdminSidebar() {
         if (data.success) setUnreadEnquiries(data.unreadCount);
       } catch {}
     };
+
+    const fetchPendingRefunds = async () => {
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
+        if (!token) return;
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7050/api'}/refunds?status=Pending`, {
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include'
+        });
+        const data = await res.json();
+        if (data.success) setPendingRefunds(data.refunds.length);
+      } catch {}
+    };
+
     fetchUnread();
-    const interval = setInterval(fetchUnread, 30000);
+    fetchPendingRefunds();
+    const interval = setInterval(() => {
+      fetchUnread();
+      fetchPendingRefunds();
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -49,12 +68,15 @@ export default function AdminSidebar() {
   const navItems = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
     { label: 'Product Manager', path: '/admin/products', icon: <ShoppingBag size={20} /> },
+    { label: 'Warehouses', path: '/admin/warehouses', icon: <MapPin size={20} /> },
     { label: 'Inventory Manager', path: '/admin/inventory', icon: <ClipboardList size={20} /> },
     { label: 'Orders Queue', path: '/admin/orders', icon: <ShoppingCart size={20} /> },
+    { label: 'Shipments', path: '/admin/shipments', icon: <Package size={20} /> },
     { 
       label: 'Refund Requests', 
       icon: <RotateCcw size={20} />, 
       isSubmenu: true,
+      badge: pendingRefunds,
       subItems: [
         { label: 'Pending', path: '/admin/refunds/pending' },
         { label: 'Approved', path: '/admin/refunds/approved' },
@@ -63,6 +85,7 @@ export default function AdminSidebar() {
       ]
     },
     { label: 'Customer Profiling', path: '/admin/customers', icon: <Users size={20} /> },
+    { label: 'Customer Access', path: '/admin/access', icon: <Shield size={20} /> },
     { label: 'Enquiries', path: '/admin/enquiries', icon: <MessageSquare size={20} />, badge: unreadEnquiries },
     { label: 'Reports Center', path: '/admin/reports', icon: <Receipt size={20} /> },
     { label: 'Coupon Manager', path: '/admin/coupons', icon: <Tag size={20} /> }
@@ -150,9 +173,12 @@ export default function AdminSidebar() {
                     <div className="d-flex align-items-center gap-2" style={{ justifyContent: isCollapsed ? 'center' : 'flex-start', width: '100%' }}>
                       {item.icon}
                       {!isCollapsed && <span>{item.label}</span>}
+                      {!isCollapsed && item.badge > 0 && (
+                        <span className="badge bg-danger ms-2 rounded-pill" style={{ fontSize: '11px' }}>{item.badge}</span>
+                      )}
                     </div>
                     {!isCollapsed && (
-                      <div>
+                      <div className="d-flex align-items-center gap-1">
                         {isRefundOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                       </div>
                     )}

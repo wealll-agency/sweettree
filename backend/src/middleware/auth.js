@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
-const userCache = new Map();
+export const userCache = new Map();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export const protect = async (req, res, next) => {
@@ -39,7 +39,8 @@ export const protect = async (req, res, next) => {
 
 export const authorizeRoles = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    // Super Admin is always authorized
+    if (!req.user || (!roles.includes(req.user.role) && req.user.role !== 'Super Admin' && req.user.role !== 'Admin')) {
       return res.status(403).json({ // 403 Forbidden
         success: false,
         message: `Role (${req.user?.role || 'Guest'}) is not authorized to access this resource`

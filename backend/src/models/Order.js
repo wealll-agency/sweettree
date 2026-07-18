@@ -49,7 +49,21 @@ const orderSchema = new mongoose.Schema({
   deliveredAt: { type: Date },
   ccavenueTrackingId: { type: String, index: true },
   ccavenueBankRefNo: { type: String },
-  paymentMode: { type: String }
+  paymentMode: { type: String },
+  
+  // Shipping Integration Fields (Multiple shipments support)
+  shipments: [{
+    warehouse: { type: mongoose.Schema.Types.ObjectId, ref: 'Warehouse' },
+    waybill: { type: String, index: true },
+    trackingId: { type: String },
+    status: { type: String, default: 'Manifested' },
+    courierName: { type: String, default: 'Delhivery' },
+    shippedAt: { type: Date },
+    expectedDeliveryDate: { type: Date },
+    currentLocation: { type: String },
+    lastScan: { type: String },
+    lastUpdated: { type: Date }
+  }]
 }, {
   timestamps: true
 });

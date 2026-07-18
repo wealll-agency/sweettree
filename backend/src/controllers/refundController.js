@@ -1,5 +1,6 @@
 import RefundRequest from '../models/RefundRequest.js';
 import Order from '../models/Order.js';
+import SystemSetting from '../models/SystemSetting.js';
 
 // @desc    Get all refund requests (with optional status filter)
 // @route   GET /api/refunds
@@ -90,3 +91,53 @@ export const createMockRefundRequest = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Create a refund/cancel request by customer
+// @route   POST /api/refunds/request/:orderId
+// @access  Private
+export const createCustomerRefundRequest = async (req, res, next) => {
+  try {
+    const { reason, customerComment } = req.body;
+    const orderId = req.params.orderId;
+
+    const refundSetting = await SystemSetting.findOne({ key: 'refund' });
+    const hasRefundPermission = refundSetting ? refundSetting.value : true;
+    if (!hasRefundPermission) {
+      return res.status(403).json({ success: false, message: 'Refund requests are currently disabled globally.' });
+    }
+    
+    // Check if order exists and belongs to user
+    const order = await Order.findOne({ _id: orderId, user: req.user._id });
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Check if refund request already exists
+    const existingRequest = await RefundRequest.findOne({ order: orderId });
+    if (existingRequest) {
+      return res.status(400).json({ success: false, message: 'A request for this order already exists' });
+    }
+
+    // If order is not shipped, we can directly cancel it (and still create the refund request if paid)
+    // For simplicity, we just create a refund request and let admin handle the rest.
+    if (order.orderStatus === 'Placed' || order.orderStatus === 'Confirmed') {
+        order.orderStatus = 'Cancelled';
+        await order.save();
+    }
+
+    const refund = new RefundRequest({
+      order: orderId,
+      user: req.user._id,
+      reason: reason || 'Customer Request',
+      customerComment,
+      amount: order.totalAmount,
+      status: 'Pending'
+    });
+
+    await refund.save();
+    res.status(201).json({ success: true, refund });
+  } catch (error) {
+    next(error);
+  }
+};
+
