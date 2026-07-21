@@ -1,4 +1,5 @@
 import express from 'express'; // Trigger restart
+import 'express-async-errors'; // Catch async route errors
 import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -157,8 +158,15 @@ process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
 process.on('unhandledRejection', (err) => {
-  console.error(`Unhandled Rejection: ${err.message}`);
-  gracefulShutdown();
+  console.error(`[CRITICAL] Unhandled Rejection: ${err.message}`, err);
+  // Do not gracefully shut down server to prevent 502 loop in production.
+  // Instead, PM2 or process manager should handle serious crashes, 
+  // and express-async-errors will handle route-level promise rejections.
+});
+
+process.on('uncaughtException', (err) => {
+  console.error(`[CRITICAL] Uncaught Exception: ${err.message}`, err);
+  // Log safely, but avoid immediate exit for minor exceptions, letting process manager decide.
 });
 
 // Trigger reload for nodemon configuration updates.
