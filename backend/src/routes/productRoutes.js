@@ -6,7 +6,7 @@ import {
   updateProduct,
   deleteProduct,
   toggleProductStatus
-} from '../controllers/ProductController.js';
+} from '../controllers/productController.js';
 import { protect, authorizeRoles } from '../middleware/auth.js';
 import { auditRoute } from '../middleware/logger.js';
 

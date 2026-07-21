@@ -11,7 +11,7 @@ import {
   deleteAddress,
   getSystemSettings,
   updateSystemSettings
-} from '../controllers/AuthController.js';
+} from '../controllers/authController.js';
 import { protect, authorizeRoles } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
 

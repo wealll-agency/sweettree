@@ -3,7 +3,7 @@ import {
   getDashboardSummary,
   exportSalesReportPDF,
   exportSalesReportExcel
-} from '../controllers/ReportController.js';
+} from '../controllers/reportController.js';
 import { protect, authorizeRoles } from '../middleware/auth.js';
 
 const router = express.Router();

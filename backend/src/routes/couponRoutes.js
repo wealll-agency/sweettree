@@ -4,7 +4,7 @@ import {
   applyCoupon,
   getCoupons,
   deleteCoupon
-} from '../controllers/CouponController.js';
+} from '../controllers/couponController.js';
 import { protect, authorizeRoles } from '../middleware/auth.js';
 import { auditRoute } from '../middleware/logger.js';
 
