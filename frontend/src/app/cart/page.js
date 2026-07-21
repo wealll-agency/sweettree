@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { removeFromCart, updateCartQuantity, applyCouponCode, recalculateCart } from '../../store/cartSlice.js';
-import axios from 'axios';
+import api from '../../utils/axiosConfig.js';
 import { Trash2, ShoppingBag, Plus, Minus, ArrowRight } from 'lucide-react';
 
 export default function CartPage() {
@@ -46,16 +46,7 @@ export default function CartPage() {
       setCouponError('');
       setCouponSuccess('');
       
-      const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
-      const config = {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : ''
-        },
-        withCredentials: true
-      };
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
-      const response = await axios.post(`${apiUrl}/coupons/apply`, { code: couponInput.trim() }, config);
+      const response = await api.post(`/coupons/apply`, { code: couponInput.trim() });
       
       const applicableProducts = response.data.applicableProducts || [];
 

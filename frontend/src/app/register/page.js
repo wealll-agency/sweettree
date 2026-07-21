@@ -1,15 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { registerUser, clearError } from '../../store/authSlice.js';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { UserPlus, User, Mail, Phone, Key } from 'lucide-react';
 
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-5">Loading...</div>}>
+      <RegisterContent />
+    </Suspense>
+  );
+}
+
+function RegisterContent() {
   const dispatch = useDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect') || '';
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -20,10 +30,10 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (user) {
-      router.push('/');
+      router.push(redirect ? `/${redirect}` : '/');
     }
     dispatch(clearError());
-  }, [user, router, dispatch]);
+  }, [user, redirect, router, dispatch]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -116,7 +126,7 @@ export default function RegisterPage() {
         </form>
 
         <p className="text-center text-muted fs-7 mt-4 mb-0">
-          Already have an account? <Link href="/login" className="text-success fw-bold text-decoration-none hover-underline">Log In</Link>
+          Already have an account? <Link href={`/login${redirect ? `?redirect=${redirect}` : ''}`} className="text-success fw-bold text-decoration-none hover-underline">Log In</Link>
         </p>
 
       </div>

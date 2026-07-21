@@ -99,7 +99,7 @@ export const createProduct = async (req, res, next) => {
     name, category, subCategory, subSubCategory, brand, productType, sku, unit, unitValue, searchTags, 
     price, purchasePrice, minOrderQty, discount, discountType, taxAmount, taxCalculation, 
     shippingCost, shippingMultiplyWithQty, isFeatured, isActive,
-    description, ingredients, benefits, images, videos, batchNumber, expiryDate, stock, packSizes
+    description, ingredients, benefits, images, videos, batchNumber, expiryDate, stock, packSizes, warehouse
   } = req.body;
 
   try {
@@ -149,7 +149,8 @@ export const createProduct = async (req, res, next) => {
       batchNumber,
       expiryDate: expiryDate ? new Date(expiryDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Default 1 year expiry
       stock: Number(stock) || 0,
-      packSizes: (typeof packSizes === 'string' ? JSON.parse(packSizes) : (packSizes || [])).filter(p => p.weight !== '' && p.weight !== null && p.weight !== undefined && p.price !== '' && p.price !== null && p.price !== undefined)
+      packSizes: (typeof packSizes === 'string' ? JSON.parse(packSizes) : (packSizes || [])).filter(p => p.weight !== '' && p.weight !== null && p.weight !== undefined && p.price !== '' && p.price !== null && p.price !== undefined),
+      warehouse: warehouse === '' ? null : warehouse
     });
 
     const createdProduct = await product.save();
@@ -250,6 +251,10 @@ export const updateProduct = async (req, res, next) => {
       const oldStock = product.stock;
       if (req.body.stock !== undefined) {
         product.stock = req.body.stock;
+      }
+      
+      if (req.body.warehouse !== undefined) {
+        product.warehouse = req.body.warehouse === '' ? null : req.body.warehouse;
       }
 
       const updatedProduct = await product.save();

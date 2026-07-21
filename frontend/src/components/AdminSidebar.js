@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../store/authSlice.js';
 import { clearCart } from '../store/cartSlice.js';
 import { LayoutDashboard, ShoppingBag, ClipboardList, ShoppingCart, Users, Receipt, LogOut, Tag, ChevronLeft, ChevronRight, RotateCcw, ChevronDown, ChevronUp, MessageSquare, MapPin, Package, Shield } from 'lucide-react';
+import api from '../utils/axiosConfig.js';
 
 export default function AdminSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -23,27 +24,15 @@ export default function AdminSidebar() {
   useEffect(() => {
     const fetchUnread = async () => {
       try {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
-        if (!token) return;
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api'}/enquiries`, {
-          headers: { Authorization: `Bearer ${token}` },
-          credentials: 'include'
-        });
-        const data = await res.json();
-        if (data.success) setUnreadEnquiries(data.unreadCount);
+        const res = await api.get(`/enquiries`);
+        if (res.data.success) setUnreadEnquiries(res.data.unreadCount);
       } catch {}
     };
 
     const fetchPendingRefunds = async () => {
       try {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
-        if (!token) return;
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api'}/refunds?status=Pending`, {
-          headers: { Authorization: `Bearer ${token}` },
-          credentials: 'include'
-        });
-        const data = await res.json();
-        if (data.success) setPendingRefunds(data.refunds.length);
+        const res = await api.get(`/refunds?status=Pending`);
+        if (res.data.success) setPendingRefunds(res.data.refunds.length);
       } catch {}
     };
 

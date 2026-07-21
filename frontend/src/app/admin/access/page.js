@@ -2,20 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { Shield, Save, Check, RefreshCw, AlertCircle, ShoppingBag, RotateCcw } from 'lucide-react';
-import axios from 'axios';
+import api from '../../../utils/axiosConfig.js';
 
 export default function CustomerAccessPage() {
   const [settings, setSettings] = useState({ cod: true, refund: true });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null); // { type: 'success' | 'danger', text: '' }
-
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
-
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/auth/settings?t=${Date.now()}`);
+      const res = await api.get(`/auth/settings?t=${Date.now()}`);
       if (res.data.success) {
         setSettings(res.data.settings);
       }
@@ -45,15 +42,7 @@ export default function CustomerAccessPage() {
     setSaving(true);
     setStatusMessage(null);
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
-      const res = await axios.put(
-        `${API_BASE}/auth/settings`,
-        { settings },
-        {
-          headers: { Authorization: token ? `Bearer ${token}` : '' },
-          withCredentials: true
-        }
-      );
+      const res = await api.put(`/auth/settings`, { settings });
       if (res.data.success) {
         setStatusMessage({
           type: 'success',

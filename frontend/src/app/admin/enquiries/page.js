@@ -2,8 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { Mail, MailOpen, Trash2, RefreshCw } from 'lucide-react';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
+import api from '../../../utils/axiosConfig.js';
 
 export default function EnquiriesPage() {
   const { user } = useSelector((state) => state.auth);
@@ -14,13 +13,8 @@ export default function EnquiriesPage() {
   const fetchEnquiries = useCallback(async () => {
     setLoading(true);
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
-      const res = await fetch(`${API_BASE}/enquiries`, {
-        headers: { Authorization: `Bearer ${token}` },
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (data.success) setEnquiries(data.enquiries);
+      const res = await api.get(`/enquiries`);
+      if (res.data.success) setEnquiries(res.data.enquiries);
     } catch (e) {
       console.error(e);
     } finally {
@@ -32,12 +26,7 @@ export default function EnquiriesPage() {
 
   const markRead = async (id) => {
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
-      await fetch(`${API_BASE}/enquiries/${id}/read`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` },
-        credentials: 'include'
-      });
+      await api.patch(`/enquiries/${id}/read`);
       setEnquiries(prev => prev.map(e => e._id === id ? { ...e, isRead: true } : e));
       if (selected?._id === id) setSelected(prev => ({ ...prev, isRead: true }));
     } catch (e) { console.error(e); }
@@ -46,12 +35,7 @@ export default function EnquiriesPage() {
   const deleteEnquiry = async (id) => {
     if (!confirm('Are you sure you want to delete this enquiry?')) return;
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
-      await fetch(`${API_BASE}/enquiries/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-        credentials: 'include'
-      });
+      await api.delete(`/enquiries/${id}`);
       setEnquiries(prev => prev.filter(e => e._id !== id));
       if (selected?._id === id) setSelected(null);
     } catch (e) { console.error(e); }

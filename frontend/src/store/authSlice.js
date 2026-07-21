@@ -1,16 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/auth` : 'https://sweettreeon.com/api/auth';
-
-// Configure Axios to send cookies
-axios.defaults.withCredentials = true;
-
-const getConfig = () => {
-  return {
-    withCredentials: true
-  };
-};
+import api from '../utils/axiosConfig.js';
 
 const getInitialUser = () => {
   return null;
@@ -20,7 +9,7 @@ export const registerUser = createAsyncThunk(
   'auth/register',
   async ({ name, email, password, phone }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/register`, { name, email, password, phone }, getConfig());
+      const response = await api.post(`/auth/register`, { name, email, password, phone });
       return response.data.user;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Registration failed');
@@ -32,7 +21,7 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async ({ email, password, rememberMe }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/login`, { email, password, rememberMe }, getConfig());
+      const response = await api.post(`/auth/login`, { email, password, rememberMe });
       return response.data.user;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Login failed');
@@ -44,7 +33,7 @@ export const logoutUser = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      await axios.post(`${API_URL}/logout`);
+      await api.post(`/auth/logout`);
       return null;
     } catch (error) {
       return rejectWithValue('Logout failed');
@@ -56,7 +45,7 @@ export const updateUserProfile = createAsyncThunk(
   'auth/updateUserProfile',
   async (profileData, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`${API_URL}/profile`, profileData, getConfig());
+      const response = await api.put(`/auth/profile`, profileData);
       return response.data.user;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update profile');
@@ -68,7 +57,7 @@ export const addAddress = createAsyncThunk(
   'auth/addAddress',
   async (addressData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/addresses`, addressData, getConfig());
+      const response = await api.post(`/auth/addresses`, addressData);
       return response.data.addresses;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to add address');
@@ -80,7 +69,7 @@ export const deleteAddress = createAsyncThunk(
   'auth/deleteAddress',
   async (addressId, { rejectWithValue }) => {
     try {
-      const response = await axios.delete(`${API_URL}/addresses/${addressId}`, getConfig());
+      const response = await api.delete(`/auth/addresses/${addressId}`);
       return response.data.addresses;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete address');
@@ -92,7 +81,7 @@ export const updateAddress = createAsyncThunk(
   'auth/updateAddress',
   async ({ addressId, addressData }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`${API_URL}/addresses/${addressId}`, addressData, getConfig());
+      const response = await api.put(`/auth/addresses/${addressId}`, addressData);
       return response.data.addresses;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update address');
@@ -162,6 +151,8 @@ const authSlice = createSlice({
         state.user = null;
         if (typeof window !== 'undefined') {
           localStorage.removeItem('sweettree_user');
+          localStorage.removeItem('sweettree_token');
+          localStorage.removeItem('admin_token');
         }
       })
       // Update Profile

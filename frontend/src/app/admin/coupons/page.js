@@ -1,18 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../../utils/axiosConfig.js';
 import { Tag, Trash2, PlusCircle, AlertCircle } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
-
-const getConfig = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
-  return {
-    headers: { Authorization: token ? `Bearer ${token}` : '' },
-    withCredentials: true
-  };
-};
 
 export default function CouponManagerPage() {
   const [coupons, setCoupons] = useState([]);
@@ -39,8 +31,8 @@ export default function CouponManagerPage() {
     try {
       setLoading(true);
       const [couponsRes, productsRes] = await Promise.all([
-        axios.get(`${API_URL}/coupons`, getConfig()),
-        axios.get(`${API_URL}/products`, getConfig())
+        api.get(`/coupons`),
+        api.get(`/products`)
       ]);
       setCoupons(couponsRes.data.coupons || []);
       setProducts(productsRes.data.products || []);
@@ -70,7 +62,7 @@ export default function CouponManagerPage() {
     setSuccess(null);
 
     try {
-      await axios.post(`${API_URL}/coupons`, formData, getConfig());
+      await api.post(`/coupons`, formData);
       setSuccess('Coupon created successfully!');
       setFormData({
         code: '',
@@ -91,7 +83,7 @@ export default function CouponManagerPage() {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this coupon?')) return;
     try {
-      await axios.delete(`${API_URL}/coupons/${id}`, getConfig());
+      await api.delete(`/coupons/${id}`);
       fetchData();
     } catch (err) {
       setError('Failed to delete coupon');

@@ -7,7 +7,7 @@ import { logoutUser } from '../store/authSlice.js';
 import { clearCart } from '../store/cartSlice.js';
 import { Home, Bell, User, LogOut, ShoppingCart, RotateCcw, MessageSquare, Truck, CheckCircle, ChevronRight } from 'lucide-react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
+import api from '../utils/axiosConfig.js';
 
 const TYPE_CONFIG = {
   new_order:       { icon: <ShoppingCart size={15} />, color: '#3b82f6', bg: '#eff6ff' },
@@ -42,16 +42,10 @@ export default function AdminHeader() {
   // Fetch notifications
   const fetchNotifs = async () => {
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
-      if (!token) return;
-      const res = await fetch(`${API_BASE}/notifications`, {
-        headers: { Authorization: `Bearer ${token}` },
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (data.success) {
-        setNotifications(data.notifications.slice(0, 8));
-        setUnread(data.unreadCount);
+      const res = await api.get(`/notifications`);
+      if (res.data.success) {
+        setNotifications(res.data.notifications.slice(0, 8));
+        setUnread(res.data.unreadCount);
       }
     } catch {}
   };

@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useDispatch, useSelector } from 'react-redux';
-import { addToCart } from '../../store/cartSlice';
+import { addToCart, clearCart } from '../../store/cartSlice';
 import { fetchProducts, fetchProductDetails, fetchProductReviews, submitProductReview } from '../../store/productsSlice';
 import { Star, MessageCircle, Heart, Plus, Minus } from 'lucide-react';
 import { toggleWishlist } from '../../store/wishlistSlice';
@@ -124,7 +124,23 @@ function ShopDetailsContent() {
   };
 
   const handleBuyNow = () => {
-    handleAddToCart();
+    const mockProduct = {
+      _id: realProduct._id,
+      name: realProduct.name,
+      price: finalPrice,
+      discount: 0,
+      image: realProduct.images?.[0] || '/top_product1.png',
+      stock: realProduct.stock || 100
+    };
+    
+    dispatch(clearCart());
+    
+    dispatch(addToCart({
+      product: mockProduct,
+      quantity,
+      size: selectedPack || defaultPackName
+    }));
+
     setTimeout(() => {
       router.push('/checkout');
     }, 100);

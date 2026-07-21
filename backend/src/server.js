@@ -1,4 +1,4 @@
-import express from 'express';
+import express from 'express'; // Trigger restart
 import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -37,6 +37,16 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
+// Validate critical payment environment variables
+if (process.env.NODE_ENV === 'production') {
+  const requiredKeys = ['CCAVENUE_MERCHANT_ID', 'CCAVENUE_WORKING_KEY', 'CCAVENUE_ACCESS_CODE'];
+  const missingKeys = requiredKeys.filter(key => !process.env[key]);
+  if (missingKeys.length > 0) {
+    console.error(`\n[CRITICAL WARNING] Missing CCAvenue Payment Keys in production: ${missingKeys.join(', ')}`);
+    console.error('CCAvenue payments will fail until these are provided in your environment variables.\n');
+  }
+}
+
 // Middlewares
 app.use(helmet({
   crossOriginResourcePolicy: false // Allows loading local static upload files in local frontend/admin images
@@ -62,6 +72,15 @@ app.use(cookieParser());
 
 // Static Folder for Local Uploads
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
+// Prevent caching for API routes (fixes live server stale data issues)
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);

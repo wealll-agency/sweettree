@@ -8,6 +8,7 @@ import { hydrateCart } from '../store/cartSlice.js';
 import { hydrateWishlist } from '../store/wishlistSlice.js';
 
 import axios from 'axios';
+import api from '../utils/axiosConfig.js';
 
 function StateHydrator() {
   const dispatch = useDispatch();
@@ -69,9 +70,12 @@ function StateHydrator() {
       }
     };
     initAuth();
+  }, [dispatch]);
 
-    // Global Axios 401 Interceptor
-    const interceptor = axios.interceptors.response.use(
+  // Global Axios 401 Interceptor - Kept in a separate useEffect so it properly 
+  // survives React 18 Strict Mode unmount/remount cycles.
+  useEffect(() => {
+    const interceptor = api.interceptors.response.use(
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
@@ -86,10 +90,13 @@ function StateHydrator() {
           try {
              await axios.post(`${apiUrl}/auth/refresh`, {}, { withCredentials: true });
              // The backend set a new HttpOnly access token cookie, so retry the original request
-             return axios(originalRequest);
+             return api(originalRequest);
           } catch(err) {
              // Refresh failed, user is definitely logged out
              dispatch(setCredentials(null));
+             if (typeof window !== 'undefined') {
+               window.location.href = '/login?session_expired=true';
+             }
              return Promise.reject(err);
           }
         }
@@ -98,7 +105,7 @@ function StateHydrator() {
     );
 
     return () => {
-      axios.interceptors.response.eject(interceptor);
+      api.interceptors.response.eject(interceptor);
     };
   }, [dispatch]);
 

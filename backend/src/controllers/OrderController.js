@@ -162,9 +162,10 @@ export const createOrder = async (req, res, next) => {
     if (paymentMode === 'COD') {
       await Payment.create({
         order: savedOrder._id,
+        ccavenueOrderId: `COD-${savedOrder._id}`,
         amount: totalAmount,
         status: 'Created',
-        method: 'COD'
+        paymentMode: 'COD'
       });
 
       await logActivity(req.user._id, 'CREATE_ORDER', `Created COD order ID: ${savedOrder._id}`, req);
@@ -188,10 +189,44 @@ export const createOrder = async (req, res, next) => {
     const merchant_id = process.env.CCAVENUE_MERCHANT_ID || 'M_ID';
     const access_code = process.env.CCAVENUE_ACCESS_CODE || 'A_CODE';
     const working_key = process.env.CCAVENUE_WORKING_KEY || 'W_KEY';
-    const redirect_url = process.env.CCAVENUE_REDIRECT_URL || 'http://localhost:7050/api/orders/ccavenue-callback';
-    const cancel_url = process.env.CCAVENUE_CANCEL_URL || 'http://localhost:7050/api/orders/ccavenue-callback';
+    const hostUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const redirect_url = process.env.CCAVENUE_REDIRECT_URL || `${hostUrl}/api/orders/ccavenue-callback`;
+    const cancel_url = process.env.CCAVENUE_CANCEL_URL || `${hostUrl}/api/orders/ccavenue-callback`;
 
-    const merchantData = `merchant_id=${merchant_id}&order_id=${savedOrder._id}&currency=INR&amount=${totalAmount}&redirect_url=${redirect_url}&cancel_url=${cancel_url}&language=EN&billing_name=${encodeURIComponent(mappedDeliveryAddress.name)}&billing_address=${encodeURIComponent(mappedDeliveryAddress.address)}&billing_city=${encodeURIComponent(mappedDeliveryAddress.city)}&billing_state=${encodeURIComponent(mappedDeliveryAddress.state)}&billing_zip=${mappedDeliveryAddress.pincode}&billing_country=India&billing_tel=${mappedDeliveryAddress.phone}`;
+    // Sanitize string inputs to prevent CCAvenue token parsing failures
+    const sanitize = (str) => {
+      if (!str) return '';
+      return String(str).replace(/[=&]/g, ' ').trim();
+    };
+
+    const merchantDataObj = {
+      merchant_id: merchant_id,
+      order_id: savedOrder._id.toString(),
+      currency: 'INR',
+      amount: Number(totalAmount).toFixed(2),
+      redirect_url: redirect_url,
+      cancel_url: cancel_url,
+      language: 'EN',
+      billing_name: sanitize(mappedDeliveryAddress.name),
+      billing_address: sanitize(mappedDeliveryAddress.address),
+      billing_city: sanitize(mappedDeliveryAddress.city),
+      billing_state: sanitize(mappedDeliveryAddress.state),
+      billing_zip: sanitize(mappedDeliveryAddress.pincode),
+      billing_country: 'India',
+      billing_tel: sanitize(mappedDeliveryAddress.phone)
+    };
+
+    let merchantData = '';
+    for (let key in merchantDataObj) {
+      merchantData += `${key}=${merchantDataObj[key]}&`;
+    }
+    // Remove the very last trailing ampersand to perfectly match standard URL encoded strings
+    merchantData = merchantData.slice(0, -1);
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('--- CCAvenue Plaintext Payload ---');
+      console.log(merchantData);
+    }
 
     const encRequest = encrypt(merchantData, working_key);
 
@@ -240,6 +275,20 @@ export const ccavenueCallback = async (req, res, next) => {
       return res.status(404).send('Order not found');
     }
 
+    // Safely extract the primary frontend URL if comma-separated
+    let frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    if (frontendUrl.includes(',')) {
+      frontendUrl = frontendUrl.split(',')[0].trim();
+    }
+
+    // Idempotency: Prevent duplicate stock deductions or restorals on page refresh
+    if (order.paymentStatus === 'Paid') {
+      return res.redirect(`${frontendUrl}/user/orders/${order._id}?success=true`);
+    }
+    if (order.paymentStatus === 'Failed' && order_status !== 'Success') {
+      return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent(failure_message || 'Payment Failed')}`);
+    }
+
     const payment = await Payment.findOne({ ccavenueOrderId: order_id });
 
     if (order_status === 'Success') {
@@ -260,7 +309,6 @@ export const ccavenueCallback = async (req, res, next) => {
         await payment.save();
       }
 
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       return res.redirect(`${frontendUrl}/user/orders/${order._id}?success=true`);
     } else {
       order.paymentStatus = 'Failed';
@@ -297,7 +345,6 @@ export const ccavenueCallback = async (req, res, next) => {
         );
       }
 
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent(failure_message || 'Payment Failed')}`);
     }
   } catch (error) {

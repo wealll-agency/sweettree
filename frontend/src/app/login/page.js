@@ -120,7 +120,7 @@ function LoginContent() {
         </form>
 
         <p className="text-center text-muted fs-7 mt-4 mb-0">
-          Don't have an account? <Link href="/register" className="text-success fw-bold text-decoration-none hover-underline">Register</Link>
+          Don't have an account? <Link href={`/register${redirect ? `?redirect=${redirect}` : ''}`} className="text-success fw-bold text-decoration-none hover-underline">Register</Link>
         </p>
 
       </div>

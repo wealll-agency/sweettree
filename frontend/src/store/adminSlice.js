@@ -1,28 +1,18 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import api from '../utils/axiosConfig.js';
 
-const PRODUCTS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/products` : 'https://sweettreeon.com/api/products';
-const ORDERS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/orders` : 'https://sweettreeon.com/api/orders';
-const REPORTS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/reports` : 'https://sweettreeon.com/api/reports';
-const REFUNDS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/refunds` : 'https://sweettreeon.com/api/refunds';
-const DELHIVERY_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/delhivery` : 'https://sweettreeon.com/api/delhivery';
-const WAREHOUSES_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/warehouses` : 'https://sweettreeon.com/api/warehouses';
-
-axios.defaults.withCredentials = true;
-
-const getConfig = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
-  return {
-    headers: { Authorization: token ? `Bearer ${token}` : '' },
-    withCredentials: true
-  };
-};
+const PRODUCTS_URL = '/products';
+const ORDERS_URL = '/orders';
+const REPORTS_URL = '/reports';
+const REFUNDS_URL = '/refunds';
+const DELHIVERY_URL = '/delhivery';
+const WAREHOUSES_URL = '/warehouses';
 
 export const fetchDashboardStats = createAsyncThunk(
   'admin/fetchDashboardStats',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${REPORTS_URL}/dashboard`, getConfig());
+      const response = await axios.get(`${REPORTS_URL}/dashboard`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch dashboard statistics');
@@ -44,7 +34,7 @@ export const fetchAdminProducts = createAsyncThunk(
       if (filters.limit) queryParams.append('limit', filters.limit);
 
       const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-      const response = await axios.get(`${PRODUCTS_URL}${queryString}`, getConfig());
+      const response = await axios.get(`${PRODUCTS_URL}${queryString}`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch products');
@@ -56,7 +46,7 @@ export const toggleProductState = createAsyncThunk(
   'admin/toggleProductState',
   async ({ id, field, value }, { rejectWithValue }) => {
     try {
-      const response = await axios.patch(`${PRODUCTS_URL}/${id}/toggle`, { field, value }, getConfig());
+      const response = await axios.patch(`${PRODUCTS_URL}/${id}/toggle`, { field, value });
       return response.data.product;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to toggle product status');
@@ -68,7 +58,7 @@ export const addProduct = createAsyncThunk(
   'admin/addProduct',
   async (productData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(PRODUCTS_URL, productData, getConfig());
+      const response = await axios.post(PRODUCTS_URL, productData);
       return response.data.product;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to add product');
@@ -80,7 +70,7 @@ export const editProduct = createAsyncThunk(
   'admin/editProduct',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`${PRODUCTS_URL}/${id}`, data, getConfig());
+      const response = await axios.put(`${PRODUCTS_URL}/${id}`, data);
       return response.data.product;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update product');
@@ -92,7 +82,7 @@ export const deleteReview = createAsyncThunk(
   'admin/deleteReview',
   async (id, { rejectWithValue }) => {
     try {
-      await axios.delete(`/api/reviews/${id}`, { withCredentials: true });
+      await axios.delete(`/api/reviews/${id}`);
       return id;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete review');
@@ -104,7 +94,7 @@ export const fetchWarehouses = createAsyncThunk(
   'admin/fetchWarehouses',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(WAREHOUSES_URL, getConfig());
+      const response = await axios.get(WAREHOUSES_URL);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch warehouses');
@@ -116,7 +106,7 @@ export const createWarehouse = createAsyncThunk(
   'admin/createWarehouse',
   async (warehouseData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(WAREHOUSES_URL, warehouseData, getConfig());
+      const response = await axios.post(WAREHOUSES_URL, warehouseData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create warehouse');
@@ -128,7 +118,7 @@ export const updateWarehouse = createAsyncThunk(
   'admin/updateWarehouse',
   async ({ id, warehouseData }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`${WAREHOUSES_URL}/${id}`, warehouseData, getConfig());
+      const response = await axios.put(`${WAREHOUSES_URL}/${id}`, warehouseData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update warehouse');
@@ -140,7 +130,7 @@ export const deleteWarehouse = createAsyncThunk(
   'admin/deleteWarehouse',
   async (id, { rejectWithValue }) => {
     try {
-      await axios.delete(`${WAREHOUSES_URL}/${id}`, getConfig());
+      await axios.delete(`${WAREHOUSES_URL}/${id}`);
       return id;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete warehouse');
@@ -152,7 +142,7 @@ export const removeProduct = createAsyncThunk(
   'admin/removeProduct',
   async (productId, { rejectWithValue }) => {
     try {
-      await axios.delete(`${PRODUCTS_URL}/${productId}`, getConfig());
+      await axios.delete(`${PRODUCTS_URL}/${productId}`);
       return productId;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete product');
@@ -168,7 +158,7 @@ export const fetchAdminShipments = createAsyncThunk(
       if (status) {
         url += `&status=${status}`;
       }
-      const { data } = await axios.get(url, getConfig());
+      const { data } = await axios.get(url);
       return data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch shipments');
@@ -180,7 +170,7 @@ export const fetchShipmentByWaybill = createAsyncThunk(
   'admin/fetchShipmentByWaybill',
   async (waybill, { rejectWithValue }) => {
     try {
-      const { data } = await axios.get(`${ORDERS_URL}/shipments/${waybill}`, getConfig());
+      const { data } = await axios.get(`${ORDERS_URL}/shipments/${waybill}`);
       return data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch shipment details');
@@ -197,7 +187,7 @@ export const fetchAdminOrders = createAsyncThunk(
       if (filters.limit) queryParams.append('limit', filters.limit);
 
       const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-      const response = await axios.get(`${ORDERS_URL}${queryString}`, getConfig());
+      const response = await axios.get(`${ORDERS_URL}${queryString}`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch orders');
@@ -209,7 +199,7 @@ export const updateOrderStatus = createAsyncThunk(
   'admin/updateOrderStatus',
   async ({ id, status, trackingNumber }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`${ORDERS_URL}/${id}/status`, { status, trackingNumber }, getConfig());
+      const response = await axios.put(`${ORDERS_URL}/${id}/status`, { status, trackingNumber });
       return response.data.order;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update order status');
@@ -221,7 +211,7 @@ export const refundOrder = createAsyncThunk(
   'admin/refundOrder',
   async (orderId, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${ORDERS_URL}/${orderId}/refund`, {}, getConfig());
+      const response = await axios.post(`${ORDERS_URL}/${orderId}/refund`, {});
       return response.data.order;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to process refund');
@@ -234,7 +224,7 @@ export const fetchRefundRequests = createAsyncThunk(
   async (status, { rejectWithValue }) => {
     try {
       const url = status ? `${REFUNDS_URL}?status=${status}` : REFUNDS_URL;
-      const response = await axios.get(url, getConfig());
+      const response = await axios.get(url);
       return response.data.refunds;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch refund requests');
@@ -246,7 +236,7 @@ export const updateRefundRequestStatus = createAsyncThunk(
   'admin/updateRefundRequestStatus',
   async ({ id, status, adminComment }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`${REFUNDS_URL}/${id}/status`, { status, adminComment }, getConfig());
+      const response = await axios.put(`${REFUNDS_URL}/${id}/status`, { status, adminComment });
       return response.data.refund;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update refund status');
@@ -259,7 +249,7 @@ export const createDelhiveryShipment = createAsyncThunk(
   'admin/createDelhiveryShipment',
   async (orderId, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${DELHIVERY_URL}/create/${orderId}`, {}, getConfig());
+      const response = await axios.post(`${DELHIVERY_URL}/create/${orderId}`, {});
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create Delhivery shipment');
@@ -271,7 +261,7 @@ export const cancelDelhiveryShipment = createAsyncThunk(
   'admin/cancelDelhiveryShipment',
   async (waybill, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${DELHIVERY_URL}/cancel/${waybill}`, {}, getConfig());
+      const response = await axios.post(`${DELHIVERY_URL}/cancel/${waybill}`, {});
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to cancel Delhivery shipment');
@@ -283,7 +273,7 @@ export const getDelhiveryLabel = createAsyncThunk(
   'admin/getDelhiveryLabel',
   async (waybill, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${DELHIVERY_URL}/label/${waybill}`, getConfig());
+      const response = await axios.get(`${DELHIVERY_URL}/label/${waybill}`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to generate shipping label');

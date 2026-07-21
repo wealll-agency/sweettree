@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchOrderDetails, trackDelhiveryShipment, createRefundRequest } from '../../../../store/ordersSlice.js';
+import { clearCart } from '../../../../store/cartSlice.js';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ShieldCheck, MapPin, Truck, Check, Calendar, ArrowLeft, ShoppingBag } from 'lucide-react';
@@ -27,6 +28,12 @@ export default function OrderTrackingPage() {
   const isNewSuccess = searchParams.get('success') === 'true';
 
   const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (isNewSuccess) {
+      dispatch(clearCart());
+    }
+  }, [isNewSuccess, dispatch]);
 
   useEffect(() => {
     setMounted(true);

@@ -90,12 +90,14 @@ const Header = () => {
                   <span className="nav-text">ABOUT</span>
                 </Link>
               </li>
+              {/* 
               <li>
                 <Link href="/blog" className="premium-nav-link">
                   <span className="nav-icon"><BookOpen size={16} /></span>
                   <span className="nav-text">BLOG</span>
                 </Link>
-              </li>
+              </li> 
+              */}
               <li>
                 <Link href="/contact" className="premium-nav-link">
                   <span className="nav-icon"><Mail size={16} /></span>

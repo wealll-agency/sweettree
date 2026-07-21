@@ -9,7 +9,7 @@ import {
   processRefund,
   getAdminShipments,
   getShipmentByWaybill
-} from '../controllers/OrderController.js';
+} from '../controllers/orderController.js';
 import { protect, authorizeRoles } from '../middleware/auth.js';
 import { auditRoute } from '../middleware/logger.js';
 

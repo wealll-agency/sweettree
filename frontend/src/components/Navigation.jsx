@@ -11,7 +11,7 @@ const Navigation = () => {
             <li><Link href="/shop">🛍️ SHOP </Link></li>
             <li><Link href="/build-combo">🎁 COMBO GIFT BOX</Link></li>
             <li><Link href="/about">ℹ️ ABOUT</Link></li>
-            <li><Link href="/blog">📝 BLOG</Link></li>
+            {/* <li><Link href="/blog">📝 BLOG</Link></li> */}
             <li><Link href="/contact">📞 CONTACT</Link></li>
           </ul>
         </div>

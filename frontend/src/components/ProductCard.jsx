@@ -32,6 +32,18 @@ const ProductCard = ({ product }) => {
   const productId = resolvedProduct._id || product.name;
   const isWishlisted = wishlistItems.some(i => i._id === productId);
 
+  let calculatedDiscountedPrice = resolvedProduct.price;
+  if (resolvedProduct.discount > 0) {
+    if (resolvedProduct.discountType === 'Percent') {
+      calculatedDiscountedPrice = Math.round(resolvedProduct.price * (1 - resolvedProduct.discount / 100));
+    } else {
+      calculatedDiscountedPrice = Math.max(0, resolvedProduct.price - resolvedProduct.discount);
+    }
+  } else if (resolvedProduct.discountedPrice !== undefined) {
+    calculatedDiscountedPrice = resolvedProduct.discountedPrice;
+  }
+
+
   const handleToggleWishlist = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -48,7 +60,7 @@ const ProductCard = ({ product }) => {
 
   const handleAddToCart = (e) => {
     e.preventDefault();
-    const finalPrice = resolvedProduct.discountedPrice !== undefined ? resolvedProduct.discountedPrice : resolvedProduct.price;
+    const finalPrice = calculatedDiscountedPrice;
     dispatch(addToCart({ 
       product: {
         _id: productId,
@@ -111,7 +123,7 @@ const ProductCard = ({ product }) => {
           </div>
           <h3 className="product-name">{resolvedProduct.name}</h3>
           <div className="product-pricing">
-            MRP: <del>₹{resolvedProduct.price}</del> <span className="current-price">₹{resolvedProduct.discountedPrice !== undefined ? resolvedProduct.discountedPrice : resolvedProduct.price}</span> 
+            MRP: <del>₹{resolvedProduct.price}</del> <span className="current-price">₹{calculatedDiscountedPrice}</span> 
             {product.perGram && <span className="per-gram">({product.perGram})</span>}
           </div>
         </Link>

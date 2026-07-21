@@ -249,17 +249,18 @@ const seedData = async () => {
       totalAmount: 712,
       paymentStatus: 'Paid',
       orderStatus: 'Delivered',
-      razorpayOrderId: 'order_mock12345678',
-      razorpayPaymentId: 'pay_mock12345678',
+      ccavenueTrackingId: 'track_mock12345678',
+      ccavenueBankRefNo: 'bank_mock12345678',
+      paymentMode: 'Credit Card',
       shippedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
       deliveredAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
     });
 
     await Payment.create({
       order: order._id,
-      razorpayOrderId: 'order_mock12345678',
-      razorpayPaymentId: 'pay_mock12345678',
-      razorpaySignature: 'sig_mock12345678',
+      ccavenueOrderId: 'order_mock12345678',
+      ccavenueTrackingId: 'track_mock12345678',
+      ccavenueBankRefNo: 'bank_mock12345678',
       amount: 712,
       status: 'Captured'
     });

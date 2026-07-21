@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { createOrder } from '../../store/ordersSlice.js';
 import { clearCart, addToCart, applyCouponCode } from '../../store/cartSlice.js';
-import axios from 'axios';
+import api from '../../utils/axiosConfig.js';
 import { addAddress } from '../../store/authSlice.js';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -57,8 +57,7 @@ export default function CheckoutPage() {
 
     const fetchGlobalSettings = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
-        const res = await axios.get(`${apiUrl}/auth/settings?t=${Date.now()}`);
+        const res = await api.get(`/auth/settings?t=${Date.now()}`);
         if (res.data.success) {
           setHasCodPermission(res.data.settings.cod !== false);
         }
@@ -79,8 +78,7 @@ export default function CheckoutPage() {
     // Fetch recommended products
     const fetchRecommended = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
-        const res = await axios.get(`${apiUrl}/products`);
+        const res = await api.get(`/products`);
         if (res.data.success) {
           // Exclude products already in cart, get top 3
           const cartProductIds = items.map(item => item.product);
@@ -97,6 +95,44 @@ export default function CheckoutPage() {
       fetchRecommended();
     }
   }, [items]);
+
+  // Restore Checkout State after login/registration
+  useEffect(() => {
+    if (user) {
+      const pendingCheckoutStr = sessionStorage.getItem('pendingCheckout');
+      if (pendingCheckoutStr) {
+        try {
+          const state = JSON.parse(pendingCheckoutStr);
+          if (state.address && state.city) {
+            setAddrName(state.addrName || '');
+            setAddrPhone(state.addrPhone || '');
+            setPincode(state.pincode || '');
+            setLocality(state.locality || '');
+            setAddress(state.address || '');
+            setCity(state.city || '');
+            setStateName(state.stateName || '');
+            setLandmark(state.landmark || '');
+            setAltPhone(state.altPhone || '');
+            setAddressType(state.addressType || 'Home');
+            setPaymentMode(state.paymentMode || 'CCAvenue');
+
+            // Automatically save this address to their profile
+            dispatch(addAddress({ 
+              name: state.addrName, phone: state.addrPhone, pincode: state.pincode, locality: state.locality, address: state.address, 
+              city: state.city, state: state.stateName, landmark: state.landmark, alternatePhone: state.altPhone, addressType: state.addressType,
+              isDefault: (!user.addresses || user.addresses.length === 0)
+            })).unwrap().then((addresses) => {
+              setSelectedAddressIndex(addresses.length - 1);
+              setShowNewAddressForm(false);
+            }).catch(err => console.error("Failed to restore checkout address", err));
+          }
+          sessionStorage.removeItem('pendingCheckout');
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, [user, dispatch]);
 
   useEffect(() => {
     if (!isMounted) return;
@@ -150,7 +186,11 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     if (!user) {
-      router.push('/register?redirect=checkout');
+      const checkoutState = {
+        addrName, addrPhone, pincode, locality, address, city, stateName, landmark, altPhone, addressType, paymentMode
+      };
+      sessionStorage.setItem('pendingCheckout', JSON.stringify(checkoutState));
+      router.push('/login?redirect=checkout');
       return;
     }
 
@@ -183,11 +223,10 @@ export default function CheckoutPage() {
       const orderResult = await dispatch(createOrder(orderData)).unwrap();
       const { encRequest, accessCode } = orderResult;
       
-      // Clear cart before redirecting
-      dispatch(clearCart());
-
       // If COD, skip CCAvenue redirection and go to user profile
       if (paymentMode === 'COD' || !encRequest) {
+        // Clear cart for COD immediately
+        dispatch(clearCart());
         alert('Order placed successfully via Cash on Delivery!');
         router.push('/user/profile');
         return;
@@ -196,8 +235,11 @@ export default function CheckoutPage() {
       // 2. Redirect to CCAvenue via POST
       const form = document.createElement('form');
       form.method = 'POST';
-      // Use test or production URL based on env (default to production format)
-      form.action = process.env.NEXT_PUBLIC_CCAVENUE_URL || 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
+      
+      const ccavenueEnv = process.env.NEXT_PUBLIC_CCAVENUE_ENV || 'production';
+      form.action = ccavenueEnv.toLowerCase() === 'test' || ccavenueEnv.toLowerCase() === 'sandbox'
+        ? 'https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction'
+        : 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
       
       const encInput = document.createElement('input');
       encInput.type = 'hidden';
@@ -229,16 +271,7 @@ export default function CheckoutPage() {
     }
 
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
-      const config = {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : ''
-        },
-        withCredentials: true
-      };
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
-      const response = await axios.post(`${apiUrl}/coupons/apply`, { code: couponInput.trim() }, config);
+      const response = await api.post(`/coupons/apply`, { code: couponInput.trim() });
       
       const applicableProducts = response.data.applicableProducts || [];
 

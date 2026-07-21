@@ -3,7 +3,7 @@ import { useEffect, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShoppingCart, RotateCcw, MessageSquare, Truck, CheckCircle, Bell, RefreshCw } from 'lucide-react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
+import api from '../../../utils/axiosConfig.js';
 
 const TYPE_CONFIG = {
   new_order:       { icon: <ShoppingCart size={18} />, color: '#3b82f6', bg: '#eff6ff', label: 'New Order' },
@@ -31,13 +31,8 @@ export default function NotificationsPage() {
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('sweettree_token') : null;
-      const res = await fetch(`${API_BASE}/notifications`, {
-        headers: { Authorization: `Bearer ${token}` },
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (data.success) setNotifications(data.notifications);
+      const res = await api.get(`/notifications`);
+      if (res.data.success) setNotifications(res.data.notifications);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, []);
