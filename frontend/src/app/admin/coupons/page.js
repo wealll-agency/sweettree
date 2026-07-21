@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../../utils/axiosConfig.js';
 import { Tag, Trash2, PlusCircle, AlertCircle } from 'lucide-react';
+import { useNotification } from '../../../context/NotificationContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
 
@@ -10,6 +11,7 @@ export default function CouponManagerPage() {
   const [coupons, setCoupons] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { showConfirm, showAlert } = useNotification();
   
   const [formData, setFormData] = useState({
     code: '',
@@ -81,7 +83,8 @@ export default function CouponManagerPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this coupon?')) return;
+    const confirmed = await showConfirm('Are you sure you want to delete this coupon?');
+    if (!confirmed) return;
     try {
       await api.delete(`/coupons/${id}`);
       fetchData();
@@ -120,8 +123,7 @@ export default function CouponManagerPage() {
                   className="form-control bg-light border-0" 
                   value={formData.code} 
                   onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})}
-                  required 
-                  placeholder="e.g. SUMMER20"
+                  required
                 />
               </div>
 

@@ -173,6 +173,16 @@ function ShopDetailsContent() {
   const isInWishlist = wishlistItems.some(item => item._id === realProduct._id);
   const images = realProduct.images && realProduct.images.length > 0 ? realProduct.images : ['/top_product1.png'];
 
+  const getImageUrl = (url) => {
+    if (!url) return '/top_product1.png';
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads/')) {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'https://sweettreeon.com';
+      return `${baseUrl}${url}`;
+    }
+    return url.replace('/assets/images/', '/');
+  };
+
   return (
     <div className="container py-4 mt-2 bg-white animate-fade-in">
       {/* Breadcrumb */}
@@ -188,7 +198,7 @@ function ShopDetailsContent() {
           <div className="mb-3 position-relative text-center border rounded-2 p-4">
              {realProduct.isFeatured && <span className="badge bg-primary position-absolute top-0 start-0 m-3">PREMIUM</span>}
             <Image
-              src={images[activeImageIndex]?.startsWith('http') ? images[activeImageIndex] : (images[activeImageIndex] ? `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'https://sweettreeon.com'}${images[activeImageIndex]}` : '/top_product1.png')}
+              src={getImageUrl(images[activeImageIndex])}
               alt={realProduct.name}
               width={500}
               height={400}
@@ -205,7 +215,7 @@ function ShopDetailsContent() {
                 style={{ width: '60px', height: '60px' }}
                 onClick={() => setActiveImageIndex(index)}
               >
-                  <Image src={imgUrl.startsWith('http') ? imgUrl : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'https://sweettreeon.com'}${imgUrl}`} width={60} height={60} className="img-fluid h-100 object-fit-contain" alt={`Thumbnail ${index}`} />
+                  <Image src={getImageUrl(imgUrl)} width={60} height={60} className="img-fluid h-100 object-fit-contain" alt={`Thumbnail ${index}`} />
               </div>
             ))}
           </div>
@@ -305,7 +315,7 @@ function ShopDetailsContent() {
 
           <div className="mb-4 pt-2">
              <div className="d-flex">
-                <input type="text" className="form-control rounded-start rounded-0 py-2 border-dark" placeholder="Enter Pincode" value={pincode} onChange={(e) => setPincode(e.target.value)} style={{ maxWidth: '250px' }} />
+                <input type="text" className="form-control rounded-start rounded-0 py-2 border-dark" value={pincode} onChange={(e) => setPincode(e.target.value)} style={{ maxWidth: '250px' }} />
                 <button className="btn btn-dark rounded-end rounded-0 px-4">Check Now</button>
              </div>
              <div className="d-flex align-items-center gap-3 mt-3">
@@ -422,7 +432,6 @@ function ShopDetailsContent() {
                         <textarea
                           rows="4"
                           className="form-control"
-                          placeholder="Share your experience with this product..."
                           value={comment}
                           onChange={(e) => setComment(e.target.value)}
                         ></textarea>

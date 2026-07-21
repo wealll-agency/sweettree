@@ -56,7 +56,6 @@ export default function RefundsPageClient({ status }) {
               <input 
                 type="text" 
                 className="form-control bg-light border-start-0" 
-                placeholder="Search by order id or refund id" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />

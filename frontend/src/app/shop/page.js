@@ -179,7 +179,6 @@ function ShopContent() {
                       <input 
                         type="number" 
                         className="form-control border-0 px-1" 
-                        placeholder="From" 
                         value={priceFrom}
                         onChange={(e) => setPriceFrom(e.target.value)}
                       />
@@ -189,7 +188,6 @@ function ShopContent() {
                       <input 
                         type="number" 
                         className="form-control border-0 px-1" 
-                        placeholder="To" 
                         value={priceTo}
                         onChange={(e) => setPriceTo(e.target.value)}
                       />

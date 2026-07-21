@@ -6,12 +6,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { fetchShipmentByWaybill, getDelhiveryLabel, cancelDelhiveryShipment } from '../../../../store/adminSlice.js';
 import { Truck, MapPin, User, Package, Calendar, Activity, ArrowLeft, Printer, FileText, X, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { useNotification } from '../../../../context/NotificationContext';
 
 export default function ShipmentDetails() {
   const { waybill } = useParams();
   const dispatch = useDispatch();
   const router = useRouter();
   const { selectedShipment, ordersLoading } = useSelector((state) => state.admin);
+  const { showAlert, showConfirm } = useNotification();
 
   useEffect(() => {
     if (waybill) {
@@ -51,7 +53,7 @@ export default function ShipmentDetails() {
           <button className="btn btn-outline-dark d-flex align-items-center gap-2" onClick={() => dispatch(getDelhiveryLabel(waybill))}>
             <Printer size={16} /> Print Label
           </button>
-          <button className="btn btn-primary d-flex align-items-center gap-2" onClick={() => alert('Manifest generated')}>
+          <button className="btn btn-primary d-flex align-items-center gap-2" onClick={() => showAlert('Manifest generated', 'info')}>
             <FileText size={16} /> Print Manifest
           </button>
         </div>
@@ -197,12 +199,13 @@ export default function ShipmentDetails() {
           </div>
           
           {shipment.status !== 'Cancelled' && shipment.status !== 'Delivered' && (
-            <button className="btn btn-outline-danger w-100 d-flex justify-content-center align-items-center gap-2" onClick={() => {
-              if(confirm('Cancel this shipment?')) {
+            <button className="btn btn-outline-danger w-100 d-flex justify-content-center align-items-center gap-2" onClick={async () => {
+              const confirmed = await showConfirm('Cancel this shipment?');
+              if(confirmed) {
                 dispatch(cancelDelhiveryShipment(waybill))
                   .unwrap()
                   .then(() => {
-                    alert('Cancelled');
+                    showAlert('Cancelled', 'success');
                     dispatch(fetchShipmentByWaybill(waybill));
                   });
               }

@@ -116,7 +116,6 @@ const Header = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search products..."
                   className="sliding-search-input"
                 />
                 <button
@@ -132,11 +131,11 @@ const Header = () => {
 
             {/* User Dropdown */}
             <div className="dropdown d-none d-md-flex">
-              <button className="header-action-btn" data-bs-toggle="dropdown" aria-expanded="false" title="Account">
+              <button className="header-action-btn" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" title="Account">
                 <User size={18} />
               </button>
               {user ? (
-                <ul className="dropdown-menu dropdown-menu-end premium-dropdown" aria-label="user menu">
+                <ul className="dropdown-menu dropdown-menu-center premium-dropdown" aria-label="user menu">
                   <li className="dropdown-header-item">
                     <span className="d-block fw-bold text-dark" style={{ fontSize: '13px' }}>Hi, {user.name?.split(' ')[0] || 'User'}</span>
                     <span className="text-muted" style={{ fontSize: '11px' }}>{user.email}</span>
@@ -167,7 +166,7 @@ const Header = () => {
                   </li>
                 </ul>
               ) : (
-                <ul className="dropdown-menu dropdown-menu-end premium-dropdown" aria-label="user menu">
+                <ul className="dropdown-menu dropdown-menu-center premium-dropdown" aria-label="user menu">
                   <li>
                     <Link href="/login" className="dropdown-item premium-dropdown-item">
                       <LogIn size={16} className="me-2 text-success" /> Sign In

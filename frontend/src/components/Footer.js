@@ -25,11 +25,11 @@ const Footer = () => {
             {/* Social Icons */}
             <div className="d-flex align-items-center gap-3">
               <span style={{ fontSize: '14px', fontWeight: 'bold' }}>Follow Us:</span>
-              <a href="#" className="text-white text-opacity-75 text-decoration-none hover-white"><i className="fab fa-facebook-f fs-5"></i></a>
-              <a href="#" className="text-white text-opacity-75 text-decoration-none hover-white"><i className="fab fa-twitter fs-5"></i></a>
-              <a href="#" className="text-white text-opacity-75 text-decoration-none hover-white"><i className="fab fa-instagram fs-5"></i></a>
-              <a href="#" className="text-white text-opacity-75 text-decoration-none hover-white"><i className="fab fa-youtube fs-5"></i></a>
-              <a href="#" className="text-white text-opacity-75 text-decoration-none hover-white"><i className="fas fa-envelope fs-5"></i></a>
+              <a href="https://www.facebook.com/sweettreeon/" target="_blank" rel="noopener noreferrer" className="text-white text-opacity-75 text-decoration-none hover-white"><i className="fab fa-facebook-f fs-5"></i></a>
+              <a href="https://twitter.com/sweettreeon" target="_blank" rel="noopener noreferrer" className="text-white text-opacity-75 text-decoration-none hover-white"><i className="fab fa-twitter fs-5"></i></a>
+              <a href="https://www.instagram.com/sweettreeon/" target="_blank" rel="noopener noreferrer" className="text-white text-opacity-75 text-decoration-none hover-white"><i className="fab fa-instagram fs-5"></i></a>
+              <a href="https://www.youtube.com/@sweettreeon" target="_blank" rel="noopener noreferrer" className="text-white text-opacity-75 text-decoration-none hover-white"><i className="fab fa-youtube fs-5"></i></a>
+              <a href="mailto:info@sweettreeon.com" className="text-white text-opacity-75 text-decoration-none hover-white"><i className="fas fa-envelope fs-5"></i></a>
             </div>
           </div>
 
@@ -81,8 +81,7 @@ const Footer = () => {
         {/* Bottom Section */}
         <div className="pt-4 d-flex flex-column flex-md-row justify-content-between align-items-center" style={{ borderTop: '1px solid #333' }}>
           <div className="mb-3 mb-md-0" style={{ color: '#888', fontSize: '12px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
-            Sweettree © 2026 All Rights Reserved 
-            <Image src="/heart.webp" alt="love" width={14} height={14} style={{ width: '14px', height: '14px' }} /> 
+            Sweettree © 2026 All Rights Reserved | v1.0.0 
             and developed by 
             <Image src="/Wealll_new.webp" alt="We All" width={60} height={20} style={{ objectFit: 'contain' }} />
           </div>

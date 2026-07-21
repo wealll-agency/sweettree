@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchWarehouses, createWarehouse, updateWarehouse, deleteWarehouse } from '../../../store/adminSlice.js';
 import { Plus, Edit2, Trash2, MapPin, Phone } from 'lucide-react';
+import { useNotification } from '../../../context/NotificationContext';
 
 export default function AdminWarehouses() {
   const dispatch = useDispatch();
   const { warehouses, loading } = useSelector((state) => state.admin);
+  const { showConfirm } = useNotification();
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -75,8 +77,9 @@ export default function AdminWarehouses() {
     }
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this warehouse?')) {
+  const handleDelete = async (id) => {
+    const confirmed = await showConfirm('Are you sure you want to delete this warehouse?');
+    if (confirmed) {
       dispatch(deleteWarehouse(id));
     }
   };
@@ -155,14 +158,12 @@ export default function AdminWarehouses() {
                     <div className="mb-3">
                       <label className="form-label fw-bold fs-7">Warehouse Name</label>
                       <input type="text" className="form-control" required 
-                        value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} 
-                        placeholder="e.g. Main Delhi Hub" />
+                        value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                     </div>
                     <div className="mb-3">
                       <label className="form-label fw-bold fs-7">Delhivery Pickup Location Name</label>
                       <input type="text" className="form-control font-monospace" required 
-                        value={formData.delhiveryPickupLocationName} onChange={e => setFormData({...formData, delhiveryPickupLocationName: e.target.value})} 
-                        placeholder="Exact registered name in Delhivery panel" />
+                        value={formData.delhiveryPickupLocationName} onChange={e => setFormData({...formData, delhiveryPickupLocationName: e.target.value})} />
                       <div className="form-text">Must exactly match the registered pickup location name in your Delhivery Dashboard.</div>
                     </div>
                     <div className="row mb-3">
@@ -194,14 +195,12 @@ export default function AdminWarehouses() {
                       <div className="col-md-6 mb-3">
                         <label className="form-label fw-bold fs-7">Contact Person Name</label>
                         <input type="text" className="form-control" 
-                          value={formData.contactPersonName || ''} onChange={e => setFormData({...formData, contactPersonName: e.target.value})} 
-                          placeholder="Optional" />
+                          value={formData.contactPersonName || ''} onChange={e => setFormData({...formData, contactPersonName: e.target.value})} />
                       </div>
                       <div className="col-md-6 mb-3">
                         <label className="form-label fw-bold fs-7">Email</label>
                         <input type="email" className="form-control" 
-                          value={formData.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} 
-                          placeholder="Optional" />
+                          value={formData.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} />
                       </div>
                     </div>
                     <div className="form-check mb-3">

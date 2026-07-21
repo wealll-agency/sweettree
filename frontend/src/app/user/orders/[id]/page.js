@@ -8,6 +8,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ShieldCheck, MapPin, Truck, Check, Calendar, ArrowLeft, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
+import { useNotification } from '../../../../context/NotificationContext';
 
 export default function OrderTrackingPage() {
   const { id } = useParams();
@@ -17,6 +18,7 @@ export default function OrderTrackingPage() {
 
   const { activeOrder: order, orderLoading } = useSelector((state) => state.orders);
   const { user, loading: authLoading } = useSelector((state) => state.auth);
+  const { showAlert } = useNotification();
   
   const [trackingData, setTrackingData] = useState({});
   const [trackingLoading, setTrackingLoading] = useState(false);
@@ -99,9 +101,9 @@ export default function OrderTrackingPage() {
       setShowRefundModal(null);
       setRefundReason('');
       dispatch(fetchOrderDetails(id));
-      alert('Request submitted successfully.');
+      showAlert('Request submitted successfully.', 'success');
     } catch (err) {
-      alert(err || 'Failed to submit request');
+      showAlert(err || 'Failed to submit request', 'error');
     } finally {
       setRefundSubmitting(false);
     }
@@ -464,7 +466,6 @@ export default function OrderTrackingPage() {
                 <textarea 
                   className="form-control shadow-none bg-light"
                   rows="4"
-                  placeholder="Tell us why..."
                   value={refundReason}
                   onChange={(e) => setRefundReason(e.target.value)}
                 ></textarea>

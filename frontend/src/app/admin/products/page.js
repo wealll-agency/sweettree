@@ -5,12 +5,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchAdminProducts, addProduct, editProduct, removeProduct, toggleProductState, fetchWarehouses } from '../../../store/adminSlice.js';
 import { Plus, Edit, Trash2, X, Eye, Download, Search, LayoutGrid } from 'lucide-react';
 import Image from 'next/image';
+import { useNotification } from '../../../context/NotificationContext';
 
 export default function AdminProductsPage() {
   const dispatch = useDispatch();
   
   const { products, productsLoading, warehouses } = useSelector((state) => state.admin);
   const { user } = useSelector((state) => state.auth);
+  const { showAlert, showConfirm } = useNotification();
 
   // Form toggles
   const [showForm, setShowForm] = useState(false);
@@ -101,7 +103,7 @@ export default function AdminProductsPage() {
 
   const handleExport = () => {
     if (!products || products.length === 0) {
-      alert("No products to export");
+      showAlert("No products to export", "warning");
       return;
     }
     const headers = ['SL', 'Product Name', 'Category', 'Product Type', 'MRP Price', 'Selling Price', 'Stock', 'Featured', 'Active'];
@@ -213,8 +215,9 @@ export default function AdminProductsPage() {
     setShowForm(true);
   };
 
-  const handleDeleteClick = (id) => {
-    if (confirm('Are you sure you want to delete this product? Corresponding inventory records will be wiped.')) {
+  const handleDeleteClick = async (id) => {
+    const confirmed = await showConfirm('Are you sure you want to delete this product? Corresponding inventory records will be wiped.');
+    if (confirmed) {
       dispatch(removeProduct(id));
     }
   };
@@ -281,20 +284,20 @@ export default function AdminProductsPage() {
         .unwrap()
         .then(() => {
           resetForm();
-          alert("Product updated successfully!");
+          showAlert("Product updated successfully!", "success");
         })
         .catch((err) => {
-          alert("Failed to update product: " + err);
+          showAlert("Failed to update product: " + err, "error");
         });
     } else {
       dispatch(addProduct(payload))
         .unwrap()
         .then(() => {
           resetForm();
-          alert("Product added successfully!");
+          showAlert("Product added successfully!", "success");
         })
         .catch((err) => {
-          alert("Failed to add product: " + err);
+          showAlert("Failed to add product: " + err, "error");
         });
     }
   };
@@ -450,7 +453,6 @@ export default function AdminProductsPage() {
               <input 
                 type="text" 
                 className="form-control rounded-end-0 border-end-0" 
-                placeholder="Search Product Name" 
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && loadProducts()}
@@ -496,7 +498,7 @@ export default function AdminProductsPage() {
                 <div className="row g-4">
                   <div className="col-md-12">
                     <label className="fw-medium mb-1 fs-7">Product Name</label>
-                    <input type="text" required className="form-control" placeholder="Product Name" value={name} onChange={(e) => setName(e.target.value)} />
+                    <input type="text" required className="form-control" value={name} onChange={(e) => setName(e.target.value)} />
                   </div>
                   
                   <div className="col-md-6">
@@ -522,11 +524,11 @@ export default function AdminProductsPage() {
                   </div>
                   <div className="col-md-4">
                     <label className="fw-medium mb-1 fs-7">Sub Category</label>
-                    <input type="text" className="form-control" placeholder="Select Sub Category" value={subCategory} onChange={(e) => setSubCategory(e.target.value)} />
+                    <input type="text" className="form-control" value={subCategory} onChange={(e) => setSubCategory(e.target.value)} />
                   </div>
                   <div className="col-md-4">
                     <label className="fw-medium mb-1 fs-7">Sub Sub Category</label>
-                    <input type="text" className="form-control" placeholder="Select Sub Sub Category" value={subSubCategory} onChange={(e) => setSubSubCategory(e.target.value)} />
+                    <input type="text" className="form-control" value={subSubCategory} onChange={(e) => setSubSubCategory(e.target.value)} />
                   </div>
 
                   <div className="col-md-6">
@@ -534,12 +536,12 @@ export default function AdminProductsPage() {
                       <label className="fw-medium mb-1 fs-7">Product SKU</label>
                       <a href="#" className="text-primary text-decoration-none fs-7" onClick={(e) => { e.preventDefault(); generateSku(); }}>Generate Code</a>
                     </div>
-                    <input type="text" className="form-control" placeholder="Code" value={sku} onChange={(e) => setSku(e.target.value)} />
+                    <input type="text" className="form-control" value={sku} onChange={(e) => setSku(e.target.value)} />
                   </div>
                   <div className="col-md-6">
                     <label className="fw-medium mb-1 fs-7">Unit Quantity & Type</label>
                     <div className="input-group">
-                      <input type="number" className="form-control" placeholder="Qty (e.g. 500)" value={unitValue} onChange={(e) => setUnitValue(e.target.value)} />
+                      <input type="number" className="form-control" value={unitValue} onChange={(e) => setUnitValue(e.target.value)} />
                       <select className="form-select" style={{ maxWidth: '100px' }} value={unit} onChange={(e) => setUnit(e.target.value)}>
                         <option value="kg">kg</option>
                         <option value="gm">gm</option>
@@ -552,7 +554,7 @@ export default function AdminProductsPage() {
 
                   <div className="col-12">
                     <label className="fw-medium mb-1 fs-7">Search Tags</label>
-                    <input type="text" className="form-control" placeholder="Enter tag (comma separated)" value={searchTags} onChange={(e) => setSearchTags(e.target.value)} />
+                    <input type="text" className="form-control" value={searchTags} onChange={(e) => setSearchTags(e.target.value)} />
                   </div>
 
                   {/* Images */}
@@ -597,19 +599,19 @@ export default function AdminProductsPage() {
                   
                   <div className="col-md-12">
                     <label className="fw-medium mb-1 fs-7">Batch Number</label>
-                    <input type="text" required className="form-control" placeholder="BATCH-123" value={batchNumber} onChange={(e) => setBatchNumber(e.target.value)} />
+                    <input type="text" required className="form-control" value={batchNumber} onChange={(e) => setBatchNumber(e.target.value)} />
                   </div>
                   <div className="col-md-6">
                     <label className="fw-medium mb-1 fs-7">Ingredients (Comma-separated)</label>
-                    <input type="text" className="form-control" placeholder="Aloe Vera, Glycerin..." value={ingredients} onChange={(e) => setIngredients(e.target.value)} />
+                    <input type="text" className="form-control" value={ingredients} onChange={(e) => setIngredients(e.target.value)} />
                   </div>
                   <div className="col-md-6">
                     <label className="fw-medium mb-1 fs-7">Benefits (Comma-separated)</label>
-                    <input type="text" className="form-control" placeholder="Hydrates, Softens..." value={benefits} onChange={(e) => setBenefits(e.target.value)} />
+                    <input type="text" className="form-control" value={benefits} onChange={(e) => setBenefits(e.target.value)} />
                   </div>
                   <div className="col-12">
                     <label className="fw-medium mb-1 fs-7">Description</label>
-                    <textarea rows="3" required className="form-control" placeholder="Provide product description..." value={description} onChange={(e) => setDescription(e.target.value)}></textarea>
+                    <textarea rows="3" required className="form-control" value={description} onChange={(e) => setDescription(e.target.value)}></textarea>
                   </div>
                 </div>
               </div>
@@ -700,7 +702,7 @@ export default function AdminProductsPage() {
                 <div className="row g-4">
                   <div className="col-md-3">
                     <label className="fw-medium mb-1 fs-7">MRP Price (₹)</label>
-                    <input type="number" required className="form-control" placeholder="MRP price" value={price} onChange={(e) => setPrice(e.target.value)} />
+                    <input type="number" required className="form-control" value={price} onChange={(e) => setPrice(e.target.value)} />
                   </div>
                   <div className="col-md-3 d-flex flex-column justify-content-center">
                     <span className="fw-medium mb-1 fs-7 text-muted">Discount Price</span>

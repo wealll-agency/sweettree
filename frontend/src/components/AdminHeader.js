@@ -44,8 +44,12 @@ export default function AdminHeader() {
     try {
       const res = await api.get(`/notifications`);
       if (res.data.success) {
-        setNotifications(res.data.notifications.slice(0, 8));
-        setUnread(res.data.unreadCount);
+        const allNotifs = res.data.notifications;
+        setNotifications(allNotifs.slice(0, 8));
+        
+        const stored = JSON.parse(localStorage.getItem('readAdminNotifs') || '[]');
+        const unreadList = allNotifs.filter(n => !stored.includes(n.id));
+        setUnread(unreadList.length);
       }
     } catch {}
   };
@@ -70,6 +74,20 @@ export default function AdminHeader() {
     dispatch(logoutUser());
     dispatch(clearCart());
     router.push('/');
+  };
+
+  const handleNotificationClick = (n) => {
+    setShowBell(false);
+    
+    // Mark as read locally
+    const stored = JSON.parse(localStorage.getItem('readAdminNotifs') || '[]');
+    if (!stored.includes(n.id)) {
+      stored.push(n.id);
+      localStorage.setItem('readAdminNotifs', JSON.stringify(stored));
+      setUnread(prev => Math.max(0, prev - 1));
+    }
+    
+    router.push(n.link);
   };
 
   return (
@@ -137,7 +155,7 @@ export default function AdminHeader() {
                   return (
                     <div
                       key={n.id}
-                      onClick={() => { setShowBell(false); router.push(n.link); }}
+                      onClick={() => handleNotificationClick(n)}
                       style={{
                         display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px',
                         cursor: 'pointer', borderBottom: i < notifications.length - 1 ? '1px solid #f9fafb' : 'none',

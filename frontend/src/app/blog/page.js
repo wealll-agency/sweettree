@@ -214,7 +214,7 @@ export default function BlogPage() {
                     <div className="blog-newsletter-text">DO NOT MISS OUR NEWS</div>
                     <span className="blog-newsletter-sub">Sign up and receive the latest news of our company</span>
                     <form action="#">
-                      <input type="email" placeholder="Your Email Address..." className="blog-newsletter-input" required />
+                      <input type="email" className="blog-newsletter-input" required />
                       <button type="submit" className="blog-newsletter-btn">SEND</button>
                     </form>
                   </div>

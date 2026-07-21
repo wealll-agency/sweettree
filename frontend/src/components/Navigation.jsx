@@ -20,7 +20,7 @@ const Navigation = () => {
       {/* Mobile Search Bar */}
       <div className="container d-block d-lg-none mt-2 mb-2">
         <form className="header-search-form w-100" style={{ height: '40px', borderColor: '#004c03' }}>
-          <input type="text" placeholder="Search products..." style={{ flexGrow: 1, padding: '0 15px', fontSize: '13px' }} />
+          <input type="text" style={{ flexGrow: 1, padding: '0 15px', fontSize: '13px' }} />
           <button type="submit" style={{ padding: '0 15px' }}><i className="fas fa-search"></i></button>
         </form>
       </div>

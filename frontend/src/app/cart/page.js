@@ -181,7 +181,6 @@ export default function CartPage() {
               <input 
                 type="text" 
                 className="form-control" 
-                placeholder="Enter coupon code" 
                 value={couponInput}
                 onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
               />

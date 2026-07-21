@@ -621,12 +621,22 @@ h1, h2, h3, h4, h5, h6, .display-font {
 
 /* Premium dropdown */
 .premium-dropdown {
+  background-color: #ffffff;
+  z-index: 1050;
   border: none;
   border-radius: 14px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
   padding: 6px 0;
   min-width: 200px;
   animation: dropIn 0.2s ease;
+  margin-top: 12px;
+}
+.dropdown-menu-center {
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  top: 100% !important;
+  margin-top: 15px !important;
 }
 @keyframes dropIn {
   from { opacity: 0; transform: translateY(-8px); }

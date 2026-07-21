@@ -72,7 +72,6 @@ function LoginContent() {
                 type="email"
                 required
                 className="form-control form-control-brand ps-5"
-                placeholder="yourname@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -87,7 +86,6 @@ function LoginContent() {
                 type="password"
                 required
                 className="form-control form-control-brand ps-5"
-                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />

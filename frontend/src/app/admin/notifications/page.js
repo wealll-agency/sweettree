@@ -32,10 +32,26 @@ export default function NotificationsPage() {
     setLoading(true);
     try {
       const res = await api.get(`/notifications`);
-      if (res.data.success) setNotifications(res.data.notifications);
+      if (res.data.success) {
+        const stored = JSON.parse(localStorage.getItem('readAdminNotifs') || '[]');
+        const notifs = res.data.notifications.map(n => ({
+          ...n,
+          isRead: stored.includes(n.id)
+        }));
+        setNotifications(notifs);
+      }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, []);
+
+  const handleNotificationClick = (n) => {
+    const stored = JSON.parse(localStorage.getItem('readAdminNotifs') || '[]');
+    if (!stored.includes(n.id)) {
+      stored.push(n.id);
+      localStorage.setItem('readAdminNotifs', JSON.stringify(stored));
+    }
+    router.push(n.link);
+  };
 
   useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
@@ -70,9 +86,9 @@ export default function NotificationsPage() {
               return (
                 <div
                   key={notif.id}
-                  className="list-group-item list-group-item-action border-0 py-3 px-4"
+                  className={`list-group-item list-group-item-action border-0 py-3 px-4 ${notif.isRead ? '' : 'bg-light'}`}
                   style={{ cursor: 'pointer', borderBottom: i < notifications.length - 1 ? '1px solid #f3f4f6' : 'none' }}
-                  onClick={() => router.push(notif.link)}
+                  onClick={() => handleNotificationClick(notif)}
                 >
                   <div className="d-flex align-items-start gap-3">
                     {/* Icon */}
@@ -84,8 +100,9 @@ export default function NotificationsPage() {
                     <div className="flex-grow-1">
                       <div className="d-flex justify-content-between align-items-start">
                         <div>
-                          <span className="fw-semibold" style={{ fontSize: '14px' }}>{notif.title}</span>
+                          <span className={`fw-semibold ${notif.isRead ? 'text-muted' : 'text-dark'}`} style={{ fontSize: '14px' }}>{notif.title}</span>
                           <span className="ms-2 badge rounded-pill" style={{ backgroundColor: config.bg, color: config.color, fontSize: '11px' }}>{config.label}</span>
+                          {!notif.isRead && <span className="ms-2 badge bg-danger rounded-pill" style={{ fontSize: '10px' }}>New</span>}
                         </div>
                         <small className="text-muted flex-shrink-0 ms-3" style={{ fontSize: '12px' }}>{timeAgo(notif.time)}</small>
                       </div>

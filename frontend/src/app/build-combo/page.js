@@ -7,6 +7,7 @@ import { addToCart } from '../../store/cartSlice.js';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useNotification } from '../../context/NotificationContext';
 
 export default function BuildComboPage() {
   return (
@@ -22,6 +23,7 @@ function BuildComboContent() {
 
   const { items: products, loading } = useSelector((state) => state.products);
   const [selectedProductIds, setSelectedProductIds] = useState([]);
+  const { showAlert } = useNotification();
 
   useEffect(() => {
     dispatch(fetchProducts({ limit: 100 }));
@@ -37,7 +39,7 @@ function BuildComboContent() {
 
   const handleAddComboToCart = () => {
     if (selectedProductIds.length < 2) {
-      alert('Please select at least 2 products to create a combo.');
+      showAlert('Please select at least 2 products to create a combo.', 'warning');
       return;
     }
 

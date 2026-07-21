@@ -5,12 +5,14 @@ import { useSelector, useDispatch } from 'react-redux';
 import { addAddress, deleteAddress, updateAddress, updateUserProfile } from '../../../store/authSlice.js';
 import { useRouter } from 'next/navigation';
 import { User, MapPin, Trash2, Edit2, Mail, Phone, Plus } from 'lucide-react';
+import { useNotification } from '../../../context/NotificationContext';
 
 export default function ProfilePage() {
   const dispatch = useDispatch();
   const router = useRouter();
 
   const { user, loading } = useSelector((state) => state.auth);
+  const { showConfirm } = useNotification();
 
   // Profile states
   const [name, setName] = useState('');
@@ -123,8 +125,9 @@ export default function ProfilePage() {
     setShowAddressForm(true);
   };
 
-  const handleAddressDelete = (id) => {
-    if (confirm('Are you sure you want to delete this address?')) {
+  const handleAddressDelete = async (id) => {
+    const confirmed = await showConfirm('Are you sure you want to delete this address?');
+    if (confirmed) {
       dispatch(deleteAddress(id));
     }
   };
@@ -202,7 +205,6 @@ export default function ProfilePage() {
                 <input
                   type="password"
                   className="form-control form-control-brand"
-                  placeholder="Enter new password (optional)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -245,7 +247,6 @@ export default function ProfilePage() {
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="Name"
                       value={addrName}
                       onChange={(e) => setAddrName(e.target.value)}
                     />
@@ -255,7 +256,6 @@ export default function ProfilePage() {
                       type="tel"
                       required
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="10-digit mobile number"
                       value={addrPhone}
                       onChange={(e) => setAddrPhone(e.target.value)}
                     />
@@ -268,7 +268,6 @@ export default function ProfilePage() {
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="Pincode"
                       value={pincode}
                       onChange={(e) => setPincode(e.target.value)}
                     />
@@ -278,7 +277,6 @@ export default function ProfilePage() {
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="Locality"
                       value={locality}
                       onChange={(e) => setLocality(e.target.value)}
                     />
@@ -289,7 +287,6 @@ export default function ProfilePage() {
                   <textarea
                     required
                     className="form-control form-control-brand py-2 fs-7"
-                    placeholder="Address (Area and Street)"
                     rows="2"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
@@ -302,7 +299,6 @@ export default function ProfilePage() {
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="City/District/Town"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                     />
@@ -312,7 +308,6 @@ export default function ProfilePage() {
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="State"
                       value={stateName}
                       onChange={(e) => setStateName(e.target.value)}
                     />
@@ -324,7 +319,6 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="Landmark (Optional)"
                       value={landmark}
                       onChange={(e) => setLandmark(e.target.value)}
                     />
@@ -333,7 +327,6 @@ export default function ProfilePage() {
                     <input
                       type="tel"
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="Alternate Phone (Optional)"
                       value={altPhone}
                       onChange={(e) => setAltPhone(e.target.value)}
                     />

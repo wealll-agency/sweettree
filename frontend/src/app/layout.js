@@ -8,6 +8,8 @@ import ConditionalFooter from '../components/ConditionalFooter';
 import ScrollToTop from '../components/ScrollToTop';
 
 
+import { NotificationProvider } from '../context/NotificationContext';
+
 const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-inter' });
 const outfit = Outfit({ subsets: ['latin'], display: 'swap', variable: '--font-outfit' });
 
@@ -35,14 +37,16 @@ export default function RootLayout({ children }) {
       </head>
       <body className={`${inter.variable} ${outfit.variable} ${inter.className} d-flex flex-column min-vh-100`}>
         <ReduxProvider>
-          <Suspense fallback={null}>
-            <ScrollToTop />
-          </Suspense>
-          <ConditionalHeader />
-          <main className="flex-grow-1">
-            {children}
-          </main>
-          <ConditionalFooter />
+          <NotificationProvider>
+            <Suspense fallback={null}>
+              <ScrollToTop />
+            </Suspense>
+            <ConditionalHeader />
+            <main className="flex-grow-1">
+              {children}
+            </main>
+            <ConditionalFooter />
+          </NotificationProvider>
         </ReduxProvider>
         <Script 
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" 

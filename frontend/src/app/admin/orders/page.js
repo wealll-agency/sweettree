@@ -7,6 +7,7 @@ import { ShoppingBag, Eye, MapPin, Check, Filter, Clock, Search, X, Printer, Pac
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useNotification } from '../../../context/NotificationContext';
 
 const getStateCode = (stateName) => {
   const states = {
@@ -86,6 +87,7 @@ function AdminOrdersContent() {
   const filterStatus = searchParams.get('status');
   const { orders, ordersLoading, warehouses } = useSelector((state) => state.admin);
   const { user } = useSelector((state) => state.auth);
+  const { showAlert, showConfirm } = useNotification();
 
   // Selected order modal details
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -142,12 +144,13 @@ function AdminOrdersContent() {
         dispatch(fetchAdminOrders());
       })
       .catch((err) => {
-        alert(err || 'Failed to update order status');
+        showAlert(err || 'Failed to update order status', 'error');
       });
   };
 
-  const handleRefund = (id) => {
-    if (confirm('Are you sure you want to cancel this order and record it as refunded? (You must initiate the actual refund in your CCAvenue Dashboard)')) {
+  const handleRefund = async (id) => {
+    const confirmed = await showConfirm('Are you sure you want to cancel this order and record it as refunded? (You must initiate the actual refund in your CCAvenue Dashboard)');
+    if (confirmed) {
       setActionSuccess('');
       dispatch(refundOrder(id))
         .unwrap()
@@ -157,13 +160,14 @@ function AdminOrdersContent() {
           dispatch(fetchAdminOrders());
         })
         .catch((err) => {
-          alert(err || 'Refund processing failed');
+          showAlert(err || 'Refund processing failed', 'error');
         });
     }
   };
 
-  const handleCreateDelhiveryShipment = (orderId) => {
-    if(confirm('Are you sure you want to create shipments for this order based on warehouses?')) {
+  const handleCreateDelhiveryShipment = async (orderId) => {
+    const confirmed = await showConfirm('Are you sure you want to create shipments for this order based on warehouses?');
+    if(confirmed) {
       setActionSuccess('');
       dispatch(createDelhiveryShipment(orderId))
         .unwrap()
@@ -174,12 +178,13 @@ function AdminOrdersContent() {
           const updated = {...selectedOrder, shipments: res.shipments, orderStatus: 'Shipped'};
           setSelectedOrder(updated);
         })
-        .catch(err => alert(err || 'Failed to create shipments'));
+        .catch(err => showAlert(err || 'Failed to create shipments', 'error'));
     }
   };
 
-  const handleCancelDelhiveryShipment = (waybill) => {
-    if(confirm('Cancel this shipment?')) {
+  const handleCancelDelhiveryShipment = async (waybill) => {
+    const confirmed = await showConfirm('Cancel this shipment?');
+    if(confirmed) {
       setActionSuccess('');
       dispatch(cancelDelhiveryShipment(waybill))
         .unwrap()
@@ -194,7 +199,7 @@ function AdminOrdersContent() {
           }
           setSelectedOrder(updated);
         })
-        .catch(err => alert(err || 'Cancellation failed'));
+        .catch(err => showAlert(err || 'Cancellation failed', 'error'));
     }
   };
   
@@ -268,10 +273,10 @@ function AdminOrdersContent() {
           `);
           printWindow.document.close();
         } else {
-          alert('Label not available or generated yet.');
+          showAlert('Label not available or generated yet.', 'warning');
         }
       })
-      .catch(err => alert(err || 'Failed to get label'));
+      .catch(err => showAlert(err || 'Failed to get label', 'error'));
   };
 
   const closeDetailsModal = () => {
@@ -548,7 +553,6 @@ function AdminOrdersContent() {
                         type="text"
                         required
                         className="form-control form-control-sm"
-                        placeholder="Enter tracking number"
                         value={trackingNumber}
                         onChange={(e) => setTrackingNumber(e.target.value)}
                         style={{ maxWidth: '240px' }}

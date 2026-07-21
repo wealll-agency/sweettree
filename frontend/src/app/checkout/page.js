@@ -10,6 +10,7 @@ import { addAddress } from '../../store/authSlice.js';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin, CreditCard, ShoppingBag, Plus } from 'lucide-react';
+import { useNotification } from '../../context/NotificationContext';
 
 export default function CheckoutPage() {
   const dispatch = useDispatch();
@@ -18,6 +19,7 @@ export default function CheckoutPage() {
   const { user } = useSelector((state) => state.auth);
   const { items, couponCode, subtotal, discount, tax, shippingFee, total, isCombo, applicableProducts, discountPercentage } = useSelector((state) => state.cart);
   const { loading, error } = useSelector((state) => state.orders);
+  const { showAlert } = useNotification();
 
   // Address selection states
   const [selectedAddressIndex, setSelectedAddressIndex] = useState(0);
@@ -196,7 +198,7 @@ export default function CheckoutPage() {
 
     const addressObj = user.addresses ? user.addresses[selectedAddressIndex] : null;
     if (!addressObj) {
-      alert('Please select or add a shipping address');
+      showAlert('Please select or add a shipping address', 'warning');
       return;
     }
 
@@ -227,7 +229,7 @@ export default function CheckoutPage() {
       if (paymentMode === 'COD' || !encRequest) {
         // Clear cart for COD immediately
         dispatch(clearCart());
-        alert('Order placed successfully via Cash on Delivery!');
+        showAlert('Order placed successfully via Cash on Delivery!', 'success');
         router.push('/user/profile');
         return;
       }
@@ -256,7 +258,7 @@ export default function CheckoutPage() {
       document.body.appendChild(form);
       form.submit();
     } catch (err) {
-      alert(err || 'Failed to place order');
+      showAlert(err || 'Failed to place order', 'error');
     }
   };
 
@@ -370,7 +372,6 @@ export default function CheckoutPage() {
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="Name"
                       value={addrName}
                       onChange={(e) => setAddrName(e.target.value)}
                     />
@@ -380,7 +381,6 @@ export default function CheckoutPage() {
                       type="tel"
                       required
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="10-digit mobile number"
                       value={addrPhone}
                       onChange={(e) => setAddrPhone(e.target.value)}
                     />
@@ -393,7 +393,6 @@ export default function CheckoutPage() {
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="Pincode"
                       value={pincode}
                       onChange={(e) => setPincode(e.target.value)}
                     />
@@ -403,7 +402,6 @@ export default function CheckoutPage() {
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="Locality"
                       value={locality}
                       onChange={(e) => setLocality(e.target.value)}
                     />
@@ -414,7 +412,6 @@ export default function CheckoutPage() {
                   <textarea
                     required
                     className="form-control form-control-brand py-2 fs-7"
-                    placeholder="Address (Area and Street)"
                     rows="2"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
@@ -427,7 +424,6 @@ export default function CheckoutPage() {
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="City/District/Town"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                     />
@@ -437,7 +433,6 @@ export default function CheckoutPage() {
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="State"
                       value={stateName}
                       onChange={(e) => setStateName(e.target.value)}
                     />
@@ -449,7 +444,6 @@ export default function CheckoutPage() {
                     <input
                       type="text"
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="Landmark (Optional)"
                       value={landmark}
                       onChange={(e) => setLandmark(e.target.value)}
                     />
@@ -458,7 +452,6 @@ export default function CheckoutPage() {
                     <input
                       type="tel"
                       className="form-control form-control-brand py-2 fs-7"
-                      placeholder="Alternate Phone (Optional)"
                       value={altPhone}
                       onChange={(e) => setAltPhone(e.target.value)}
                     />
@@ -567,7 +560,6 @@ export default function CheckoutPage() {
                 <input
                   type="text"
                   className="form-control form-control-sm form-control-brand"
-                  placeholder="Enter coupon code"
                   value={couponInput}
                   onChange={(e) => setCouponInput(e.target.value)}
                 />

@@ -3,16 +3,19 @@ import { useDispatch } from 'react-redux';
 import { updateRefundRequestStatus } from '../store/adminSlice.js';
 import { useState } from 'react';
 import Image from 'next/image';
+import { useNotification } from '../context/NotificationContext';
 
 export default function RefundDetailsModal({ refund, onClose }) {
   const dispatch = useDispatch();
   const [adminComment, setAdminComment] = useState(refund?.adminComment || '');
   const [isUpdating, setIsUpdating] = useState(false);
+  const { showConfirm } = useNotification();
 
   if (!refund) return null;
 
   const handleStatusUpdate = async (status) => {
-    if (!window.confirm(`Are you sure you want to mark this request as ${status}?`)) return;
+    const confirmed = await showConfirm(`Are you sure you want to mark this request as ${status}?`);
+    if (!confirmed) return;
     setIsUpdating(true);
     await dispatch(updateRefundRequestStatus({ id: refund._id, status, adminComment }));
     setIsUpdating(false);
@@ -161,8 +164,7 @@ export default function RefundDetailsModal({ refund, onClose }) {
                   <label className="text-muted fw-bold d-block mb-1" style={{ fontSize: '0.85rem' }}>Admin Notes (Internal):</label>
                   <textarea 
                     className="form-control" 
-                    rows="2" 
-                    placeholder="Add a note or reason for rejection/approval..."
+                    rows="2"
                     value={adminComment}
                     onChange={(e) => setAdminComment(e.target.value)}
                     disabled={isUpdating}

@@ -3,12 +3,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { Mail, MailOpen, Trash2, RefreshCw } from 'lucide-react';
 import api from '../../../utils/axiosConfig.js';
+import { useNotification } from '../../../context/NotificationContext';
 
 export default function EnquiriesPage() {
   const { user } = useSelector((state) => state.auth);
   const [enquiries, setEnquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
+  const { showConfirm } = useNotification();
 
   const fetchEnquiries = useCallback(async () => {
     setLoading(true);
@@ -33,7 +35,8 @@ export default function EnquiriesPage() {
   };
 
   const deleteEnquiry = async (id) => {
-    if (!confirm('Are you sure you want to delete this enquiry?')) return;
+    const confirmed = await showConfirm('Are you sure you want to delete this enquiry?');
+    if (!confirmed) return;
     try {
       await api.delete(`/enquiries/${id}`);
       setEnquiries(prev => prev.filter(e => e._id !== id));

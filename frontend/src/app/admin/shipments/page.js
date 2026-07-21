@@ -5,10 +5,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchAdminShipments, getDelhiveryLabel, cancelDelhiveryShipment } from '../../../store/adminSlice.js';
 import { Search, Printer, X, FileText, CheckCircle, Package, MoreVertical, Eye, RefreshCw, Truck } from 'lucide-react';
 import Link from 'next/link';
+import { useNotification } from '../../../context/NotificationContext';
 
 export default function AdminShipments() {
   const dispatch = useDispatch();
   const { shipments, ordersLoading, shipmentsTotalPages, shipmentsCurrentPage } = useSelector((state) => state.admin);
+  const { showAlert, showConfirm } = useNotification();
   const [keyword, setKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -35,30 +37,31 @@ export default function AdminShipments() {
         if (pkg && pkg.pdf_download_link) {
           window.open(pkg.pdf_download_link, '_blank');
         } else {
-          alert('Label not available or generated yet.');
+          showAlert('Label not available or generated yet.', 'warning');
         }
       })
-      .catch(err => alert(err || 'Failed to get label'));
+      .catch(err => showAlert(err || 'Failed to get label', 'error'));
   };
 
-  const handleCancelShipment = (waybill) => {
-    if(confirm('Are you sure you want to cancel this shipment?')) {
+  const handleCancelShipment = async (waybill) => {
+    const confirmed = await showConfirm('Are you sure you want to cancel this shipment?');
+    if(confirmed) {
       dispatch(cancelDelhiveryShipment(waybill))
         .unwrap()
         .then(() => {
-          alert('Shipment cancelled successfully.');
+          showAlert('Shipment cancelled successfully.', 'success');
           dispatch(fetchAdminShipments({ pageNumber: shipmentsCurrentPage, keyword, status: statusFilter }));
         })
-        .catch(err => alert(err || 'Cancellation failed'));
+        .catch(err => showAlert(err || 'Cancellation failed', 'error'));
     }
   };
 
   const handleGenerateManifest = (waybill) => {
-    alert('Manifest generated logic goes here. Connected to generateManifest API.');
+    showAlert('Manifest generated logic goes here. Connected to generateManifest API.', 'info');
   };
 
   const handleRefreshSync = () => {
-    alert('Shipment synced with Delhivery APIs.');
+    showAlert('Shipment synced with Delhivery APIs.', 'success');
   };
 
   // Close dropdown when clicking outside
@@ -87,7 +90,6 @@ export default function AdminShipments() {
               <input 
                 type="text" 
                 className="form-control border-start-0 ps-0" 
-                placeholder="Search by AWB, Order ID, Customer, Phone..." 
                 value={keyword}
                 onChange={e => setKeyword(e.target.value)}
               />

@@ -62,7 +62,6 @@ function RegisterContent() {
                 type="text"
                 required
                 className="form-control form-control-brand ps-5"
-                placeholder="Rahul Sharma"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -77,7 +76,6 @@ function RegisterContent() {
                 type="email"
                 required
                 className="form-control form-control-brand ps-5"
-                placeholder="rahul@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -91,7 +89,6 @@ function RegisterContent() {
               <input
                 type="tel"
                 className="form-control form-control-brand ps-5"
-                placeholder="9876543210"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />
@@ -106,7 +103,6 @@ function RegisterContent() {
                 type="password"
                 required
                 className="form-control form-control-brand ps-5"
-                placeholder="Create strong password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
