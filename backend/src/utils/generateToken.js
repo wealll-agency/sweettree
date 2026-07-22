@@ -16,7 +16,7 @@ const generateToken = (res, userId, rememberMe = true) => {
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    sameSite: 'lax',
     ...(process.env.NODE_ENV === 'production' && { domain: '.sweettreeon.com' })
   };
 

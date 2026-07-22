@@ -120,7 +120,7 @@ export default function CartPage() {
                     <td className="py-3">
                       <div className="d-flex align-items-center gap-3">
                         <Image
-                          src={item.image?.startsWith('http') ? item.image : (item.image ? `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'https://sweettreeon.com'}${item.image}` : 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=100')}
+                          src={item.image?.startsWith('http') ? item.image : (item.image ? `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'https://www.sweettreeon.com'}${item.image}` : 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=100')}
                           alt={item.name}
                           width={60}
                           height={60}

@@ -5,7 +5,7 @@ import api from '../../../utils/axiosConfig.js';
 import { Tag, Trash2, PlusCircle, AlertCircle } from 'lucide-react';
 import { useNotification } from '../../../context/NotificationContext';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sweettreeon.com/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.sweettreeon.com/api';
 
 export default function CouponManagerPage() {
   const [coupons, setCoupons] = useState([]);

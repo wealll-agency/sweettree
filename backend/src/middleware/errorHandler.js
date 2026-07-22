@@ -33,9 +33,16 @@ const errorHandler = (err, req, res, next) => {
     return res.status(401).json({ success: false, message: 'Token expired' });
   }
 
-  res.status(err.statusCode || 500).json({
+  const statusCode = err.statusCode || 500;
+  let finalMessage = error.message || 'Server Error';
+
+  if (process.env.NODE_ENV === 'production' && statusCode === 500) {
+    finalMessage = 'Internal Server Error';
+  }
+
+  res.status(statusCode).json({
     success: false,
-    message: error.message || 'Server Error'
+    message: finalMessage
   });
 };
 

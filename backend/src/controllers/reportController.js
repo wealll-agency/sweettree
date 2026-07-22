@@ -73,59 +73,68 @@ export const getDashboardSummary = async (req, res, next) => {
     sixMonthsAgo.setDate(1);
     sixMonthsAgo.setHours(0, 0, 0, 0);
 
-    const monthlySales = await Order.aggregate([
-      {
-        $match: {
-          paymentStatus: 'Paid',
-          orderStatus: { $ne: 'Cancelled' },
-          createdAt: { $gte: sixMonthsAgo }
-        }
-      },
-      {
-        $group: {
-          _id: {
-            year: { $year: '$createdAt' },
-            month: { $month: '$createdAt' }
-          },
-          revenue: { $sum: '$totalAmount' },
-          orders: { $sum: 1 }
-        }
-      },
-      { $sort: { '_id.year': 1, '_id.month': 1 } }
-    ]);
+    let formattedSalesOverview = [];
+    try {
+      const monthlySales = await Order.aggregate([
+        {
+          $match: {
+            paymentStatus: 'Paid',
+            orderStatus: { $ne: 'Cancelled' },
+            createdAt: { $gte: sixMonthsAgo }
+          }
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: '$createdAt' },
+              month: { $month: '$createdAt' }
+            },
+            revenue: { $sum: '$totalAmount' },
+            orders: { $sum: 1 }
+          }
+        },
+        { $sort: { '_id.year': 1, '_id.month': 1 } }
+      ]);
 
-    // Format monthly data for chart display
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const formattedSalesOverview = monthlySales.map(item => ({
-      name: `${months[item._id.month - 1]} ${item._id.year}`,
-      revenue: item.revenue,
-      orders: item.orders
-    }));
+      // Format monthly data for chart display
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      formattedSalesOverview = monthlySales.map(item => ({
+        name: `${months[item._id.month - 1]} ${item._id.year}`,
+        revenue: item.revenue,
+        orders: item.orders
+      }));
+    } catch (err) {
+      console.error('Dashboard Monthly Sales Error:', err);
+    }
 
     // 5. Get top selling products
-    const topProductsAggregation = await Order.aggregate([
-      { $match: { paymentStatus: 'Paid', orderStatus: { $ne: 'Cancelled' } } },
-      { $unwind: '$items' },
-      {
-        $group: {
-          _id: '$items.product',
-          name: { $first: '$items.name' },
-          unitsSold: { $sum: '$items.quantity' },
-          revenueGenerated: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
-        }
-      },
-      { $sort: { unitsSold: -1 } },
-      { $limit: 5 }
-    ]);
+    let topProducts = [];
+    try {
+      const topProductsAggregation = await Order.aggregate([
+        { $match: { paymentStatus: 'Paid', orderStatus: { $ne: 'Cancelled' } } },
+        { $unwind: '$items' },
+        {
+          $group: {
+            _id: '$items.product',
+            name: { $first: '$items.name' },
+            unitsSold: { $sum: '$items.quantity' },
+            revenueGenerated: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
+          }
+        },
+        { $sort: { unitsSold: -1 } },
+        { $limit: 5 }
+      ]);
 
-    // Populate thumbnails
-    const topProducts = [];
-    for (const prod of topProductsAggregation) {
-      const pDetail = await Product.findById(prod._id).select('images');
-      topProducts.push({
-        ...prod,
-        image: pDetail?.images[0] || ''
-      });
+      // Populate thumbnails
+      for (const prod of topProductsAggregation) {
+        const pDetail = await Product.findById(prod._id).select('images');
+        topProducts.push({
+          ...prod,
+          image: pDetail?.images[0] || ''
+        });
+      }
+    } catch (err) {
+      console.error('Dashboard Top Products Error:', err);
     }
 
     // 6. Get low stock alert items detail list
@@ -168,7 +177,7 @@ export const exportSalesReportPDF = async (req, res, next) => {
       if (endDate) query.createdAt.$lte = new Date(endDate);
     }
 
-    const orders = await Order.find(query).populate('user', 'name email');
+    const orders = await Order.find(query).populate('user', 'name email').limit(2000);
 
     // Create PDF document
     const doc = new PDFDocument({ margin: 50 });
@@ -240,7 +249,7 @@ export const exportSalesReportExcel = async (req, res, next) => {
       if (endDate) query.createdAt.$lte = new Date(endDate);
     }
 
-    const orders = await Order.find(query).populate('user', 'name email');
+    const orders = await Order.find(query).populate('user', 'name email').limit(2000);
 
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Sales Report');

@@ -35,7 +35,7 @@ class DelhiveryService {
           seller_inv: '',
           quantity: order.items.reduce((acc, item) => acc + item.quantity, 0).toString(),
           tax_value: order.tax ? order.tax.toString() : '0',
-          shipment_weight: '1000' // Grams
+          shipment_weight: (order.items.reduce((acc, item) => acc + ((item.product?.weight || 1000) * item.quantity), 0)).toString() // Grams
         }
       ],
       pickup_location: {

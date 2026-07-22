@@ -11,6 +11,10 @@ export const registerUser = async (req, res, next) => {
   const { name, email, password, phone } = req.body;
 
   try {
+    if (password && password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+
     const userExists = await User.findOne({ email });
 
     if (userExists) {
@@ -99,7 +103,7 @@ export const logoutUser = async (req, res, next) => {
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      sameSite: 'lax',
       ...(process.env.NODE_ENV === 'production' && { domain: '.sweettreeon.com' }),
       expires: new Date(0)
     };
@@ -194,6 +198,9 @@ export const updateUserProfile = async (req, res, next) => {
       user.dob = req.body.dob !== undefined ? req.body.dob : user.dob;
 
       if (req.body.password) {
+        if (req.body.password.length < 6) {
+          return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+        }
         user.password = req.body.password;
       }
 

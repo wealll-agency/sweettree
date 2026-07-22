@@ -82,7 +82,7 @@ const CartOffcanvas = () => {
                   <button onClick={() => handleRemove(item.product, item.size)} className="position-absolute top-0 end-0 bg-transparent border-0 text-muted p-0" style={{ right: '-5px' }}>
                     <Trash2 size={16} />
                   </button>
-                  <Image src={item.image?.startsWith('http') || item.image?.startsWith('/') ? item.image : (item.image ? `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'https://sweettreeon.com'}${item.image}` : '/placeholder.png')} alt={item.name} width={60} height={60} className="rounded" style={{ objectFit: 'cover' }} />
+                  <Image src={item.image?.startsWith('http') || item.image?.startsWith('/') ? item.image : (item.image ? `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'https://www.sweettreeon.com'}${item.image}` : '/placeholder.png')} alt={item.name} width={60} height={60} className="rounded" style={{ objectFit: 'cover' }} />
                   <div className="ms-3 flex-grow-1">
                     <div className="text-primary fw-bold" style={{ fontSize: '10px' }}>SWEETTREE</div>
                     <h6 className="fw-bold m-0 mb-2" style={{ fontSize: '12px', lineHeight: '1.4' }}>{item.name}</h6>

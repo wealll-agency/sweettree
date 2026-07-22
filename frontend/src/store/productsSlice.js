@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/products` : 'https://sweettreeon.com/api/products';
-const REVIEWS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/reviews` : 'https://sweettreeon.com/api/reviews';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/products` : 'https://www.sweettreeon.com/api/products';
+const REVIEWS_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/reviews` : 'https://www.sweettreeon.com/api/reviews';
 
 export const fetchProducts = createAsyncThunk(
   'products/fetchAll',

@@ -133,7 +133,7 @@ export const createOrder = async (req, res, next) => {
 
     // 2. Reduce Stock in Inventory & Product Collections
     for (const item of validatedItems) {
-      await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } });
+      await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } }, { runValidators: true });
       await Inventory.findOneAndUpdate(
         { product: item.product },
         { 
@@ -146,7 +146,8 @@ export const createOrder = async (req, res, next) => {
               adjustedBy: req.user._id
             }
           }
-        }
+        },
+        { runValidators: true }
       );
     }
 
@@ -292,6 +293,47 @@ export const ccavenueCallback = async (req, res, next) => {
     const payment = await Payment.findOne({ ccavenueOrderId: order_id });
 
     if (order_status === 'Success') {
+      const response_amount = params.get('amount') || params.get('mer_amount') || params.get('net_amount_debit');
+      
+      if (Number(response_amount) !== Number(order.totalAmount)) {
+        order.paymentStatus = 'Failed';
+        order.ccavenueTrackingId = tracking_id;
+        order.ccavenueBankRefNo = bank_ref_no;
+        order.paymentMode = payment_mode;
+        await order.save();
+
+        if (payment) {
+          payment.status = 'Failed';
+          payment.ccavenueTrackingId = tracking_id;
+          payment.ccavenueBankRefNo = bank_ref_no;
+          payment.paymentMode = payment_mode;
+          payment.failureMessage = `Amount mismatch (Paid: ${response_amount}, Expected: ${order.totalAmount})`;
+          payment.encResponse = encResp;
+          await payment.save();
+        }
+
+        for (const item of order.items) {
+          await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } }, { runValidators: true });
+          await Inventory.findOneAndUpdate(
+            { product: item.product },
+            { 
+              $inc: { stockQuantity: item.quantity },
+              $push: {
+                adjustments: {
+                  quantityChanged: item.quantity,
+                  type: 'AuditAdjustment',
+                  reason: `Amount Mismatch Stock Restoral (Order ID: ${order._id})`,
+                  adjustedBy: order.user
+                }
+              }
+            },
+            { runValidators: true }
+          );
+        }
+
+        return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent('Payment failed due to amount mismatch. Please contact support.')}`);
+      }
+
       order.paymentStatus = 'Paid';
       order.orderStatus = 'Confirmed';
       order.confirmedAt = Date.now();
@@ -328,7 +370,7 @@ export const ccavenueCallback = async (req, res, next) => {
       }
 
       for (const item of order.items) {
-        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
+        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } }, { runValidators: true });
         await Inventory.findOneAndUpdate(
           { product: item.product },
           { 
@@ -341,7 +383,8 @@ export const ccavenueCallback = async (req, res, next) => {
                 adjustedBy: order.user
               }
             }
-          }
+          },
+          { runValidators: true }
         );
       }
 
@@ -457,7 +500,7 @@ export const updateOrderStatus = async (req, res, next) => {
       updateQuery.$set.paymentStatus = 'Refunded';
       
       for (const item of order.items) {
-        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
+        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } }, { runValidators: true });
         await Inventory.findOneAndUpdate(
           { product: item.product },
           { 
@@ -470,7 +513,8 @@ export const updateOrderStatus = async (req, res, next) => {
                 adjustedBy: req.user._id
               }
             }
-          }
+          },
+          { runValidators: true }
         );
       }
     }

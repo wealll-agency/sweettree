@@ -2,6 +2,12 @@ import Order from '../models/Order.js';
 
 export const delhiveryWebhookHandler = async (req, res) => {
   try {
+    const token = req.query.token;
+    if (token !== (process.env.DELHIVERY_WEBHOOK_SECRET || 'fallback_secret_for_dev_only')) {
+      console.warn('Delhivery Webhook: Unauthorized access attempt');
+      return res.status(401).send('Unauthorized webhook');
+    }
+
     const payload = req.body;
     
     // Delhivery pushes status updates via webhooks

@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import compression from 'compression';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
@@ -13,6 +14,8 @@ import mongoose from 'mongoose';
 // Config imports
 import connectDB from './config/db.js';
 import errorHandler from './middleware/errorHandler.js';
+import { apiLimiter } from './middleware/rateLimiter.js';
+import mongoSanitize from 'express-mongo-sanitize';
 
 // Route imports
 import authRoutes from './routes/authRoutes.js';
@@ -43,8 +46,9 @@ if (process.env.NODE_ENV === 'production') {
   const requiredKeys = ['CCAVENUE_MERCHANT_ID', 'CCAVENUE_WORKING_KEY', 'CCAVENUE_ACCESS_CODE'];
   const missingKeys = requiredKeys.filter(key => !process.env[key]);
   if (missingKeys.length > 0) {
-    console.error(`\n[CRITICAL WARNING] Missing CCAvenue Payment Keys in production: ${missingKeys.join(', ')}`);
-    console.error('CCAvenue payments will fail until these are provided in your environment variables.\n');
+    console.error(`\n[FATAL ERROR] Missing CCAvenue Payment Keys in production: ${missingKeys.join(', ')}`);
+    console.error('Shutting down server to prevent silent checkout failures. Please provide these in your environment variables.\n');
+    process.exit(1);
   }
 }
 
@@ -52,6 +56,7 @@ if (process.env.NODE_ENV === 'production') {
 app.use(helmet({
   crossOriginResourcePolicy: false // Allows loading local static upload files in local frontend/admin images
 }));
+app.use(compression());
 const allowedOrigins = [
   'http://localhost:3000', 
   'http://localhost:3001', 
@@ -65,7 +70,9 @@ if (process.env.FRONTEND_URL) {
 
 app.use(cors({
   origin: allowedOrigins,
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -82,6 +89,12 @@ app.use('/api', (req, res, next) => {
   res.setHeader('Surrogate-Control', 'no-store');
   next();
 });
+
+// Apply global rate limiting to all API routes
+app.use('/api', apiLimiter);
+
+// Sanitize NoSQL injections
+app.use(mongoSanitize());
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -159,14 +172,15 @@ process.on('SIGINT', gracefulShutdown);
 
 process.on('unhandledRejection', (err) => {
   console.error(`[CRITICAL] Unhandled Rejection: ${err.message}`, err);
-  // Do not gracefully shut down server to prevent 502 loop in production.
-  // Instead, PM2 or process manager should handle serious crashes, 
-  // and express-async-errors will handle route-level promise rejections.
+  // In production, unhandled rejections should trigger a clean restart via PM2
+  // to avoid zombie memory states causing 502 Bad Gateway errors.
+  gracefulShutdown();
 });
 
 process.on('uncaughtException', (err) => {
   console.error(`[CRITICAL] Uncaught Exception: ${err.message}`, err);
-  // Log safely, but avoid immediate exit for minor exceptions, letting process manager decide.
+  // Immediately shut down on synchronous fatal errors so PM2 can revive
+  process.exit(1);
 });
 
 // Trigger reload for nodemon configuration updates.
