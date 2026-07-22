@@ -243,6 +243,7 @@ export default function ProfilePage() {
                 
                 <div className="row g-2 mb-2">
                   <div className="col-md-6">
+                    <label className="form-label mb-1 fs-7 fw-semibold">Full Name*</label>
                     <input
                       type="text"
                       required
@@ -252,6 +253,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div className="col-md-6">
+                    <label className="form-label mb-1 fs-7 fw-semibold">Phone Number*</label>
                     <input
                       type="tel"
                       required
@@ -264,6 +266,7 @@ export default function ProfilePage() {
 
                 <div className="row g-2 mb-2">
                   <div className="col-md-6">
+                    <label className="form-label mb-1 fs-7 fw-semibold">Pincode*</label>
                     <input
                       type="text"
                       required
@@ -273,6 +276,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div className="col-md-6">
+                    <label className="form-label mb-1 fs-7 fw-semibold">Locality / Area*</label>
                     <input
                       type="text"
                       required
@@ -284,6 +288,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="mb-2">
+                  <label className="form-label mb-1 fs-7 fw-semibold">Street Address / House No.*</label>
                   <textarea
                     required
                     className="form-control form-control-brand py-2 fs-7"
@@ -295,6 +300,7 @@ export default function ProfilePage() {
 
                 <div className="row g-2 mb-2">
                   <div className="col-md-6">
+                    <label className="form-label mb-1 fs-7 fw-semibold">City / District*</label>
                     <input
                       type="text"
                       required
@@ -304,6 +310,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div className="col-md-6">
+                    <label className="form-label mb-1 fs-7 fw-semibold">State*</label>
                     <input
                       type="text"
                       required
@@ -316,6 +323,7 @@ export default function ProfilePage() {
 
                 <div className="row g-2 mb-3">
                   <div className="col-md-6">
+                    <label className="form-label mb-1 fs-7 fw-semibold">Landmark (Optional)</label>
                     <input
                       type="text"
                       className="form-control form-control-brand py-2 fs-7"
@@ -324,6 +332,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div className="col-md-6">
+                    <label className="form-label mb-1 fs-7 fw-semibold">Alternate Phone (Optional)</label>
                     <input
                       type="tel"
                       className="form-control form-control-brand py-2 fs-7"
