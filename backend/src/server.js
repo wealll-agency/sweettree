@@ -41,6 +41,10 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
+// Initialize Cron Jobs
+import { initCronJobs } from './utils/cronJobs.js';
+initCronJobs();
+
 // Validate critical payment environment variables
 if (process.env.NODE_ENV === 'production') {
   const requiredKeys = ['CCAVENUE_MERCHANT_ID', 'CCAVENUE_WORKING_KEY', 'CCAVENUE_ACCESS_CODE'];

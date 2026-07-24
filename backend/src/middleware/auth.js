@@ -4,6 +4,16 @@ import User from '../models/User.js';
 export const userCache = new Map();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+// Clean up expired cache every 10 minutes to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of userCache.entries()) {
+    if (now - value.timestamp >= CACHE_TTL) {
+      userCache.delete(key);
+    }
+  }
+}, 10 * 60 * 1000).unref(); // unref prevents this interval from keeping the process alive
+
 export const protect = async (req, res, next) => {
   let token = req.cookies?.token;
 

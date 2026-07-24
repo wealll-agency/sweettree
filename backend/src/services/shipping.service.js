@@ -76,19 +76,25 @@ class ShippingService {
       };
 
       // Call the provider service
-      const result = await service.createShipment(shipmentSubset);
+      try {
+        const result = await service.createShipment(shipmentSubset);
+        results.push(result);
 
-      results.push(result);
-
-      // Store shipment tracking info
-      populatedOrder.shipments.push({
-        warehouse: groupData.warehouse._id,
-        waybill: result.waybill,
-        trackingId: result.waybill,
-        status: 'Manifested',
-        courierName: ACTIVE_PROVIDER,
-        shippedAt: new Date()
-      });
+        // Store shipment tracking info
+        populatedOrder.shipments.push({
+          warehouse: groupData.warehouse._id,
+          waybill: result.waybill,
+          trackingId: result.waybill,
+          status: 'Manifested',
+          courierName: ACTIVE_PROVIDER,
+          shippedAt: new Date()
+        });
+      } catch (err) {
+        if (populatedOrder.shipments.length > 0) {
+          await populatedOrder.save();
+        }
+        throw new Error(`Failed to create shipment for warehouse ${groupData.warehouse.name || wId}: ${err.message}`);
+      }
     }
 
     populatedOrder.orderStatus = 'Shipped';
