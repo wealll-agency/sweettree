@@ -83,7 +83,7 @@ const Footer = () => {
           <div className="mb-3 mb-md-0" style={{ color: '#888', fontSize: '12px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
             Sweettree © 2026 All Rights Reserved | v1.1.0 
             and developed by 
-            <a href="https://wealll.com/sweetree" target="_blank" rel="noopener noreferrer" className="d-inline-flex align-items-center">
+            <a href="https://wealll.com/" target="_blank" rel="noopener noreferrer" className="d-inline-flex align-items-center">
               <Image src="/Wealll_new.webp" alt="We All" width={60} height={20} style={{ objectFit: 'contain' }} />
             </a>
           </div>

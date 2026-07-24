@@ -19,5 +19,11 @@ The following rules have been strictly set by the user and MUST NOT be changed o
 ## 4. Form Inputs and Placeholders
 - **Strict Rule:** Do NOT use `placeholder` attributes on any HTML or React inputs/forms anywhere on the website.
 
+## 5. UI and Navigation Specifics
+- **Strict Rule:** The 'Shop by Category' section on mobile MUST remain in a single horizontal line (flex-nowrap) by resizing elements via media query. Do NOT add horizontal scrolling or wrap them to multiple lines on mobile.
+- **Strict Rule:** The footer 'We All' developer logo MUST strictly link to `https://wealll.com/` without any appended paths like `/sweetree`. 
+- **Strict Rule:** There is NO 'Inventory Notifications' page in the admin sidebar. Clicking on a restock notification MUST redirect the admin directly to the 'Inventory Manager' page.
+- **Strict Rule:** The Warehouse Add/Edit popup MUST include 'Working Days' and 'Return Details' fields. The popup MUST be scrollable (`modal-dialog-scrollable`) and large (`modal-lg`) to prevent UI cut-offs. Do not revert these structural changes.
+
 ---
 *Note to agents: Adhere to these rules unconditionally to prevent overriding critical user-approved functionality.*
