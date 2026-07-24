@@ -81,9 +81,11 @@ const Footer = () => {
         {/* Bottom Section */}
         <div className="pt-4 d-flex flex-column flex-md-row justify-content-between align-items-center" style={{ borderTop: '1px solid #333' }}>
           <div className="mb-3 mb-md-0" style={{ color: '#888', fontSize: '12px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
-            Sweettree © 2026 All Rights Reserved | v1.0.0 
+            Sweettree © 2026 All Rights Reserved | v1.1.0 
             and developed by 
-            <Image src="/Wealll_new.webp" alt="We All" width={60} height={20} style={{ objectFit: 'contain' }} />
+            <a href="https://wealll.com/sweetree" target="_blank" rel="noopener noreferrer" className="d-inline-flex align-items-center">
+              <Image src="/Wealll_new.webp" alt="We All" width={60} height={20} style={{ objectFit: 'contain' }} />
+            </a>
           </div>
           
           <div className="d-flex align-items-center gap-2">
