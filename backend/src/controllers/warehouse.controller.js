@@ -33,7 +33,7 @@ export const getWarehouseById = async (req, res) => {
 // @access  Private/Admin
 export const createWarehouse = async (req, res) => {
   try {
-    const { name, delhiveryPickupLocationName, address, city, state, pincode, contactPhone, contactPersonName, email, returnSameAsPickup, isActive } = req.body;
+    const { name, delhiveryPickupLocationName, address, city, state, pincode, contactPhone, contactPersonName, email, returnSameAsPickup, workingDays, returnAddressLine, returnCity, returnState, returnPincode, isActive } = req.body;
     
     const warehouse = new Warehouse({
       name,
@@ -46,6 +46,11 @@ export const createWarehouse = async (req, res) => {
       contactPersonName,
       email,
       returnSameAsPickup: returnSameAsPickup !== undefined ? returnSameAsPickup : true,
+      workingDays: workingDays || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      returnAddressLine,
+      returnCity,
+      returnState,
+      returnPincode,
       isActive: isActive !== undefined ? isActive : true
     });
 
@@ -61,7 +66,7 @@ export const createWarehouse = async (req, res) => {
 // @access  Private/Admin
 export const updateWarehouse = async (req, res) => {
   try {
-    const { name, delhiveryPickupLocationName, address, city, state, pincode, contactPhone, contactPersonName, email, returnSameAsPickup, isActive } = req.body;
+    const { name, delhiveryPickupLocationName, address, city, state, pincode, contactPhone, contactPersonName, email, returnSameAsPickup, workingDays, returnAddressLine, returnCity, returnState, returnPincode, isActive } = req.body;
     
     const warehouse = await Warehouse.findById(req.params.id);
 
@@ -77,6 +82,11 @@ export const updateWarehouse = async (req, res) => {
       if (contactPersonName !== undefined) warehouse.contactPersonName = contactPersonName;
       if (email !== undefined) warehouse.email = email;
       if (returnSameAsPickup !== undefined) warehouse.returnSameAsPickup = returnSameAsPickup;
+      if (workingDays !== undefined) warehouse.workingDays = workingDays;
+      if (returnAddressLine !== undefined) warehouse.returnAddressLine = returnAddressLine;
+      if (returnCity !== undefined) warehouse.returnCity = returnCity;
+      if (returnState !== undefined) warehouse.returnState = returnState;
+      if (returnPincode !== undefined) warehouse.returnPincode = returnPincode;
       if (isActive !== undefined) {
         warehouse.isActive = isActive;
       }

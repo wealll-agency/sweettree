@@ -331,7 +331,6 @@ export default function AdminProductsPage() {
     }
     setSku(code);
   };
-
   const displayedProducts = showLimitedStockOnly ? products.filter(p => p.stock <= 10) : products;
 
   return (
@@ -744,10 +743,10 @@ export default function AdminProductsPage() {
                     <label className="fw-medium mb-1 fs-7">Shipping Cost (₹)</label>
                     <input type="number" className="form-control" value={shippingCost} onChange={(e) => setShippingCost(e.target.value)} />
                   </div>
-                  <div className="col-md-6 d-flex align-items-end pb-2">
-                    <div className="form-check form-switch d-flex align-items-center gap-2">
-                      <label className="form-check-label fs-7 fw-medium mb-0">Shipping Cost Multiply With Quantity</label>
-                      <input className="form-check-input ms-2" type="checkbox" checked={shippingMultiplyWithQty} onChange={(e) => setShippingMultiplyWithQty(e.target.checked)} />
+                  <div className="col-md-6 d-flex flex-column justify-content-end pb-2 gap-3">
+                    <div className="form-check form-switch d-flex align-items-center">
+                      <label className="form-check-label fs-7 fw-medium mb-0 me-3">Shipping Cost Multiply With Qty</label>
+                      <input className="form-check-input" type="checkbox" checked={shippingMultiplyWithQty} onChange={(e) => setShippingMultiplyWithQty(e.target.checked)} />
                     </div>
                   </div>
                 </div>

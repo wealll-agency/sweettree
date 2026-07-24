@@ -1,8 +1,16 @@
+'use client';
 import React from 'react';
 import Link from 'next/link';
-import { Home, ShoppingBag, Gift, Info, BookOpen, Phone, User, Heart, MessageCircle } from 'lucide-react';
+import { Home, ShoppingBag, Gift, Info, BookOpen, Phone, User, Heart, MessageCircle, LogOut, LogIn, Package } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
+import { logoutUser } from '../store/authSlice';
+import { useRouter } from 'next/navigation';
 
 const MobileMenu = () => {
+  const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const router = useRouter();
+
   const closeMenu = () => {
     if (typeof window !== 'undefined' && window.bootstrap) {
       const menu = document.getElementById('mobileMenu');
@@ -13,6 +21,13 @@ const MobileMenu = () => {
         }
       }
     }
+  };
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    dispatch(logoutUser());
+    closeMenu();
+    router.push('/login');
   };
 
   return (
@@ -55,12 +70,41 @@ const MobileMenu = () => {
               <Phone size={18} className="text-muted" />CONTACT
             </Link>
           </li>
+          {user ? (
+            <>
+              <li className="list-group-item">
+                <Link href="/user/profile" className="d-flex align-items-center py-2 text-dark text-decoration-none fw-bold gap-2" onClick={closeMenu}>
+                  <User size={18} className="text-muted" />MY PROFILE
+                </Link>
+              </li>
+              <li className="list-group-item">
+                <Link href="/user/orders" className="d-flex align-items-center py-2 text-dark text-decoration-none fw-bold gap-2" onClick={closeMenu}>
+                  <Package size={18} className="text-muted" />MY ORDERS
+                </Link>
+              </li>
+              <li className="list-group-item">
+                <a href="#" className="d-flex align-items-center py-2 text-danger text-decoration-none fw-bold gap-2" onClick={handleLogout}>
+                  <LogOut size={18} className="text-danger" />LOG OUT
+                </a>
+              </li>
+            </>
+          ) : (
+            <>
+              <li className="list-group-item">
+                <Link href="/login" className="d-flex align-items-center py-2 text-dark text-decoration-none fw-bold gap-2" onClick={closeMenu}>
+                  <LogIn size={18} className="text-muted" />SIGN IN
+                </Link>
+              </li>
+              <li className="list-group-item">
+                <Link href="/register" className="d-flex align-items-center py-2 text-dark text-decoration-none fw-bold gap-2" onClick={closeMenu}>
+                  <User size={18} className="text-muted" />SIGN UP
+                </Link>
+              </li>
+            </>
+          )}
         </ul>
         <div className="p-3 bg-light mt-3">
           <div className="d-flex justify-content-around">
-            <Link href="/user/profile" className="text-dark bg-white rounded-circle p-2 shadow-sm d-flex align-items-center justify-content-center" onClick={closeMenu} style={{ width: '38px', height: '38px' }}>
-              <User size={18} />
-            </Link>
             <Link href="/wishlist" className="text-dark bg-white rounded-circle p-2 shadow-sm d-flex align-items-center justify-content-center" onClick={closeMenu} style={{ width: '38px', height: '38px' }}>
               <Heart size={18} />
             </Link>

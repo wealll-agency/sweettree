@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../store/authSlice.js';
 import { clearCart } from '../store/cartSlice.js';
-import { LayoutDashboard, ShoppingBag, ClipboardList, ShoppingCart, Users, Receipt, LogOut, Tag, ChevronLeft, ChevronRight, RotateCcw, ChevronDown, ChevronUp, MessageSquare, MapPin, Package, Shield } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, ClipboardList, ShoppingCart, Users, Receipt, LogOut, Tag, ChevronLeft, ChevronRight, RotateCcw, ChevronDown, ChevronUp, MessageSquare, MapPin, Package, Shield, Bell } from 'lucide-react';
 import api from '../utils/axiosConfig.js';
 
 export default function AdminSidebar() {
@@ -57,6 +57,7 @@ export default function AdminSidebar() {
   const navItems = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
     { label: 'Product Manager', path: '/admin/products', icon: <ShoppingBag size={20} /> },
+    { label: 'Homepage Products', path: '/admin/homepage-products', icon: <LayoutDashboard size={20} /> },
     { label: 'Warehouses', path: '/admin/warehouses', icon: <MapPin size={20} /> },
     { label: 'Inventory Manager', path: '/admin/inventory', icon: <ClipboardList size={20} /> },
     { label: 'Orders Queue', path: '/admin/orders', icon: <ShoppingCart size={20} /> },

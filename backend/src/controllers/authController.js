@@ -345,12 +345,14 @@ export const getSystemSettings = async (req, res, next) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     const codSetting = await SystemSetting.findOne({ key: 'cod' });
     const refundSetting = await SystemSetting.findOne({ key: 'refund' });
+    const topSellingSetting = await SystemSetting.findOne({ key: 'topSellingSource' });
 
     res.json({
       success: true,
       settings: {
         cod: codSetting ? codSetting.value : true,
-        refund: refundSetting ? refundSetting.value : true
+        refund: refundSetting ? refundSetting.value : true,
+        topSellingSource: topSellingSetting ? topSellingSetting.value : 'automatic'
       }
     });
   } catch (error) {
@@ -381,19 +383,28 @@ export const updateSystemSettings = async (req, res, next) => {
           { upsert: true, new: true }
         );
       }
+      if (settings.topSellingSource !== undefined) {
+        await SystemSetting.findOneAndUpdate(
+          { key: 'topSellingSource' },
+          { value: String(settings.topSellingSource) },
+          { upsert: true, new: true }
+        );
+      }
     }
 
     await logActivity(req.user._id, 'UPDATE_SYSTEM_SETTINGS', `Updated global access settings`, req);
 
     const codSetting = await SystemSetting.findOne({ key: 'cod' });
     const refundSetting = await SystemSetting.findOne({ key: 'refund' });
+    const topSellingSetting = await SystemSetting.findOne({ key: 'topSellingSource' });
 
     res.json({
       success: true,
       message: 'System settings updated successfully',
       settings: {
         cod: codSetting ? codSetting.value : true,
-        refund: refundSetting ? refundSetting.value : true
+        refund: refundSetting ? refundSetting.value : true,
+        topSellingSource: topSellingSetting ? topSellingSetting.value : 'automatic'
       }
     });
   } catch (error) {

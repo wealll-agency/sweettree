@@ -66,7 +66,7 @@ function BuildComboContent() {
   const comboSubtotal = selectedProductIds.reduce((total, id) => {
     const p = products.find(prod => prod._id === id);
     if (!p) return total;
-    const activePrice = p.discount > 0 ? Math.round(p.price * (1 - p.discount / 100)) : p.price;
+    const activePrice = p.discountedPrice || (p.discount > 0 ? (p.discountType === 'Flat' ? Math.max(0, p.price - p.discount) : Math.max(0, p.price - (p.price * p.discount / 100))) : p.price);
     return total + activePrice;
   }, 0);
 
@@ -101,9 +101,8 @@ function BuildComboContent() {
             <div className="row g-4" id="shopProductGrid">
               {products.map((product) => {
                 const isSelected = selectedProductIds.includes(product._id);
-                // Based on standard Sweettree schema
-                 const mrp = product.purchasePrice || product.price;
-                 const activePrice = product.price;
+                const activePrice = product.discountedPrice || (product.discount > 0 ? (product.discountType === 'Flat' ? Math.max(0, product.price - product.discount) : Math.max(0, product.price - (product.price * product.discount / 100))) : product.price);
+                const mrp = product.price;
                 
                 let image = '/placeholder.png';
                 if (product.images && product.images.length > 0) {
@@ -112,13 +111,14 @@ function BuildComboContent() {
                   image = product.image.replace('/assets/images/', '/');
                 }
                 
-                const tagLeft = product.discount > 0 ? 'PREMIUM' : (product.tagLeft || '');
-                const tagRight = product.discount > 0 ? `${product.discount}% OFF` : (product.tagRight || '');
+                const tagLeft = product.newArrival ? 'NEW ARRIVAL' : (product.tagLeft || (product.discount > 0 ? 'PREMIUM' : ''));
+                const tagLeftClass = product.newArrival ? 'bg-success' : (product.tagLeftClass || '');
+                const tagRight = product.tagRight || (product.discount > 0 ? (product.discountType === 'Flat' ? `₹${product.discount} OFF` : `${product.discount}% OFF`) : '');
 
                 return (
                   <div key={product._id} className="col-sm-6 col-md-4">
-                    <div className="item h-100 px-2 py-3" onClick={() => toggleProductSelection(product._id)} style={{ cursor: 'pointer' }}>
-                      <div className={`Sweettree-product-card position-relative transition-all ${isSelected ? 'border-primary shadow-sm' : ''}`}>
+                    <div className="item h-100 px-2 py-3" onClick={() => { if (product.stock > 0) toggleProductSelection(product._id); }} style={{ cursor: product.stock > 0 ? 'pointer' : 'not-allowed' }}>
+                      <div className={`Sweettree-product-card position-relative transition-all ${isSelected ? 'border-primary shadow-sm' : ''}`} style={{ opacity: product.stock <= 0 ? 0.7 : 1 }}>
                         
                         {isSelected && (
                           <div className="position-absolute top-0 end-0 m-2 rounded-circle d-flex align-items-center justify-content-center shadow" style={{ width: '28px', height: '28px', zIndex: 10, backgroundColor: '#1c72b9', color: 'white' }}>
@@ -127,12 +127,17 @@ function BuildComboContent() {
                         )}
 
                         <div className="product-tags d-flex justify-content-between">
-                          {tagLeft && <span className="tag-left">{tagLeft}</span>}
+                          {tagLeft && <span className={`tag-left ${tagLeftClass}`}>{tagLeft}</span>}
                           {tagRight && <span className="tag-right ms-auto">{tagRight}</span>}
                         </div>
                         
                         <div style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                           <div className="product-img-box position-relative" style={{ minHeight: '200px' }}>
+                            {product.stock <= 0 && (
+                              <div className="position-absolute w-100 d-flex justify-content-center align-items-center" style={{ top: '40%', zIndex: 20 }}>
+                                <span className="badge bg-danger px-3 py-2 fs-6 shadow-sm">OUT OF STOCK</span>
+                              </div>
+                            )}
                             <Image 
                               src={image} 
                               alt={product.name} 
@@ -150,16 +155,23 @@ function BuildComboContent() {
                           <h3 className="product-name" style={{ userSelect: 'none' }}>{product.name}</h3>
                           
                           <div className="product-pricing">
-                            MRP: <del>₹{mrp}</del> <span className="current-price">₹{activePrice}</span> 
+                            {mrp > activePrice ? (
+                              <>
+                                MRP: <del>₹{mrp}</del> <span className="current-price">₹{activePrice}</span> 
+                              </>
+                            ) : (
+                              <span className="current-price">₹{activePrice}</span>
+                            )}
                           </div>
                         </div>
 
                         <button 
                           className={`Sweettree-btn-cart w-100 mt-2`}
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleProductSelection(product._id); }}
-                          style={isSelected ? { backgroundColor: '#1c72b9', color: 'white', borderColor: '#1c72b9' } : {}}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (product.stock > 0) toggleProductSelection(product._id); }}
+                          style={product.stock <= 0 ? { opacity: 0.5, cursor: 'not-allowed', backgroundColor: '#6c757d', borderColor: '#6c757d' } : (isSelected ? { backgroundColor: '#1c72b9', color: 'white', borderColor: '#1c72b9' } : {})}
+                          disabled={product.stock <= 0}
                         >
-                          {isSelected ? 'Remove from Combo' : 'Select for Combo'}
+                          {product.stock <= 0 ? 'Out of Stock' : (isSelected ? 'Remove from Combo' : 'Select for Combo')}
                         </button>
                       </div>
                     </div>
@@ -191,7 +203,7 @@ function BuildComboContent() {
                 selectedProductIds.map(id => {
                   const p = products.find(prod => prod._id === id);
                   if (!p) return null;
-                  const activePrice = p.discount > 0 ? Math.round(p.price * (1 - p.discount / 100)) : p.price;
+                  const activePrice = p.discountedPrice || (p.discount > 0 ? (p.discountType === 'Flat' ? Math.max(0, p.price - p.discount) : Math.max(0, p.price - (p.price * p.discount / 100))) : p.price);
                   return (
                     <div key={id} className="d-flex justify-content-between align-items-center fs-7 bg-white p-2 rounded border-sm">
                       <span className="text-truncate me-2" style={{ maxWidth: '150px' }}>{p.name}</span>

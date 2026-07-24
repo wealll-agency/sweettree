@@ -78,7 +78,7 @@ export const ShopByCategory = () => {
     <section className="section-wrapper our_brands">
       <div className="container text-center">
         <h2 className="main-title mb-5">Shop by Category</h2>
-        <div className="d-flex justify-content-center flex-wrap gap-4 mb-4">
+        <div className="d-flex flex-nowrap justify-content-center gap-2 gap-md-4 mb-4">
           {[
             { name: 'Nuts', icon: 'fa-leaf', borderColor: '#d37d6e' },
             { name: 'Berries', icon: 'fa-lemon', borderColor: '#e46682' },
@@ -86,7 +86,7 @@ export const ShopByCategory = () => {
             { name: 'Seeds', icon: 'fa-seedling', borderColor: '#7eb672' },
             { name: 'Mixes', icon: 'fa-bowl-food', borderColor: '#6691c2' },
           ].map((cat, idx) => (
-            <Link href={`/shop?category=${cat.name}`} key={idx} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Link href={`/shop?category=${cat.name}`} key={idx} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flex: '1 1 0', justifyContent: 'center' }}>
               <div className="category-squircle" style={{ borderColor: cat.borderColor, '--cat-color': cat.borderColor }}>
                 <div className="category-icon-circle">
                   <i className={`fa-solid ${cat.icon}`}></i>
@@ -146,6 +146,25 @@ export const ShopByCategory = () => {
             color: #111;
             margin: 0;
             transition: all 0.3s ease;
+          }
+          @media (max-width: 768px) {
+            .category-squircle {
+              width: 100%;
+              max-width: 70px;
+              height: 70px;
+              border-radius: 20px;
+            }
+            .category-icon-circle {
+              width: 32px;
+              height: 32px;
+              margin-bottom: 4px;
+            }
+            .category-icon-circle i {
+              font-size: 14px;
+            }
+            .category-name-text {
+              font-size: 9px;
+            }
           }
         `}</style>
 

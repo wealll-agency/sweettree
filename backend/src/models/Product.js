@@ -30,6 +30,11 @@ const productSchema = new mongoose.Schema({
   
   isFeatured: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true, index: true },
+  showOnHomepage: { type: Boolean, default: true },
+  manualTopSelling: { type: Boolean, default: false },
+  healthyProduct: { type: Boolean, default: false },
+  newArrival: { type: Boolean, default: false },
+  totalSold: { type: Number, default: 0 },
   
   description: { type: String, required: true },
   ingredients: [{ type: String }],

@@ -619,6 +619,28 @@ h1, h2, h3, h4, h5, h6, .display-font {
   right: -10px;
 }
 
+/* details/summary resets */
+summary::-webkit-details-marker {
+  display: none !important;
+}
+summary {
+  list-style: none !important;
+}
+summary:focus {
+  outline: none !important;
+}
+
+@media (max-width: 767.98px) {
+  .header-badge {
+    top: -2px !important;
+    right: -2px !important;
+    width: 14px !important;
+    height: 14px !important;
+    font-size: 8px !important;
+    border: 1px solid #ffffff !important;
+  }
+}
+
 /* Premium dropdown */
 .premium-dropdown {
   background-color: #ffffff;
@@ -731,5 +753,10 @@ h1, h2, h3, h4, h5, h6, .display-font {
   height: 18px;
   display: flex;
   align-items: center;
-  justify-content: center;
+}
+
+/* Hide all Swiper navigation arrows globally as requested */
+.swiper-button-next,
+.swiper-button-prev {
+  display: none !important;
 }

@@ -9,11 +9,14 @@ import { addToCart, clearCart } from '../../store/cartSlice';
 import { fetchProducts, fetchProductDetails, fetchProductReviews, submitProductReview } from '../../store/productsSlice';
 import { Star, MessageCircle, Heart, Plus, Minus } from 'lucide-react';
 import { toggleWishlist } from '../../store/wishlistSlice';
+import api from '../../utils/axiosConfig';
+import { useNotification } from '../../context/NotificationContext';
 
 function ShopDetailsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const dispatch = useDispatch();
+  const { showAlert } = useNotification();
 
   const { items: products, selectedProduct, reviews, reviewsLoading } = useSelector((state) => state.products);
   const wishlistItems = useSelector((state) => state.wishlist?.items || []);
@@ -29,6 +32,7 @@ function ShopDetailsContent() {
   const [comment, setComment] = useState('');
   const [reviewError, setReviewError] = useState('');
   const [reviewSuccess, setReviewSuccess] = useState('');
+  const [notifyLoading, setNotifyLoading] = useState(false);
 
   const productIdParam = searchParams.get('id');
   const productNameParam = searchParams.get('name') || '';
@@ -170,6 +174,25 @@ function ShopDetailsContent() {
       });
   };
 
+  const handleNotifyMe = async () => {
+    if (!user) {
+      router.push(`/login?redirect=/shop-details?name=${encodeURIComponent(realProduct.name)}`);
+      return;
+    }
+    
+    setNotifyLoading(true);
+    try {
+      const response = await api.post('/notifications/stock', { productId: realProduct._id });
+      if (response.data.success) {
+        showAlert(response.data.message, 'success');
+      }
+    } catch (error) {
+      showAlert(error.response?.data?.message || 'Failed to subscribe to notifications', 'error');
+    } finally {
+      setNotifyLoading(false);
+    }
+  };
+
   const isInWishlist = wishlistItems.some(item => item._id === realProduct._id);
   const images = realProduct.images && realProduct.images.length > 0 ? realProduct.images : ['/top_product1.png'];
 
@@ -306,10 +329,18 @@ function ShopDetailsContent() {
           </div>
 
           <div className="d-flex gap-3 mb-4">
-             <button onClick={handleAddToCart} className="btn w-50 py-3 fw-bold" style={{ backgroundColor: '#005B6E', color: 'white' }} disabled={realProduct.stock === 0}>
-               {realProduct.stock === 0 ? 'Out of Stock' : 'Add To Cart'}
-             </button>
-             <button onClick={handleBuyNow} className="btn btn-outline-dark w-50 py-3 fw-bold" disabled={realProduct.stock === 0}>Buy It Now</button>
+             {realProduct.stock <= 0 ? (
+               <button onClick={handleNotifyMe} className="btn w-100 py-3 fw-bold" style={{ backgroundColor: '#6c757d', color: 'white' }} disabled={notifyLoading}>
+                 {notifyLoading ? 'Subscribing...' : 'Notify Me When Available'}
+               </button>
+             ) : (
+               <>
+                 <button onClick={handleAddToCart} className="btn w-50 py-3 fw-bold" style={{ backgroundColor: '#005B6E', color: 'white' }}>
+                   Add To Cart
+                 </button>
+                 <button onClick={handleBuyNow} className="btn btn-outline-dark w-50 py-3 fw-bold">Buy It Now</button>
+               </>
+             )}
              <button onClick={() => dispatch(toggleWishlist(realProduct))} className="btn btn-outline-dark px-3"><Heart size={20} fill={isInWishlist ? 'var(--accent-color)' : 'none'} color={isInWishlist ? 'var(--accent-color)' : 'currentColor'} /></button>
           </div>
 

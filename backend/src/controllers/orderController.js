@@ -133,7 +133,7 @@ export const createOrder = async (req, res, next) => {
 
     // 2. Reduce Stock in Inventory & Product Collections
     for (const item of validatedItems) {
-      await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } }, { runValidators: true });
+      await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity, totalSold: item.quantity } }, { runValidators: true });
       await Inventory.findOneAndUpdate(
         { product: item.product },
         { 
@@ -313,7 +313,7 @@ export const ccavenueCallback = async (req, res, next) => {
         }
 
         for (const item of order.items) {
-          await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } }, { runValidators: true });
+          await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true });
           await Inventory.findOneAndUpdate(
             { product: item.product },
             { 
@@ -370,7 +370,7 @@ export const ccavenueCallback = async (req, res, next) => {
       }
 
       for (const item of order.items) {
-        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } }, { runValidators: true });
+        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true });
         await Inventory.findOneAndUpdate(
           { product: item.product },
           { 
@@ -500,7 +500,7 @@ export const updateOrderStatus = async (req, res, next) => {
       updateQuery.$set.paymentStatus = 'Refunded';
       
       for (const item of order.items) {
-        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } }, { runValidators: true });
+        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true });
         await Inventory.findOneAndUpdate(
           { product: item.product },
           { 

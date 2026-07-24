@@ -1,5 +1,7 @@
 import Product from '../models/Product.js';
 import Inventory from '../models/Inventory.js';
+import SystemSetting from '../models/SystemSetting.js';
+import StockNotification from '../models/StockNotification.js';
 import { logActivity } from '../middleware/logger.js';
 import { uploadFile } from '../services/storageService.js';
 
@@ -8,9 +10,13 @@ import { uploadFile } from '../services/storageService.js';
 // @access  Public
 export const getProducts = async (req, res, next) => {
   try {
-    const { keyword, category, subCategory, subSubCategory, brand, minPrice, maxPrice, sort, page = 1, limit = 12 } = req.query;
+    const { keyword, category, subCategory, subSubCategory, brand, minPrice, maxPrice, sort, page = 1, limit = 12, homepage, topSelling, newArrival, healthyProduct, featured, inStock } = req.query;
 
     const query = {};
+
+    if (inStock === 'true') {
+      query.stock = { $gt: 0 };
+    }
 
     // Keyword Search
     if (keyword) {
@@ -44,8 +50,34 @@ export const getProducts = async (req, res, next) => {
       if (maxPrice) query.price.$lte = Number(maxPrice);
     }
 
-    // Sorting
+    // Homepage Filters
+    if (homepage === 'true') {
+      query.showOnHomepage = true;
+    }
+    if (featured === 'true') {
+      query.isFeatured = true;
+    }
+    if (newArrival === 'true') {
+      query.newArrival = true;
+    }
+    if (healthyProduct === 'true') {
+      query.healthyProduct = true;
+    }
+
+    // Top Selling Filter
     let sortBy = { createdAt: -1 };
+    if (topSelling === 'true') {
+      const topSellingSetting = await SystemSetting.findOne({ key: 'topSellingSource' });
+      const source = topSellingSetting ? topSellingSetting.value : 'automatic';
+      
+      if (source === 'manual') {
+        query.manualTopSelling = true;
+      } else {
+        sortBy = { totalSold: -1 };
+      }
+    }
+
+    // Default sorting overrides
     if (sort) {
       if (sort === 'priceAsc') sortBy = { price: 1 };
       else if (sort === 'priceDesc') sortBy = { price: -1 };
@@ -98,7 +130,7 @@ export const createProduct = async (req, res, next) => {
   const { 
     name, category, subCategory, subSubCategory, brand, productType, sku, unit, unitValue, searchTags, 
     price, purchasePrice, minOrderQty, discount, discountType, taxAmount, taxCalculation, 
-    shippingCost, shippingMultiplyWithQty, isFeatured, isActive,
+    shippingCost, shippingMultiplyWithQty, isFeatured, isActive, showOnHomepage, manualTopSelling, newArrival,
     description, ingredients, benefits, images, videos, batchNumber, expiryDate, stock, packSizes, warehouse
   } = req.body;
 
@@ -141,6 +173,9 @@ export const createProduct = async (req, res, next) => {
       shippingMultiplyWithQty: shippingMultiplyWithQty || false,
       isFeatured: isFeatured === 'true' || isFeatured === true,
       isActive: isActive === 'false' || isActive === false ? false : true,
+      showOnHomepage: showOnHomepage === 'false' || showOnHomepage === false ? false : true,
+      manualTopSelling: manualTopSelling === 'true' || manualTopSelling === true,
+      newArrival: newArrival === 'true' || newArrival === true,
       description,
       ingredients: typeof ingredients === 'string' ? ingredients.split(',').map(i => i.trim()).filter(Boolean) : (ingredients || []),
       benefits: typeof benefits === 'string' ? benefits.split(',').map(b => b.trim()).filter(Boolean) : (benefits || []),
@@ -215,6 +250,11 @@ export const updateProduct = async (req, res, next) => {
 
       product.isFeatured = req.body.isFeatured !== undefined ? (req.body.isFeatured === 'true' || req.body.isFeatured === true) : product.isFeatured;
       product.isActive = req.body.isActive !== undefined ? (req.body.isActive !== 'false' && req.body.isActive !== false) : product.isActive;
+      product.showOnHomepage = req.body.showOnHomepage !== undefined ? (req.body.showOnHomepage !== 'false' && req.body.showOnHomepage !== false) : product.showOnHomepage;
+      product.manualTopSelling = req.body.manualTopSelling !== undefined ? (req.body.manualTopSelling === 'true' || req.body.manualTopSelling === true) : product.manualTopSelling;
+      product.healthyProduct = req.body.healthyProduct !== undefined ? (req.body.healthyProduct === 'true' || req.body.healthyProduct === true) : product.healthyProduct;
+      product.newArrival = req.body.newArrival !== undefined ? (req.body.newArrival === 'true' || req.body.newArrival === true) : product.newArrival;
+      
       product.description = req.body.description || product.description;
       product.ingredients = typeof req.body.ingredients === 'string' ? req.body.ingredients.split(',').map(i => i.trim()).filter(Boolean) : (req.body.ingredients || product.ingredients);
       product.benefits = typeof req.body.benefits === 'string' ? req.body.benefits.split(',').map(b => b.trim()).filter(Boolean) : (req.body.benefits || product.benefits);
@@ -277,6 +317,23 @@ export const updateProduct = async (req, res, next) => {
           },
           { upsert: true, new: true }
         );
+
+        // Check for restock notification trigger
+        if (oldStock <= 0 && req.body.stock > 0) {
+          const pendingNotifications = await StockNotification.find({ product: product._id, status: 'Pending' }).populate('user', 'name email');
+          
+          if (pendingNotifications.length > 0) {
+            console.log(`[RESTOCK NOTIFICATION] Triggering notifications for ${pendingNotifications.length} users for product ${product.name}`);
+            
+            // Here you would trigger an email/sms service for each pending user
+            for (const notification of pendingNotifications) {
+              console.log(`[EMAIL DISPATCH] Sending Restock Email to ${notification.email} (User: ${notification.user?.name}) for Product: ${product.name}`);
+              
+              notification.status = 'Completed';
+              await notification.save();
+            }
+          }
+        }
       }
 
       await logActivity(req.user._id, 'UPDATE_PRODUCT', `Updated product ID: ${req.params.id}`, req);
@@ -316,8 +373,8 @@ export const deleteProduct = async (req, res, next) => {
 // @access  Private/Admin/Manager
 export const toggleProductStatus = async (req, res, next) => {
   try {
-    const { field, value } = req.body; // field should be 'isFeatured' or 'isActive'
-    if (!['isFeatured', 'isActive'].includes(field)) {
+    const { field, value } = req.body; // field should be 'isFeatured', 'isActive', or 'newArrival'
+    if (!['isFeatured', 'isActive', 'newArrival'].includes(field)) {
       return res.status(400).json({ success: false, message: 'Invalid toggle field' });
     }
 
@@ -331,6 +388,42 @@ export const toggleProductStatus = async (req, res, next) => {
     
     await logActivity(req.user._id, 'UPDATE_PRODUCT', `Toggled ${field} to ${value} for product ID: ${product._id}`, req);
     res.json({ success: true, product });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Bulk update homepage visibility flags
+// @route   PUT /api/products/bulk-flags
+// @access  Private/Admin/Manager
+export const bulkUpdateHomepageFlags = async (req, res, next) => {
+  try {
+    const { flag, productIds } = req.body; // flag: showOnHomepage, healthyProduct, newArrival, manualTopSelling
+
+    if (!['showOnHomepage', 'newArrival', 'manualTopSelling', 'healthyProduct'].includes(flag)) {
+      return res.status(400).json({ success: false, message: 'Invalid flag specified' });
+    }
+    
+    if (!Array.isArray(productIds)) {
+      return res.status(400).json({ success: false, message: 'productIds must be an array' });
+    }
+
+    // Set flag to false for all products NOT in the array
+    await Product.updateMany(
+      { _id: { $nin: productIds } },
+      { $set: { [flag]: false } }
+    );
+
+    // Set flag to true for all products IN the array
+    if (productIds.length > 0) {
+      await Product.updateMany(
+        { _id: { $in: productIds } },
+        { $set: { [flag]: true } }
+      );
+    }
+
+    await logActivity(req.user._id, 'UPDATE_PRODUCT', `Bulk updated ${flag} for ${productIds.length} products`, req);
+    res.json({ success: true, message: `Successfully updated ${flag}` });
   } catch (error) {
     next(error);
   }

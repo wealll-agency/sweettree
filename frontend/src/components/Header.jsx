@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutUser } from '../store/authSlice';
@@ -28,6 +28,7 @@ import {
 const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const dropdownRef = useRef(null);
   const { user } = useSelector((state) => state.auth);
   const wishlistItems = useSelector((state) => state.wishlist?.items || []);
   const wishlistCount = wishlistItems.length;
@@ -41,8 +42,28 @@ const Header = () => {
   const handleLogout = (e) => {
     e.preventDefault();
     dispatch(logoutUser());
+    if (dropdownRef.current) {
+      dropdownRef.current.removeAttribute('open');
+    }
     router.push('/login');
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const closestDropdown = event.target.closest('.dropdown');
+      if (closestDropdown !== dropdownRef.current && dropdownRef.current) {
+        dropdownRef.current.removeAttribute('open');
+      }
+    };
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => {
+      document.removeEventListener("pointerdown", handleClickOutside);
+    };
+  }, []);
+
+
+
+
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -108,7 +129,7 @@ const Header = () => {
           </div>
 
           {/* Right Action Icons */}
-          <div className="col-lg-3 col-7 d-flex justify-content-end align-items-center" style={{ gap: '8px' }}>
+          <div className="col-lg-3 col-7 d-flex justify-content-end align-items-center gap-3 gap-md-2">
             {/* Search */}
             <div className={`sliding-search-container d-none d-md-flex ${isSearchOpen ? 'open' : ''}`}>
               <form onSubmit={handleSearch} className="sliding-search-form mb-0">
@@ -130,56 +151,76 @@ const Header = () => {
             </div>
 
             {/* User Dropdown */}
-            <div className="dropdown d-none d-md-flex">
-              <button className="header-action-btn" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" title="Account">
+            <details className="dropdown d-none d-md-block" ref={dropdownRef} style={{ position: 'relative' }}>
+              <summary 
+                className="header-action-btn" 
+                title="Account"
+                style={{ listStyle: 'none', outline: 'none', cursor: 'pointer' }}
+              >
                 <User size={18} />
-              </button>
-              {user ? (
-                <ul className="dropdown-menu dropdown-menu-center premium-dropdown" aria-label="user menu">
-                  <li className="dropdown-header-item">
-                    <span className="d-block fw-bold text-dark" style={{ fontSize: '13px' }}>Hi, {user.name?.split(' ')[0] || 'User'}</span>
-                    <span className="text-muted" style={{ fontSize: '11px' }}>{user.email}</span>
-                  </li>
-                  <li><hr className="dropdown-divider my-1" /></li>
-                  {(user?.role === 'Super Admin' || user?.role === 'Manager' || user?.role === 'Staff') && (
+              </summary>
+              <ul 
+                className="dropdown-menu premium-dropdown show" 
+                aria-label="user menu"
+                style={{
+                  display: 'block',
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  left: 'auto',
+                  marginTop: '10px',
+                  minWidth: '220px',
+                  zIndex: 99999,
+                  transform: 'none'
+                }}
+              >
+                {user ? (
+                  <>
+                    <li className="dropdown-header-item">
+                      <span className="d-block fw-bold text-dark" style={{ fontSize: '13px' }}>Hi, {user.name?.split(' ')[0] || 'User'}</span>
+                      <span className="text-muted" style={{ fontSize: '11px' }}>{user.email}</span>
+                    </li>
+                    <li><hr className="dropdown-divider my-1" /></li>
+                    {(user?.role === 'Super Admin' || user?.role === 'Manager' || user?.role === 'Staff') && (
+                      <li>
+                        <Link href="/admin/dashboard" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
+                          <LayoutDashboard size={16} className="me-2 text-success" /> Admin Panel
+                        </Link>
+                      </li>
+                    )}
                     <li>
-                      <Link href="/admin/dashboard" className="dropdown-item premium-dropdown-item">
-                        <LayoutDashboard size={16} className="me-2 text-success" /> Admin Panel
+                      <Link href="/user/profile" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
+                        <User size={16} className="me-2 text-primary" /> My Profile
                       </Link>
                     </li>
-                  )}
-                  <li>
-                    <Link href="/user/profile" className="dropdown-item premium-dropdown-item">
-                      <User size={16} className="me-2 text-primary" /> My Profile
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/user/orders" className="dropdown-item premium-dropdown-item">
-                      <Package size={16} className="me-2 text-warning" /> My Orders
-                    </Link>
-                  </li>
-                  <li><hr className="dropdown-divider my-1" /></li>
-                  <li>
-                    <button onClick={handleLogout} className="dropdown-item premium-dropdown-item text-danger">
-                      <LogOut size={16} className="me-2" /> Log Out
-                    </button>
-                  </li>
-                </ul>
-              ) : (
-                <ul className="dropdown-menu dropdown-menu-center premium-dropdown" aria-label="user menu">
-                  <li>
-                    <Link href="/login" className="dropdown-item premium-dropdown-item">
-                      <LogIn size={16} className="me-2 text-success" /> Sign In
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/register" className="dropdown-item premium-dropdown-item">
-                      <User size={16} className="me-2 text-primary" /> Sign Up
-                    </Link>
-                  </li>
-                </ul>
-              )}
-            </div>
+                    <li>
+                      <Link href="/user/orders" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
+                        <Package size={16} className="me-2 text-warning" /> My Orders
+                      </Link>
+                    </li>
+                    <li><hr className="dropdown-divider my-1" /></li>
+                    <li>
+                      <button onClick={handleLogout} className="dropdown-item premium-dropdown-item text-danger">
+                        <LogOut size={16} className="me-2" /> Log Out
+                      </button>
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li>
+                      <Link href="/login" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
+                        <LogIn size={16} className="me-2 text-success" /> Sign In
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/register" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
+                        <User size={16} className="me-2 text-primary" /> Sign Up
+                      </Link>
+                    </li>
+                  </>
+                )}
+              </ul>
+            </details>
 
             {/* Wishlist */}
             <Link href="/wishlist" className="header-action-btn d-none d-md-flex text-decoration-none position-relative" title="Wishlist">

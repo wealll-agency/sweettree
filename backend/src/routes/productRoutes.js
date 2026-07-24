@@ -5,7 +5,8 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
-  toggleProductStatus
+  toggleProductStatus,
+  bulkUpdateHomepageFlags
 } from '../controllers/productController.js';
 import { protect, authorizeRoles } from '../middleware/auth.js';
 import { auditRoute } from '../middleware/logger.js';
@@ -19,6 +20,9 @@ const router = express.Router();
 router.route('/')
   .get(getProducts)
   .post(protect, authorizeRoles('Super Admin', 'Manager', 'Staff'), upload.fields([{ name: 'image', maxCount: 1 }, { name: 'subImages', maxCount: 3 }]), auditRoute('CREATE_PRODUCT'), createProduct);
+
+router.route('/homepage/bulk-flags')
+  .put(protect, authorizeRoles('Super Admin', 'Manager'), auditRoute('UPDATE_PRODUCT'), bulkUpdateHomepageFlags);
 
 router.route('/:id')
   .get(getProductById)

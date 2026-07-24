@@ -6,6 +6,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../store/cartSlice';
 import { toggleWishlist } from '../store/wishlistSlice';
 import { fetchProducts } from '../store/productsSlice';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, EffectFade } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/effect-fade';
 
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
@@ -87,26 +91,58 @@ const ProductCard = ({ product }) => {
   const imageSrc = resolvedProduct.image || (resolvedProduct.images && resolvedProduct.images[0]) || '/placeholder.png';
   const cleanImageSrc = imageSrc.replace('/assets/images/', '/');
 
+  const allImages = resolvedProduct.images && resolvedProduct.images.length > 0 
+    ? resolvedProduct.images 
+    : (resolvedProduct.image ? [resolvedProduct.image] : ['/placeholder.png']);
+
   return (
     <div className="item h-100 px-2 py-3">
       <div className="Sweettree-product-card">
         <div className="product-tags d-flex justify-content-between">
-          {(product.tagLeft || (resolvedProduct.discount > 0 ? 'PREMIUM' : '')) && <span className={`tag-left ${product.tagLeftClass || ''}`}>{product.tagLeft || (resolvedProduct.discount > 0 ? 'PREMIUM' : '')}</span>}
-          {(product.tagRight || (resolvedProduct.discount > 0 ? `${resolvedProduct.discount}% OFF` : '')) && <span className={`tag-right ${product.tagRightClass || ''} ms-auto`}>{product.tagRight || (resolvedProduct.discount > 0 ? `${resolvedProduct.discount}% OFF` : '')}</span>}
+          <span className={`tag-left ${resolvedProduct.newArrival ? 'bg-success' : (product.tagLeftClass || '')}`}>
+            {resolvedProduct.newArrival ? 'NEW ARRIVAL' : (product.tagLeft || 'PREMIUM')}
+          </span>
+          {(product.tagRight || resolvedProduct.discount > 0) ? (
+            <span className={`tag-right ${product.tagRightClass || ''} ms-auto`}>
+              {product.tagRight || (resolvedProduct.discount > 0 ? (resolvedProduct.discountType === 'Flat' ? `₹${resolvedProduct.discount} OFF` : `${resolvedProduct.discount}% OFF`) : '')}
+            </span>
+          ) : null}
         </div>
         <Link href={`/shop-details?name=${encodeURIComponent(resolvedProduct.name)}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-          <div className="product-img-box position-relative" style={{ minHeight: '200px' }}>
-            <Image src={cleanImageSrc} alt={resolvedProduct.name} fill sizes="(max-width: 768px) 100vw, 33vw" style={{ objectFit: 'contain' }} />
+          <div className="product-img-box position-relative" style={{ minHeight: '200px', overflow: 'hidden', opacity: resolvedProduct.stock <= 0 ? 0.7 : 1 }}>
+            {resolvedProduct.stock <= 0 && (
+              <div className="position-absolute w-100 d-flex justify-content-center align-items-center" style={{ top: '40%', zIndex: 20 }}>
+                <span className="badge bg-danger px-3 py-2 fs-6 shadow-sm">OUT OF STOCK</span>
+              </div>
+            )}
+            <Swiper
+              modules={[Autoplay, EffectFade]}
+              effect="fade"
+              autoplay={{ delay: Math.floor(Math.random() * 2000) + 2500, disableOnInteraction: false }}
+              loop={allImages.length > 1}
+              allowTouchMove={false}
+              className="w-100 h-100"
+            >
+              {allImages.map((img, idx) => (
+                <SwiperSlide key={idx} className="position-relative w-100 h-100" style={{ minHeight: '200px' }}>
+                  <Image 
+                    src={img.replace('/assets/images/', '/')} 
+                    alt={`${resolvedProduct.name} ${idx}`} 
+                    fill 
+                    sizes="(max-width: 768px) 100vw, 33vw" 
+                    style={{ objectFit: 'contain' }} 
+                  />
+                </SwiperSlide>
+              ))}
+            </Swiper>
           </div>
           <div className="card-divider"></div>
           <div className="product-meta d-flex justify-content-between align-items-center">
             <span className="brand-text">{resolvedProduct.brand || 'Sweettree'}</span>
             <div className="rating-heart d-flex align-items-center gap-2">
-              {resolvedProduct.rating && (
-                <span className="rating-badge d-flex align-items-center gap-1">
-                  <Star size={12} fill="#ffb800" stroke="#ffb800" /> {resolvedProduct.rating}
-                </span>
-              )}
+              <span className="rating-badge d-flex align-items-center gap-1">
+                <Star size={12} fill="#ffb800" stroke="#ffb800" /> {resolvedProduct.rating || '5.0'}
+              </span>
               <button 
                 onClick={handleToggleWishlist} 
                 className="btn btn-link p-0 border-0 m-0 text-decoration-none d-flex align-items-center" 
@@ -121,13 +157,26 @@ const ProductCard = ({ product }) => {
               </button>
             </div>
           </div>
-          <h3 className="product-name">{resolvedProduct.name}</h3>
+          <h3 className="product-name" style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            height: '38px'
+          }} title={resolvedProduct.name}>{resolvedProduct.name}</h3>
           <div className="product-pricing">
             MRP: <del>₹{resolvedProduct.price}</del> <span className="current-price">₹{calculatedDiscountedPrice}</span> 
-            {product.perGram && <span className="per-gram">({product.perGram})</span>}
+            {(product.perGram || resolvedProduct.perGram) && <span className="per-gram">({product.perGram || resolvedProduct.perGram})</span>}
           </div>
         </Link>
-        <button onClick={handleAddToCart} className="Sweettree-btn-cart w-100 mt-2">Add To Cart</button>
+        {resolvedProduct.stock <= 0 ? (
+          <Link href={`/shop-details?name=${encodeURIComponent(resolvedProduct.name)}`} className="btn btn-secondary w-100 mt-2" style={{ backgroundColor: '#6c757d', color: 'white', fontWeight: '600' }}>
+            Notify Me
+          </Link>
+        ) : (
+          <button onClick={handleAddToCart} className="Sweettree-btn-cart w-100 mt-2">Add To Cart</button>
+        )}
       </div>
     </div>
   );

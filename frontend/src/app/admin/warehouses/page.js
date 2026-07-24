@@ -24,6 +24,11 @@ export default function AdminWarehouses() {
       contactPersonName: '',
       email: '',
       returnSameAsPickup: true,
+      workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      returnAddressLine: '',
+      returnCity: '',
+      returnState: '',
+      returnPincode: '',
       isActive: true
   });
 
@@ -42,6 +47,14 @@ export default function AdminWarehouses() {
         state: warehouse.state,
         pincode: warehouse.pincode,
         contactPhone: warehouse.contactPhone,
+        contactPersonName: warehouse.contactPersonName || '',
+        email: warehouse.email || '',
+        returnSameAsPickup: warehouse.returnSameAsPickup !== undefined ? warehouse.returnSameAsPickup : true,
+        workingDays: warehouse.workingDays || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        returnAddressLine: warehouse.returnAddressLine || '',
+        returnCity: warehouse.returnCity || '',
+        returnState: warehouse.returnState || '',
+        returnPincode: warehouse.returnPincode || '',
         isActive: warehouse.isActive
       });
     } else {
@@ -57,6 +70,11 @@ export default function AdminWarehouses() {
         contactPersonName: '',
         email: '',
         returnSameAsPickup: true,
+        workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        returnAddressLine: '',
+        returnCity: '',
+        returnState: '',
+        returnPincode: '',
         isActive: true
       });
     }
@@ -147,7 +165,7 @@ export default function AdminWarehouses() {
       {showModal && (
         <>
           <div className="modal show d-block" tabIndex="-1">
-            <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
               <div className="modal-content border-0 shadow-lg">
                 <div className="modal-header border-0 pb-0">
                   <h5 className="modal-title fw-bold">{editingId ? 'Edit Warehouse' : 'Add Warehouse'}</h5>
@@ -203,11 +221,59 @@ export default function AdminWarehouses() {
                           value={formData.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} />
                       </div>
                     </div>
+                    <div className="mb-3">
+                      <label className="form-label fw-bold fs-7">Working Days</label>
+                      <div className="d-flex flex-wrap gap-2">
+                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                          <div key={day} className="form-check form-check-inline m-0">
+                            <input 
+                              className="form-check-input cursor-pointer" 
+                              type="checkbox" 
+                              id={`day-${day}`}
+                              checked={formData.workingDays.includes(day)}
+                              onChange={(e) => {
+                                const newDays = e.target.checked 
+                                  ? [...formData.workingDays, day]
+                                  : formData.workingDays.filter(d => d !== day);
+                                setFormData({...formData, workingDays: newDays});
+                              }}
+                            />
+                            <label className="form-check-label fs-7 cursor-pointer" htmlFor={`day-${day}`}>{day}</label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                     <div className="form-check mb-3">
                       <input className="form-check-input shadow-none cursor-pointer" type="checkbox" id="returnSameAsPickup"
                         checked={formData.returnSameAsPickup} onChange={e => setFormData({...formData, returnSameAsPickup: e.target.checked})} />
                       <label className="form-check-label fw-bold fs-7 cursor-pointer text-muted" htmlFor="returnSameAsPickup">Return address is the same as the pickup address</label>
                     </div>
+
+                    {!formData.returnSameAsPickup && (
+                      <div className="row mb-3 p-3 bg-light rounded border mx-0">
+                        <div className="col-12 mb-2"><h6 className="fw-bold mb-0">Return Details</h6></div>
+                        <div className="col-12 mb-3">
+                          <label className="form-label fw-bold fs-7">Address Line</label>
+                          <input type="text" className="form-control" required={!formData.returnSameAsPickup}
+                            value={formData.returnAddressLine} onChange={e => setFormData({...formData, returnAddressLine: e.target.value})} />
+                        </div>
+                        <div className="col-md-4 mb-3">
+                          <label className="form-label fw-bold fs-7">Pincode</label>
+                          <input type="text" className="form-control" required={!formData.returnSameAsPickup}
+                            value={formData.returnPincode} onChange={e => setFormData({...formData, returnPincode: e.target.value})} />
+                        </div>
+                        <div className="col-md-4 mb-3">
+                          <label className="form-label fw-bold fs-7">City</label>
+                          <input type="text" className="form-control" required={!formData.returnSameAsPickup}
+                            value={formData.returnCity} onChange={e => setFormData({...formData, returnCity: e.target.value})} />
+                        </div>
+                        <div className="col-md-4 mb-3">
+                          <label className="form-label fw-bold fs-7">State</label>
+                          <input type="text" className="form-control" required={!formData.returnSameAsPickup}
+                            value={formData.returnState} onChange={e => setFormData({...formData, returnState: e.target.value})} />
+                        </div>
+                      </div>
+                    )}
                     <div className="form-check form-switch mb-4">
                       <input className="form-check-input" type="checkbox" role="switch" id="isActiveSwitch"
                         checked={formData.isActive} onChange={e => setFormData({...formData, isActive: e.target.checked})} />

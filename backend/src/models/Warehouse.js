@@ -11,6 +11,11 @@ const warehouseSchema = new mongoose.Schema({
   contactPersonName: { type: String, trim: true },
   email: { type: String, trim: true, lowercase: true },
   returnSameAsPickup: { type: Boolean, default: true },
+  workingDays: { type: [String], default: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] },
+  returnAddressLine: { type: String, trim: true },
+  returnCity: { type: String, trim: true },
+  returnState: { type: String, trim: true },
+  returnPincode: { type: String, trim: true },
   isActive: { type: Boolean, default: true }
 }, {
   timestamps: true

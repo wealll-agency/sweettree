@@ -17,7 +17,7 @@ const ProductCarouselSection = ({ title, products }) => {
             modules={[Autoplay, Navigation]}
             spaceBetween={10}
             navigation={true}
-            loop={true}
+            loop={products.length >= 4}
             autoplay={{ delay: 2500, disableOnInteraction: false }}
             breakpoints={{
               0: { slidesPerView: 1 },
@@ -27,8 +27,8 @@ const ProductCarouselSection = ({ title, products }) => {
             }}
             className="product-slider"
           >
-            {products && [...products, ...products].map((product, index) => (
-              <SwiperSlide key={index}>
+            {products && products.map((product, index) => (
+              <SwiperSlide key={product._id || index}>
                 <ProductCard product={product} />
               </SwiperSlide>
             ))}

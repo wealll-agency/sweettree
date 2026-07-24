@@ -1,6 +1,8 @@
 import Order from '../models/Order.js';
 import RefundRequest from '../models/RefundRequest.js';
 import Enquiry from '../models/Enquiry.js';
+import StockNotification from '../models/StockNotification.js';
+import Product from '../models/Product.js';
 
 // GET /api/notifications — aggregated notifications for admin
 export const getNotifications = async (req, res) => {
@@ -38,6 +40,14 @@ export const getNotifications = async (req, res) => {
 
     // Unread enquiries
     const enquiries = await Enquiry.find({ isRead: false })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    // Pending stock notifications
+    const stockNotifications = await StockNotification.find({ status: 'Pending', createdAt: { $gte: last7Days } })
+      .populate('user', 'name')
+      .populate('product', 'name')
       .sort({ createdAt: -1 })
       .limit(10)
       .lean();
@@ -105,6 +115,18 @@ export const getNotifications = async (req, res) => {
       });
     });
 
+    stockNotifications.forEach(sn => {
+      notifications.push({
+        id: `stock-${sn._id}`,
+        type: 'stock_request',
+        title: 'Restock Requested',
+        message: `${sn.user?.name || 'A customer'} requested restock for ${sn.product?.name || 'a product'}`,
+        time: sn.createdAt,
+        link: '/admin/inventory',
+        read: false
+      });
+    });
+
     // Sort by time desc
     notifications.sort((a, b) => new Date(b.time) - new Date(a.time));
 
@@ -117,3 +139,75 @@ export const getNotifications = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Create a new stock notification subscription
+// @route   POST /api/notifications/stock
+// @access  Private (Authenticated users)
+export const createStockNotification = async (req, res) => {
+  try {
+    const { productId } = req.body;
+    const userId = req.user._id;
+
+    if (!productId) {
+      return res.status(400).json({ success: false, message: 'Product ID is required' });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    if (product.stock > 0) {
+      return res.status(400).json({ success: false, message: 'Product is currently in stock' });
+    }
+
+    const existingNotification = await StockNotification.findOne({ product: productId, user: userId, status: 'Pending' });
+    if (existingNotification) {
+      return res.status(400).json({ success: false, message: 'You have already subscribed for notifications for this product' });
+    }
+
+    const newNotification = new StockNotification({
+      user: userId,
+      product: productId,
+      email: req.user.email,
+      status: 'Pending'
+    });
+
+    await newNotification.save();
+
+    res.status(201).json({ success: true, message: 'You will be notified when this product is back in stock' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get all stock notifications for Admin
+// @route   GET /api/notifications/admin/stock
+// @access  Private/Admin
+export const getStockNotificationsAdmin = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const total = await StockNotification.countDocuments();
+    const notifications = await StockNotification.find()
+      .populate('user', 'name email')
+      .populate('product', 'name images sku')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    res.json({
+      success: true,
+      notifications,
+      total,
+      pages: Math.ceil(total / limit),
+      currentPage: page
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
