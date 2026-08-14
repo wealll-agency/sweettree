@@ -75,7 +75,7 @@ const Header = () => {
 
   return (
     <header className="main-header">
-      <div className="container">
+      <div className="container-fluid px-4 px-lg-5">
         <div className="row align-items-center">
           {/* Logo */}
           <div className="col-lg-2 col-5">
@@ -223,7 +223,7 @@ const Header = () => {
             </details>
 
             {/* Wishlist */}
-            <Link href="/wishlist" className="header-action-btn d-none d-md-flex text-decoration-none position-relative" title="Wishlist">
+            <Link href="/wishlist" className="header-action-btn d-flex text-decoration-none position-relative" title="Wishlist">
               <Heart size={18} />
               {wishlistCount > 0 && (
                 <span className="header-badge">{wishlistCount}</span>

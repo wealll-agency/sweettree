@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '../../store/productsSlice.js';
 import ProductCard from '../../components/ProductCard.jsx';
 import { useSearchParams } from 'next/navigation';
+import api from '../../utils/axiosConfig';
 
 function ShopContent() {
   const dispatch = useDispatch();
@@ -17,6 +18,8 @@ function ShopContent() {
   const categoryQuery = searchParams.get('category') || '';
 
   const [priceFrom, setPriceFrom] = useState('');
+  const [filters, setFilters] = useState({});
+  const [promotionalBanners, setPromotionalBanners] = useState([]);
   const [priceTo, setPriceTo] = useState('');
   const [selectedStock, setSelectedStock] = useState('In Stock'); // Default to In Stock
   const [selectedBrand, setSelectedBrand] = useState(null);
@@ -24,6 +27,21 @@ function ShopContent() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [sortBy, setSortBy] = useState('Best Selling');
   const [viewType, setViewType] = useState('grid');
+
+  useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const res = await api.get('/banners');
+        if (res.data.success) {
+          const promoBanners = res.data.banners.filter(b => b.placement === 'Promotional');
+          if (promoBanners.length > 0) {
+            setPromotionalBanners(promoBanners);
+          }
+        }
+      } catch (error) {}
+    };
+    fetchBanners();
+  }, []);
 
   useEffect(() => {
     dispatch(fetchProducts({ limit: 100 }));
@@ -77,8 +95,23 @@ function ShopContent() {
     // Category filter (selectedCategory state or categoryQuery URL parameter)
     const catFilter = selectedCategory || categoryQuery;
     if (catFilter) {
-      const matchCategory = (product.category || '').toLowerCase().trim() === catFilter.toLowerCase().trim() ||
-                            product.name.toLowerCase().includes(catFilter.toLowerCase());
+      const lowerCat = catFilter.toLowerCase().trim();
+      let matchCategory = false;
+
+      const productCat = (product.category || '').toLowerCase().trim();
+      const productName = product.name.toLowerCase();
+
+      if (productCat === lowerCat || productName.includes(lowerCat)) {
+        matchCategory = true;
+      }
+
+      // Intelligent mapping for homepage generic categories
+      if (lowerCat === 'nuts' && ['almond', 'cashew', 'pista', 'pistachio', 'walnut'].some(k => productCat.includes(k) || productName.includes(k))) matchCategory = true;
+      if (lowerCat === 'berries' && ['strawberry', 'blueberry', 'cranberry', 'mulberry', 'blackberry', 'berry'].some(k => productCat.includes(k) || productName.includes(k))) matchCategory = true;
+      if (lowerCat === 'dried fruits' && ['dates', 'raisin', 'apricot', 'fig', 'anjeer', 'khajoor'].some(k => productCat.includes(k) || productName.includes(k))) matchCategory = true;
+      if (lowerCat === 'seeds' && ['makhana', 'pumpkin', 'sunflower', 'chia', 'flax'].some(k => productCat.includes(k) || productName.includes(k))) matchCategory = true;
+      if (lowerCat === 'mixes' && ['spices', 'trail', 'mix'].some(k => productCat.includes(k) || productName.includes(k))) matchCategory = true;
+
       if (!matchCategory) return false;
     }
 
@@ -121,15 +154,30 @@ function ShopContent() {
 
       {/* Shop Banner */}
       <section className="shop-banner">
-        <div className="container">
+        <div className="container-fluid px-4 px-lg-5">
           <div className="shop_banner_image">
-            <Image src="/shop_banner.jpg" alt="Shop Banner" width={1920} height={300} priority={true} style={{ width: '100%', height: 'auto', display: 'block' }} />
+            {promotionalBanners.length > 0 ? (
+              promotionalBanners.map(banner => (
+                <a href={banner.targetLink || '#'} key={banner._id}>
+                  <Image 
+                    src={banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5000'}${banner.image}`} 
+                    alt={banner.title || "Shop Banner"} 
+                    width={1920} 
+                    height={300} 
+                    priority={true} 
+                    style={{ width: '100%', height: 'auto', display: 'block', marginBottom: '15px' }} 
+                  />
+                </a>
+              ))
+            ) : (
+              <Image src="/shop_banner.jpg" alt="Shop Banner" width={1920} height={300} priority={true} style={{ width: '100%', height: 'auto', display: 'block' }} />
+            )}
           </div>
         </div>
       </section>
 
       {/* Breadcrumb and Description */}
-      <div className="container py-3">
+      <div className="container-fluid px-4 px-lg-5 py-3">
         <nav aria-label="breadcrumb">
           <ol className="breadcrumb mb-2" style={{ fontSize: '13px' }}>
             <li className="breadcrumb-item"><Link href="/" className="text-muted">Home</Link></li>
@@ -141,7 +189,7 @@ function ShopContent() {
         </p>
       </div>
 
-      <div className="container pb-5">
+      <div className="container-fluid px-4 px-lg-5 pb-5">
         <div className="row">
           {/* Sidebar Filters */}
           <div className="col-lg-3 d-none d-lg-block">
@@ -322,11 +370,11 @@ function ShopContent() {
               </div>
             </div>
 
-            <div className={viewType === 'grid' ? "row row-cols-2 row-cols-lg-3 g-2 g-lg-4" : "row g-3"} id="shopProductGrid">
+            <div className={viewType === 'grid' ? "products-grid" : "row g-3"} id="shopProductGrid">
               {loading ? (
                 // Loading placeholders
                 Array(6).fill(0).map((_, idx) => (
-                  <div className="col" key={idx}>
+                  <div className={viewType === 'grid' ? "" : "col-12"} key={idx}>
                     <div className="placeholder-glow">
                       <div className="placeholder bg-light w-100 rounded mb-2" style={{ height: '260px' }}></div>
                       <div className="placeholder bg-light col-8 mb-1"></div>
@@ -338,7 +386,7 @@ function ShopContent() {
                 sortedProducts.map((product) => {
                   const finalPrice = product.discountedPrice !== undefined ? product.discountedPrice : product.price;
                   return viewType === 'grid' ? (
-                    <div className="col" key={product._id}>
+                    <div key={product._id}>
                       <ProductCard product={product} />
                     </div>
                   ) : (
@@ -352,7 +400,7 @@ function ShopContent() {
                               alt={product.name} 
                               fill
                               sizes="(max-width: 768px) 33vw, 25vw"
-                              style={{ objectFit: 'contain' }} 
+                              style={{ objectFit: 'cover', objectPosition: 'center' }} 
                             />
                           </div>
                           <div className="col-8 col-md-9 ps-3 ps-md-4">
@@ -402,7 +450,7 @@ function ShopContent() {
       
       {/* People Are Also Looking For Section */}
       <section className="tags-section bg-white py-5">
-        <div className="container py-3">
+        <div className="container-fluid px-4 px-lg-5 py-3">
           <h3 className="mb-4 text-start" style={{ fontSize: '24px', color: '#333' }}>People Are Also Looking For</h3>
           <div className="d-flex flex-wrap gap-2">
             <Link href="/shop?keyword=Cashew" className="search-tag-pill">Cashew Royale</Link>
@@ -420,7 +468,7 @@ function ShopContent() {
 export default function ShopPage() {
   return (
     <Suspense fallback={
-      <div className="container py-5 text-center">
+      <div className="container-fluid px-4 px-lg-5 py-5 text-center">
         <div className="spinner-border text-success" role="status">
           <span className="visually-hidden">Loading shop...</span>
         </div>

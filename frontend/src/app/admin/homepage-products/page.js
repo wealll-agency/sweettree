@@ -32,6 +32,10 @@ export default function HomepageProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   // Derive unique categories from products for the filter dropdown
   const categories = products ? [...new Set(products.map(p => p.category).filter(Boolean))] : [];
 
@@ -134,6 +138,19 @@ export default function HomepageProductsPage() {
     return matchesSearch && matchesCategory;
   });
 
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentProducts = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+  };
+  
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(prev => prev - 1);
+  };
+
   const renderProductList = (flag) => {
     return (
       <div className="table-responsive mt-3">
@@ -150,8 +167,8 @@ export default function HomepageProductsPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredProducts.length > 0 ? (
-              filteredProducts.map(product => (
+            {currentProducts.length > 0 ? (
+              currentProducts.map(product => (
                 <tr key={product._id} className="border-bottom" style={{ opacity: product.isActive ? 1 : 0.6 }}>
                   <td>
                     <div className="form-check">
@@ -206,6 +223,31 @@ export default function HomepageProductsPage() {
             )}
           </tbody>
         </table>
+        
+        {/* Pagination Controls */}
+        {!productsLoading && filteredProducts.length > itemsPerPage && (
+          <div className="d-flex justify-content-between align-items-center mt-4 px-2 pb-2">
+            <span className="text-muted fs-7">
+              Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredProducts.length)} of {filteredProducts.length} entries
+            </span>
+            <div className="d-flex gap-2">
+              <button 
+                onClick={handlePrevPage} 
+                disabled={currentPage === 1}
+                className="btn btn-outline-secondary btn-sm px-3"
+              >
+                Previous
+              </button>
+              <button 
+                onClick={handleNextPage} 
+                disabled={currentPage === totalPages}
+                className="btn btn-outline-secondary btn-sm px-3"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };

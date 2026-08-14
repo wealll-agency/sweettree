@@ -56,7 +56,7 @@ export default function ProfilePage() {
 
   if (!mounted || loading || !user) {
     return (
-      <div className="container py-5 d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
+      <div className="container-fluid px-4 px-lg-5 py-5 d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
         <div className="spinner-border text-success" role="status">
           <span className="visually-hidden">Loading profile...</span>
         </div>
@@ -133,7 +133,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="container py-5 animate-fade-in">
+    <div className="container-fluid px-4 px-lg-5 py-5 animate-fade-in">
       <h1 className="fw-bold mb-4 display-font">My Account</h1>
 
       <div className="row g-4">

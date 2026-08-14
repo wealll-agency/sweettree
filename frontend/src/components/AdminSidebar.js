@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../store/authSlice.js';
 import { clearCart } from '../store/cartSlice.js';
-import { LayoutDashboard, ShoppingBag, ClipboardList, ShoppingCart, Users, Receipt, LogOut, Tag, ChevronLeft, ChevronRight, RotateCcw, ChevronDown, ChevronUp, MessageSquare, MapPin, Package, Shield, Bell } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, ClipboardList, ShoppingCart, Users, Receipt, LogOut, Tag, ChevronLeft, ChevronRight, RotateCcw, ChevronDown, ChevronUp, MessageSquare, MapPin, Package, Shield, Bell, Image, Gift } from 'lucide-react';
 import api from '../utils/axiosConfig.js';
 
 export default function AdminSidebar() {
@@ -57,6 +57,7 @@ export default function AdminSidebar() {
   const navItems = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
     { label: 'Product Manager', path: '/admin/products', icon: <ShoppingBag size={20} /> },
+    { label: 'Combos', path: '/admin/combos', icon: <Gift size={20} /> },
     { label: 'Homepage Products', path: '/admin/homepage-products', icon: <LayoutDashboard size={20} /> },
     { label: 'Warehouses', path: '/admin/warehouses', icon: <MapPin size={20} /> },
     { label: 'Inventory Manager', path: '/admin/inventory', icon: <ClipboardList size={20} /> },
@@ -78,6 +79,7 @@ export default function AdminSidebar() {
     { label: 'Customer Access', path: '/admin/access', icon: <Shield size={20} /> },
     { label: 'Enquiries', path: '/admin/enquiries', icon: <MessageSquare size={20} />, badge: unreadEnquiries },
     { label: 'Reports Center', path: '/admin/reports', icon: <Receipt size={20} /> },
+    { label: 'Media Manager', path: '/admin/media-manager', icon: <Image size={20} /> },
     { label: 'Coupon Manager', path: '/admin/coupons', icon: <Tag size={20} /> }
   ];
 
@@ -85,9 +87,9 @@ export default function AdminSidebar() {
 
   return (
     <aside 
-      className="sidebar d-flex flex-column justify-content-between py-4 position-relative" 
+      className="position-relative" 
       style={{ 
-        minHeight: '100vh', 
+        height: '100vh', 
         width: sidebarWidth, 
         minWidth: sidebarWidth, 
         flexShrink: 0, 
@@ -116,7 +118,11 @@ export default function AdminSidebar() {
         {isCollapsed ? <ChevronRight size={18} color="#162C18" /> : <ChevronLeft size={18} color="#162C18" />}
       </button>
 
-      <div>
+      <div 
+        className="sidebar d-flex flex-column justify-content-between py-4"
+        style={{ height: '100vh', overflowY: 'auto', overflowX: 'hidden' }}
+      >
+        <div>
         {/* Brand label */}
         <div className={`px-3 mb-5 ${isCollapsed ? 'text-center' : 'px-4'}`}>
           {!isCollapsed ? (
@@ -263,6 +269,7 @@ export default function AdminSidebar() {
           <LogOut size={20} />
           {!isCollapsed && <span>Sign Out</span>}
         </button>
+      </div>
       </div>
     </aside>
   );

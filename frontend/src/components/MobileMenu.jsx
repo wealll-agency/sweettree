@@ -104,12 +104,9 @@ const MobileMenu = () => {
           )}
         </ul>
         <div className="p-3 bg-light mt-3">
-          <div className="d-flex justify-content-around">
-            <Link href="/wishlist" className="text-dark bg-white rounded-circle p-2 shadow-sm d-flex align-items-center justify-content-center" onClick={closeMenu} style={{ width: '38px', height: '38px' }}>
-              <Heart size={18} />
-            </Link>
-            <a href="https://wa.me/919748724689" target="_blank" rel="noopener noreferrer" className="text-dark bg-white rounded-circle p-2 shadow-sm d-flex align-items-center justify-content-center" onClick={closeMenu} style={{ width: '38px', height: '38px' }}>
-              <MessageCircle size={18} />
+          <div className="d-flex justify-content-center">
+            <a href="https://wa.me/919748724689" target="_blank" rel="noopener noreferrer" className="text-dark bg-white rounded-pill p-2 px-4 shadow-sm d-flex align-items-center justify-content-center gap-2" onClick={closeMenu} style={{ height: '40px' }}>
+              <MessageCircle size={18} /> <span className="fw-semibold" style={{fontSize: '14px'}}>Chat with us</span>
             </a>
           </div>
         </div>

@@ -19,6 +19,10 @@ export default function AdminProductsPage() {
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState('');
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   // Filters state
   const [filterBrand, setFilterBrand] = useState('All Brands');
   const [filterCategory, setFilterCategory] = useState('Select category');
@@ -84,6 +88,7 @@ export default function AdminProductsPage() {
 
   const loadProducts = () => {
     dispatch(fetchAdminProducts({
+      limit: 1000,
       brand: filterBrand !== 'All Brands' ? filterBrand : '',
       category: filterCategory !== 'Select category' ? filterCategory : '',
       subCategory: filterSubCategory !== 'Select Sub Category' ? filterSubCategory : '',
@@ -93,7 +98,7 @@ export default function AdminProductsPage() {
   };
 
   useEffect(() => {
-    dispatch(fetchAdminProducts({}));
+    dispatch(fetchAdminProducts({ limit: 1000 }));
     dispatch(fetchWarehouses());
   }, [dispatch]);
 
@@ -331,8 +336,20 @@ export default function AdminProductsPage() {
     }
     setSku(code);
   };
-  const displayedProducts = showLimitedStockOnly ? products.filter(p => p.stock <= 10) : products;
+  const filteredProducts = showLimitedStockOnly ? products.filter(p => p.stock <= 10) : products;
 
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentProducts = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+  };
+  
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(prev => prev - 1);
+  };
   return (
     <div className="animate-fade-in position-relative">
       {/* View Product Modal */}
@@ -782,9 +799,16 @@ export default function AdminProductsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {displayedProducts.map((prod, index) => (
-                    <tr key={prod._id} className="border-bottom">
-                      <td className="text-muted">{index + 1}</td>
+                  {currentProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" className="text-center py-5 text-muted">
+                        No products found.
+                      </td>
+                    </tr>
+                  ) : (
+                    currentProducts.map((prod, index) => (
+                      <tr key={prod._id} className="border-bottom">
+                        <td className="text-muted">{indexOfFirstItem + index + 1}</td>
                       <td className="py-3">
                         <div className="d-flex align-items-center gap-2">
                           <Image
@@ -848,9 +872,35 @@ export default function AdminProductsPage() {
                         </td>
                       )}
                     </tr>
-                  ))}
+                  ))
+                )}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {!productsLoading && !showForm && filteredProducts.length > itemsPerPage && (
+            <div className="d-flex justify-content-between align-items-center mt-4 px-4 pb-4">
+              <span className="text-muted fs-7">
+                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredProducts.length)} of {filteredProducts.length} entries
+              </span>
+              <div className="d-flex gap-2">
+                <button 
+                  onClick={handlePrevPage} 
+                  disabled={currentPage === 1}
+                  className="btn btn-outline-secondary btn-sm px-3"
+                >
+                  Previous
+                </button>
+                <button 
+                  onClick={handleNextPage} 
+                  disabled={currentPage === totalPages}
+                  className="btn btn-outline-secondary btn-sm px-3"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
         </div>

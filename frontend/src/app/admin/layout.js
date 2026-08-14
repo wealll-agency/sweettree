@@ -44,7 +44,7 @@ export default function AdminLayout({ children }) {
   // Block customer access
   if (user && !['Super Admin', 'Manager', 'Staff'].includes(user.role)) {
     return (
-      <div className="container py-5 d-flex justify-content-center align-items-center" style={{ minHeight: '80vh' }}>
+      <div className="container-fluid px-4 px-lg-5 py-5 d-flex justify-content-center align-items-center" style={{ minHeight: '80vh' }}>
         <div className="glass-card p-5 text-center max-w-md mx-auto">
           <div className="rounded-circle p-3 bg-danger bg-opacity-10 text-danger d-inline-block mb-3">
             <ShieldAlert size={36} />
@@ -64,7 +64,7 @@ export default function AdminLayout({ children }) {
   if (!user) return null;
 
   return (
-    <div className="d-flex" style={{ minHeight: '100vh' }}>
+    <div className="d-flex" style={{ height: '100vh', overflow: 'hidden' }}>
       {/* Admin navigation sidebar */}
       <AdminSidebar />
       

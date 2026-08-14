@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { createOrder } from '../../store/ordersSlice.js';
 import { clearCart, addToCart, applyCouponCode } from '../../store/cartSlice.js';
@@ -146,7 +147,7 @@ export default function CheckoutPage() {
 
   if (!isMounted || items.length === 0) {
     return (
-      <div className="container py-5 text-center d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
+      <div className="container-fluid px-4 px-lg-5 py-5 text-center d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
         <div className="spinner-border text-success mb-3" role="status">
           <span className="visually-hidden">Loading checkout...</span>
         </div>
@@ -203,7 +204,15 @@ export default function CheckoutPage() {
     }
 
     const orderData = {
-      items: items.map(i => ({ product: i.product, name: i.name, quantity: i.quantity, price: i.price })),
+      items: items.map(i => ({ 
+        product: i.product || undefined, 
+        combo: i.combo || undefined, 
+        itemType: i.itemType || 'Product',
+        name: i.name, 
+        quantity: i.quantity, 
+        price: i.price,
+        size: i.size
+      })),
       deliveryAddress: {
         name: addressObj.name || user.name || 'Guest Customer',
         phone: addressObj.phone || user.phone || '9999999999',
@@ -309,7 +318,7 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="container py-5 animate-fade-in">
+    <div className="container-fluid px-4 px-lg-5 py-5 animate-fade-in">
       <h1 className="fw-bold mb-4 display-font">Secure Checkout</h1>
 
       <div className="row g-5">
@@ -626,8 +635,8 @@ export default function CheckoutPage() {
 
             <button
               onClick={handlePlaceOrder}
-              disabled={loading || (user && user.addresses?.length === 0) || (!user && (!address || !city))}
-              className="btn btn-brand w-100 py-3 mt-4 fw-bold fs-6 d-flex align-items-center justify-content-center gap-2"
+              disabled={loading}
+              className="btn btn-brand w-100 py-3 mt-4 fw-bold fs-6 d-none d-md-flex align-items-center justify-content-center gap-2"
             >
               {loading ? 'Processing Order...' : 'Pay Now'}
             </button>
@@ -685,8 +694,29 @@ export default function CheckoutPage() {
             </div>
           )}
         </div>
-
       </div>
+
+      {/* Mobile Sticky Pay Now Action (Rendered via Portal to guarantee fixed positioning) */}
+      {isMounted && typeof document !== 'undefined' && createPortal(
+        <div className="d-md-none mobile-sticky-actions">
+           <div className="d-flex justify-content-between align-items-center mb-2">
+              <span style={{ fontSize: '12px', color: '#6c757d', fontWeight: '500' }}>Total Amount</span>
+              <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#212529' }}>₹{total}</span>
+           </div>
+           <div className="d-flex gap-2">
+             <button
+                onClick={handlePlaceOrder}
+                disabled={loading}
+                className="btn btn-brand flex-fill py-2 fw-bold"
+                style={{ backgroundColor: '#005B6E', color: 'white', border: '1px solid #005B6E', fontSize: '13px' }}
+             >
+                {loading ? 'Processing...' : 'PAY NOW'}
+             </button>
+           </div>
+        </div>,
+        document.body
+      )}
+
     </div>
   );
 }

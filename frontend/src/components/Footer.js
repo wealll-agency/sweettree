@@ -7,7 +7,7 @@ import Image from 'next/image';
 const Footer = () => {
   return (
     <footer style={{ backgroundColor: '#1a1a1a', color: '#ffffff' }} className="pt-5 pb-3 mt-5">
-      <div className="container">
+      <div className="container-fluid px-4 px-lg-5">
         <div className="row mb-5">
           {/* Logo and About Section */}
           <div className="col-lg-4 col-md-12 mb-4 mb-lg-0">

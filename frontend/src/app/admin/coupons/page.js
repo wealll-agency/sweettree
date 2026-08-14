@@ -24,10 +24,25 @@ export default function CouponManagerPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [viewingProducts, setViewingProducts] = useState(null);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (viewingProducts) {
+      document.body.classList.add('modal-open');
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = 'auto';
+    }
+    return () => {
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = 'auto';
+    };
+  }, [viewingProducts]);
 
   const fetchData = async () => {
     try {
@@ -46,9 +61,20 @@ export default function CouponManagerPage() {
     }
   };
 
-  const handleProductSelection = (e) => {
-    const selectedOptions = Array.from(e.target.selectedOptions).map(option => option.value);
-    setFormData({ ...formData, applicableProducts: selectedOptions });
+  const handleProductCheckboxChange = (productId, isChecked) => {
+    if (isChecked) {
+      setFormData({ ...formData, applicableProducts: [...formData.applicableProducts, productId] });
+    } else {
+      setFormData({ ...formData, applicableProducts: formData.applicableProducts.filter(id => id !== productId) });
+    }
+  };
+
+  const handleSelectAllProducts = (e) => {
+    if (e.target.checked) {
+      setFormData({ ...formData, applicableProducts: products.map(p => p._id) });
+    } else {
+      setFormData({ ...formData, applicableProducts: [] });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -150,37 +176,80 @@ export default function CouponManagerPage() {
                 />
               </div>
 
-              <div className="mb-3 form-check">
-                <input 
-                  type="checkbox" 
-                  className="form-check-input" 
-                  id="isComboCheck"
-                  checked={formData.isCombo}
-                  onChange={(e) => setFormData({...formData, isCombo: e.target.checked})}
-                />
-                <label className="form-check-label fs-7 fw-semibold" htmlFor="isComboCheck">
-                  Is this a Combo Coupon?
-                </label>
-                <div className="form-text fs-8 text-muted">If checked, customer must have ALL selected products below in their cart to use this coupon. Minimum 2 products required.</div>
+              <div className="mb-3">
+                <div className="d-flex gap-2 align-items-start">
+                  <input 
+                    type="checkbox" 
+                    className="form-check-input flex-shrink-0 cursor-pointer shadow-none mt-1" 
+                    id="isComboCheck"
+                    checked={formData.isCombo}
+                    onChange={(e) => setFormData({...formData, isCombo: e.target.checked})}
+                    style={{ width: '1rem', height: '1rem' }}
+                  />
+                  <div>
+                    <label className="form-check-label fs-7 fw-semibold cursor-pointer mb-1" htmlFor="isComboCheck">
+                      Is this a Combo Coupon?
+                    </label>
+                    <div className="form-text fs-8 text-muted mt-0">If checked, customer must have ALL selected products below in their cart to use this coupon. Minimum 2 products required.</div>
+                  </div>
+                </div>
               </div>
 
               <div className="mb-4">
-                <label className="form-label fs-7 fw-semibold">Applicable Products</label>
-                <p className="text-muted fs-8 mb-2">Hold Ctrl (Windows) or Cmd (Mac) to select multiple products.</p>
-                <select 
-                  multiple 
-                  className="form-control bg-light border-0" 
-                  style={{ height: '150px' }}
-                  value={formData.applicableProducts}
-                  onChange={handleProductSelection}
-                  required
+                <div className="d-flex justify-content-between align-items-center mb-2 px-1">
+                  <label className="form-label fs-7 fw-semibold mb-0">Applicable Products</label>
+                  <div className="form-check m-0 d-flex align-items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="form-check-input flex-shrink-0 cursor-pointer m-0 mt-1" 
+                      id="selectAllProducts"
+                      checked={products.length > 0 && formData.applicableProducts.length === products.length}
+                      onChange={handleSelectAllProducts}
+                      style={{ width: '1rem', height: '1rem' }}
+                    />
+                    <label className="form-check-label fs-8 fw-bold text-brand cursor-pointer" htmlFor="selectAllProducts">
+                      Select All
+                    </label>
+                  </div>
+                </div>
+                
+                <div 
+                  className="bg-white rounded border p-2" 
+                  style={{ height: '220px', overflowY: 'auto' }}
                 >
-                  {products.map(product => (
-                    <option key={product._id} value={product._id}>
-                      {product.name} (₹{product.price})
-                    </option>
-                  ))}
-                </select>
+                  {products.length === 0 ? (
+                    <div className="text-muted fs-8 text-center mt-4">Loading products...</div>
+                  ) : (
+                    <div className="d-flex flex-column gap-1">
+                      {products.map(product => (
+                        <label 
+                          key={product._id} 
+                          className="d-flex align-items-center p-2 rounded cursor-pointer"
+                          style={{
+                            backgroundColor: formData.applicableProducts.includes(product._id) ? '#f0f9ff' : 'transparent',
+                            transition: 'background-color 0.2s',
+                            border: formData.applicableProducts.includes(product._id) ? '1px solid #bae6fd' : '1px solid transparent'
+                          }}
+                        >
+                          <input 
+                            type="checkbox" 
+                            className="form-check-input flex-shrink-0 cursor-pointer m-0 mt-1 me-3 shadow-none" 
+                            checked={formData.applicableProducts.includes(product._id)}
+                            onChange={(e) => handleProductCheckboxChange(product._id, e.target.checked)}
+                            style={{ width: '1rem', height: '1rem' }}
+                          />
+                          <div className="d-flex justify-content-between w-100 align-items-center mt-1">
+                            <span className="fs-8 fw-medium text-dark text-truncate" style={{ maxWidth: '75%' }}>{product.name}</span>
+                            <span className="fs-8 text-muted fw-bold">₹{product.price}</span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {formData.applicableProducts.length === 0 && (
+                  <div className="text-danger fs-8 mt-1 px-1">Please select at least one product.</div>
+                )}
               </div>
 
               <button type="submit" className="btn btn-brand w-100 py-2 fw-semibold" disabled={isSubmitting}>
@@ -225,13 +294,12 @@ export default function CouponManagerPage() {
                         <td className="fw-bold text-success">{coupon.discountPercentage}% OFF</td>
                         <td style={{ maxWidth: '200px' }}>
                           {coupon.applicableProducts && coupon.applicableProducts.length > 0 ? (
-                            <div className="d-flex flex-wrap gap-1">
-                              {coupon.applicableProducts.map(p => (
-                                <span key={p._id} className="badge bg-light text-dark border text-truncate" style={{ maxWidth: '180px' }}>
-                                  {p.name}
-                                </span>
-                              ))}
-                            </div>
+                            <button 
+                              className="btn btn-sm btn-outline-dark fs-8 py-1 fw-medium"
+                              onClick={() => setViewingProducts(coupon)}
+                            >
+                              View ({coupon.applicableProducts.length})
+                            </button>
                           ) : (
                             <span className="text-muted fst-italic">All Products</span>
                           )}
@@ -254,6 +322,35 @@ export default function CouponManagerPage() {
           </div>
         </div>
       </div>
+
+      {/* Applicable Products Modal */}
+      {viewingProducts && (
+        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div className="modal-content border-0 rounded-4 shadow">
+              <div className="modal-header border-bottom-0 pb-0">
+                <h5 className="modal-title fw-bold">
+                  Applicable Products for <span className="font-monospace fs-6">{viewingProducts.code}</span>
+                </h5>
+                <button type="button" className="btn-close shadow-none" onClick={() => setViewingProducts(null)}></button>
+              </div>
+              <div className="modal-body">
+                <div className="d-flex flex-column gap-2">
+                  {viewingProducts.applicableProducts.map(p => (
+                    <div key={p._id} className="p-2 border rounded bg-light fs-7 d-flex justify-content-between align-items-center">
+                      <span className="fw-medium text-dark">{p.name}</span>
+                      <span className="text-muted fw-bold">₹{p.price}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="modal-footer border-top-0 pt-0">
+                <button type="button" className="btn btn-light rounded px-4" onClick={() => setViewingProducts(null)}>Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

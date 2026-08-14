@@ -4,6 +4,7 @@ import { encrypt, decrypt } from '../utils/ccavenue.js';
 import Order from '../models/Order.js';
 import SystemSetting from '../models/SystemSetting.js';
 import Product from '../models/Product.js';
+import Combo from '../models/Combo.js';
 import Inventory from '../models/Inventory.js';
 import Payment from '../models/Payment.js';
 import Coupon from '../models/Coupon.js';
@@ -15,48 +16,91 @@ import { logActivity } from '../middleware/logger.js';
 const calculateOrderTotals = async (items, couponCode) => {
   let subtotal = 0;
   
-  const productIds = items.map(item => item.product);
+  const productIds = items.filter(i => i.itemType !== 'Combo').map(i => i.product);
+  const comboIds = items.filter(i => i.itemType === 'Combo').map(i => i.combo);
+  
   const products = await Product.find({ _id: { $in: productIds } }).lean();
+  const combos = await Combo.find({ _id: { $in: comboIds } }).populate('components.product').lean();
+  
   const productMap = products.reduce((acc, product) => {
     acc[product._id.toString()] = product;
     return acc;
   }, {});
+  
+  const comboMap = combos.reduce((acc, combo) => {
+    acc[combo._id.toString()] = combo;
+    return acc;
+  }, {});
 
   for (const item of items) {
-    if (!mongoose.isValidObjectId(item.product)) {
-      const err = new Error(`Invalid product ID format for: ${item.name}`);
-      err.statusCode = 400;
-      throw err;
-    }
-    const product = productMap[item.product.toString()];
-    if (!product) {
-      throw new Error(`Product not found: ${item.name}`);
-    }
-    
-    // Check stock
-    if (product.stock < item.quantity) {
-      throw new Error(`Insufficient stock for ${product.name}. Available: ${product.stock}`);
-    }
-    
-    let basePrice = product.price;
-    // Check if a specific pack size was selected
-    if (item.size && product.packSizes && product.packSizes.length > 0) {
-      const selectedPack = product.packSizes.find(
-        p => `${p.weight} ${p.unit}` === item.size
-      );
-      if (selectedPack) {
-        basePrice = selectedPack.price;
-      } else if (item.size !== `${product.unitValue || 1} ${product.unit || 'Pack'}`) {
-        throw new Error(`Invalid pack size selected for: ${item.name}`);
+    if (item.itemType === 'Combo') {
+      if (!mongoose.isValidObjectId(item.combo)) {
+        const err = new Error(`Invalid combo ID format for: ${item.name}`);
+        err.statusCode = 400;
+        throw err;
       }
-    }
-    
-    const activePrice = product.discount > 0 
-      ? (product.discountType === 'Percent' ? Math.round(basePrice * (1 - product.discount / 100)) : Math.max(0, basePrice - product.discount))
-      : basePrice;
+      const combo = comboMap[item.combo.toString()];
+      if (!combo) throw new Error(`Combo not found: ${item.name}`);
+      if (combo.status !== 'Active') throw new Error(`Combo is currently unavailable: ${combo.name}`);
       
-    subtotal += activePrice * item.quantity;
-    item.price = activePrice; // Bind exact price paid
+      let availableComboStock = Infinity;
+      const componentsSnapshot = [];
+      for (const comp of combo.components) {
+        if (!comp.product) throw new Error(`A component for ${combo.name} is missing or deleted.`);
+        const stock = comp.product.stock || 0;
+        const possibleCombos = Math.floor(stock / comp.quantity);
+        if (possibleCombos < availableComboStock) availableComboStock = possibleCombos;
+        
+        componentsSnapshot.push({
+          product: comp.product._id,
+          name: comp.product.name,
+          size: comp.size,
+          quantity: comp.quantity
+        });
+      }
+      
+      if (availableComboStock < item.quantity) {
+        throw new Error(`Insufficient stock for combo ${combo.name}. Available: ${availableComboStock}`);
+      }
+      
+      item.comboComponentsSnapshot = componentsSnapshot;
+      item.price = combo.comboPrice;
+      subtotal += item.price * item.quantity;
+      
+    } else {
+      if (!mongoose.isValidObjectId(item.product)) {
+        const err = new Error(`Invalid product ID format for: ${item.name}`);
+        err.statusCode = 400;
+        throw err;
+      }
+      const product = productMap[item.product.toString()];
+      if (!product) {
+        throw new Error(`Product not found: ${item.name}`);
+      }
+      
+      if (product.stock < item.quantity) {
+        throw new Error(`Insufficient stock for ${product.name}. Available: ${product.stock}`);
+      }
+      
+      let basePrice = product.price;
+      if (item.size && product.packSizes && product.packSizes.length > 0) {
+        const selectedPack = product.packSizes.find(
+          p => `${p.weight} ${p.unit}` === item.size
+        );
+        if (selectedPack) {
+          basePrice = selectedPack.price;
+        } else if (item.size !== `${product.unitValue || 1} ${product.unit || 'Pack'}`) {
+          throw new Error(`Invalid pack size selected for: ${item.name}`);
+        }
+      }
+      
+      const activePrice = product.discount > 0 
+        ? (product.discountType === 'Percent' ? Math.round(basePrice * (1 - product.discount / 100)) : Math.max(0, basePrice - product.discount))
+        : basePrice;
+        
+      subtotal += activePrice * item.quantity;
+      item.price = activePrice;
+    }
   }
 
   let discount = 0;
@@ -133,22 +177,44 @@ export const createOrder = async (req, res, next) => {
 
     // 2. Reduce Stock in Inventory & Product Collections
     for (const item of validatedItems) {
-      await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity, totalSold: item.quantity } }, { runValidators: true });
-      await Inventory.findOneAndUpdate(
-        { product: item.product },
-        { 
-          $inc: { stockQuantity: -item.quantity },
-          $push: {
-            adjustments: {
-              quantityChanged: -item.quantity,
-              type: 'Sale',
-              reason: `Order Placement (Local ID: ${savedOrder._id})`,
-              adjustedBy: req.user._id
+      if (item.itemType === 'Combo') {
+        for (const comp of item.comboComponentsSnapshot) {
+          const deductQty = comp.quantity * item.quantity;
+          await Product.findByIdAndUpdate(comp.product, { $inc: { stock: -deductQty, totalSold: deductQty } }, { runValidators: true });
+          await Inventory.findOneAndUpdate(
+            { product: comp.product },
+            { 
+              $inc: { stockQuantity: -deductQty },
+              $push: {
+                adjustments: {
+                  quantityChanged: -deductQty,
+                  type: 'Sale',
+                  reason: `Combo Order Placement (Local ID: ${savedOrder._id}, Combo: ${item.name})`,
+                  adjustedBy: req.user._id
+                }
+              }
+            },
+            { runValidators: true }
+          );
+        }
+      } else {
+        await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity, totalSold: item.quantity } }, { runValidators: true });
+        await Inventory.findOneAndUpdate(
+          { product: item.product },
+          { 
+            $inc: { stockQuantity: -item.quantity },
+            $push: {
+              adjustments: {
+                quantityChanged: -item.quantity,
+                type: 'Sale',
+                reason: `Order Placement (Local ID: ${savedOrder._id})`,
+                adjustedBy: req.user._id
+              }
             }
-          }
-        },
-        { runValidators: true }
-      );
+          },
+          { runValidators: true }
+        );
+      }
     }
 
     // Increment Coupon usages if code was valid
@@ -403,6 +469,7 @@ export const getMyOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ user: req.user._id })
       .populate('items.product', 'images name')
+      .populate('items.combo', 'image name')
       .sort({ createdAt: -1 })
       .lean();
     res.json({ success: true, orders });
@@ -419,6 +486,7 @@ export const getOrderById = async (req, res, next) => {
     const order = await Order.findById(req.params.id)
       .populate('user', 'name email phone')
       .populate('items.product', 'images name')
+      .populate('items.combo', 'image name')
       .lean();
 
     if (!order) {

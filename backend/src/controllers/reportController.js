@@ -5,6 +5,53 @@ import Inventory from '../models/Inventory.js';
 import PDFDocument from 'pdfkit';
 import ExcelJS from 'exceljs';
 
+// @desc    Get chart data for Sales Overview
+// @route   GET /api/reports/sales-chart
+// @access  Private/Admin/Manager
+export const getSalesChartData = async (req, res) => {
+  try {
+    const { range = 'year' } = req.query; // 'year', 'month', 'week'
+    let matchStage = { paymentStatus: 'Paid', orderStatus: { $ne: 'Cancelled' } };
+    let groupId;
+    let sortStage;
+
+    const now = new Date();
+    
+    if (range === 'year') {
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      matchStage.createdAt = { $gte: startOfYear };
+      groupId = { month: { $month: '$createdAt' } };
+      sortStage = { '_id.month': 1 };
+    } else if (range === 'month') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      matchStage.createdAt = { $gte: startOfMonth };
+      groupId = { day: { $dayOfMonth: '$createdAt' } };
+      sortStage = { '_id.day': 1 };
+    } else if (range === 'week') {
+      // Get monday of current week
+      const currentDay = now.getDay(); // 0 is sunday
+      const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1;
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - distanceToMonday);
+      startOfWeek.setHours(0, 0, 0, 0);
+      
+      matchStage.createdAt = { $gte: startOfWeek };
+      groupId = { dayOfWeek: { $dayOfWeek: '$createdAt' } }; // 1(Sun) - 7(Sat)
+      sortStage = { '_id.dayOfWeek': 1 };
+    }
+
+    const salesData = await Order.aggregate([
+      { $match: matchStage },
+      { $group: { _id: groupId, revenue: { $sum: '$totalAmount' } } },
+      { $sort: sortStage }
+    ]);
+
+    res.status(200).json({ success: true, data: salesData, range });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // @desc    Get Admin Dashboard summary stats
 // @route   GET /api/reports/dashboard
 // @access  Private/Admin/Manager

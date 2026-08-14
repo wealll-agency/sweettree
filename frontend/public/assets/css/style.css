@@ -750,14 +750,9 @@ a {
   display: flex;
   flex-direction: column;
   width: 100%;
-  background: #fff;
-  border-radius: 35px;
-  /* Extra rounded outer container for soft glow */
-  /* box-shadow: 0 10px 45px rgba(0, 0, 0, 0.08); */
-  padding: 10px;
-  /* This creates the white gutter between shadow and border */
-  margin: 15px 10px;
-  /* Ensuring shadow isn't clipped by carousel */
+  background: transparent;
+  padding: 5px;
+  margin: 15px 5px;
 }
 
 .nutraj-product-card {
@@ -2299,18 +2294,21 @@ a {
 /* Nutraj Style Product Card - 100% Pixel Perfect */
 .Sweettree-product-card {
   position: relative;
-  background: #fff !important;
-  border: 1px solid #e0e0e0 !important;
-  border-radius: 12px;
-  transition: box-shadow 0.3s;
+  background: #ffffff !important;
+  border: 1px solid #f0f0f0 !important;
+  border-radius: 16px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding: 20px 0;
+  padding: 0 0 20px 0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
 }
 
 .Sweettree-product-card:hover {
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 18px 40px rgba(32, 61, 116, 0.1) !important;
+  transform: translateY(-6px);
+  border-color: rgba(32, 61, 116, 0.1) !important;
 }
 
 /* Wrapper for textual content to allow better positioning */
@@ -2375,8 +2373,7 @@ a {
 }
 
 .Sweettree-product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+  /* Box shadow and transform moved to the main block above */
 }
 
 .product-card-link:hover .product-name {
@@ -2422,21 +2419,27 @@ a {
 }
 
 .Sweettree-btn-cart {
-  /* background: #5e1a29; */
-  background: #203d74;
+  background: linear-gradient(135deg, #203d74 0%, #152951 100%);
   color: #fff;
   border: none;
-  padding: 8px 12px;
-  font-size: 18px;
-  font-weight: 600;
-  width: 92% !important;
+  padding: 10px 15px;
+  font-size: 16px;
+  font-weight: 700;
+  width: 90% !important;
   margin: auto;
-  border-radius: 10px;
-  transition: background 0.3s;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(32, 61, 116, 0.25);
+  letter-spacing: 0.5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .Sweettree-btn-cart:hover {
-  background: #1c72b9;
+  background: linear-gradient(135deg, #152951 0%, #0d1a33 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(32, 61, 116, 0.35);
 }
 
 /* ========================================================================= */

@@ -7,9 +7,9 @@ import Image from 'next/image';
 
 export const NuttyDelightOffers = () => {
   return (
-    <section className="section-wrapper bg-white pb-5 relative-nav">
-      <div className="container text-center offers-container-override">
-        <h2 className="main-title" style={{ marginBottom: '60px' }}>Nutty Delight Offers</h2>
+    <section className="section-wrapper bg-white pb-3 pb-md-5 relative-nav nutty-delight-section">
+      <div className="container-fluid px-4 px-lg-5 text-center offers-container-override">
+        <h2 className="main-title offers-title">Trending Now</h2>
         <Swiper
           modules={[Autoplay, Navigation]}
           grabCursor={true}
@@ -17,10 +17,21 @@ export const NuttyDelightOffers = () => {
           loop={true}
           navigation={true}
           autoplay={{ delay: 3000, disableOnInteraction: false }}
-          slidesPerView={3}
-          spaceBetween={0}
-          className="offers-slider mx-auto pb-5 px-4"
-          style={{ width: '100%', padding: '40px 0' }}
+          breakpoints={{
+            0: {
+              slidesPerView: 1.2,
+              spaceBetween: 15,
+            },
+            768: {
+              slidesPerView: 2,
+              spaceBetween: 20,
+            },
+            1024: {
+              slidesPerView: 3,
+              spaceBetween: 0,
+            },
+          }}
+          className="offers-slider mx-auto pb-4 pb-md-5 px-4 w-100"
         >
           {[
             { img: '/offer1.jpg', alt: 'Payday Sale' },
@@ -49,6 +60,29 @@ export const NuttyDelightOffers = () => {
           box-shadow: 0 4px 10px rgba(0,0,0,0.1);
           z-index: 10;
         }
+        
+        .offers-title {
+          margin-bottom: 60px;
+        }
+        
+        .offers-slider {
+          padding: 40px 0;
+        }
+        
+        @media (max-width: 768px) {
+          .offers-title {
+            margin-bottom: 20px !important;
+          }
+          .offers-slider {
+            padding: 10px 0 20px 0 !important;
+          }
+          .nutty-delight-section {
+            padding-bottom: 1rem !important;
+          }
+          .nutty-delight-section .container-fluid {
+             padding-top: 20px !important;
+          }
+        }
         .offers-container-override .swiper-button-next:after,
         .offers-container-override .swiper-button-prev:after {
           font-size: 18px !important;
@@ -76,7 +110,7 @@ export const NuttyDelightOffers = () => {
 export const ShopByCategory = () => {
   return (
     <section className="section-wrapper our_brands">
-      <div className="container text-center">
+      <div className="container-fluid px-4 px-lg-5 text-center">
         <h2 className="main-title mb-5">Shop by Category</h2>
         <div className="d-flex flex-nowrap justify-content-center gap-2 gap-md-4 mb-4">
           {[
@@ -196,7 +230,7 @@ export const ShopByCategory = () => {
 export const RecentBlogs = () => {
   return (
     <section className="recent-blogs-section pb-5 pt-3 bg-white relative-nav">
-      <div className="container text-center">
+      <div className="container-fluid px-4 px-lg-5 text-center">
         <h2 className="main-title mb-5">Our Recent Blogs</h2>
         <Swiper
           modules={[Autoplay, Navigation]}
@@ -310,7 +344,7 @@ export const RecentBlogs = () => {
 export const Faqs = () => {
   return (
     <section className="faq-section bg-white pt-3 pb-5">
-      <div className="container" style={{ maxWidth: '900px' }}>
+      <div className="container-fluid px-4 px-lg-5" style={{ maxWidth: '900px' }}>
         <h2 className="main-title mb-5" style={{ fontWeight: 800, fontSize: '38px' }}>FAQs</h2>
         <div className="accordion custom-accordion" id="faqAccordion">
           <div className="accordion-item">
@@ -406,7 +440,7 @@ export const Faqs = () => {
 export const TagsSection = () => {
   return (
     <section className="tags-section bg-white py-5">
-      <div className="container py-3">
+      <div className="container-fluid px-4 px-lg-5 py-3">
         <h3 className="mb-4 text-start" style={{ fontSize: '24px', color: '#333' }}>People Are Also Looking For</h3>
         <div className="d-flex flex-wrap gap-2">
           <Link href="/shop?keyword=Cashew Royale" className="search-tag-pill">Cashew Royale</Link>
@@ -443,7 +477,7 @@ export const TagsSection = () => {
 export const StoreLocator = () => {
   return (
     <section className="store-section bg-white">
-      <div className="container position-relative">
+      <div className="container-fluid px-4 px-lg-5 position-relative">
         <div className="row">
           <div className="col-lg-5 mt-lg-4">
             <Image src="/banner_slider_image3.jpeg" alt="Sweettree Store Locations" width={600} height={600} className="img-fluid store-img mb-4 mb-lg-0" style={{ width: '100%', height: 'auto' }} />
@@ -488,7 +522,7 @@ export const HealthyCombo = () => {
   return (
     <section className="combo-section position-relative py-4 mt-4">
       <div className="combo-bg-shape"></div>
-      <div className="container position-relative z-1">
+      <div className="container-fluid px-4 px-lg-5 position-relative z-1">
         <div className="row align-items-center mb-5">
           <div className="col-lg-8 pe-lg-4">
             <div style={{ maxWidth: '750px' }}>

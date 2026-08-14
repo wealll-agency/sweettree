@@ -89,6 +89,10 @@ function AdminOrdersContent() {
   const { user } = useSelector((state) => state.auth);
   const { showAlert, showConfirm } = useNotification();
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   // Selected order modal details
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [trackingNumber, setTrackingNumber] = useState('');
@@ -285,9 +289,22 @@ function AdminOrdersContent() {
     setActionSuccess('');
   };
 
-  const displayOrders = filterStatus 
+  const filteredOrders = filterStatus 
     ? orders.filter(ord => ord.orderStatus === filterStatus)
     : orders;
+
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentOrders = filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+  };
+  
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(prev => prev - 1);
+  };
 
   const handlePrint = () => {
     const printContent = document.getElementById('printable-invoice').innerHTML;
@@ -390,14 +407,14 @@ function AdminOrdersContent() {
                 </tr>
               </thead>
               <tbody>
-                {displayOrders.length === 0 ? (
+                {currentOrders.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="text-center py-5 text-muted">
                       No orders found{filterStatus ? ` for status: ${filterStatus}` : ''}.
                     </td>
                   </tr>
                 ) : (
-                  displayOrders.map((ord) => (
+                  currentOrders.map((ord) => (
                     <tr key={ord._id} className="border-bottom">
                     <td className="py-3 fw-bold font-monospace">#{ord._id.substring(0, 10).toUpperCase()}</td>
                     <td>
@@ -431,6 +448,31 @@ function AdminOrdersContent() {
               )}
               </tbody>
             </table>
+          </div>
+        )}
+        
+        {/* Pagination Controls */}
+        {!ordersLoading && filteredOrders.length > itemsPerPage && (
+          <div className="d-flex justify-content-between align-items-center mt-4">
+            <span className="text-muted fs-7">
+              Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredOrders.length)} of {filteredOrders.length} entries
+            </span>
+            <div className="d-flex gap-2">
+              <button 
+                onClick={handlePrevPage} 
+                disabled={currentPage === 1}
+                className="btn btn-outline-secondary btn-sm px-3"
+              >
+                Previous
+              </button>
+              <button 
+                onClick={handleNextPage} 
+                disabled={currentPage === totalPages}
+                className="btn btn-outline-secondary btn-sm px-3"
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -547,25 +589,7 @@ function AdminOrdersContent() {
                   {selectedOrder.orderStatus === 'Confirmed' && (
                     <button onClick={() => handleStatusChange(selectedOrder._id, 'Packed')} className="btn btn-sm btn-primary">Pack Order</button>
                   )}
-                  {selectedOrder.orderStatus === 'Packed' && (
-                    <div className="d-flex gap-2 w-100">
-                      <input
-                        type="text"
-                        required
-                        className="form-control form-control-sm"
-                        value={trackingNumber}
-                        onChange={(e) => setTrackingNumber(e.target.value)}
-                        style={{ maxWidth: '240px' }}
-                      />
-                      <button 
-                        onClick={() => handleStatusChange(selectedOrder._id, 'Shipped')} 
-                        disabled={!trackingNumber}
-                        className="btn btn-sm btn-info"
-                      >
-                        Ship Order
-                      </button>
-                    </div>
-                  )}
+
                   {selectedOrder.orderStatus === 'Shipped' && (
                     <button onClick={() => handleStatusChange(selectedOrder._id, 'Delivered')} className="btn btn-sm btn-success">Mark Delivered</button>
                   )}

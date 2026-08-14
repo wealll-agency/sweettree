@@ -13,7 +13,7 @@ export default function BlogPage() {
 
       {/* Blog Archive Section */}
       <section className="blog-archive-section py-5 bg-white">
-        <div className="container pt-3 pb-2">
+        <div className="container-fluid px-4 px-lg-5 pt-3 pb-2">
           <div className="row g-4">
             {/* Main Blog Content Region (Left Sidebar) */}
             <div className="col-lg-8">
@@ -228,7 +228,7 @@ export default function BlogPage() {
 
       {/* People Are Also Looking For Section */}
       <section className="tags-section bg-white py-5">
-        <div className="container py-3">
+        <div className="container-fluid px-4 px-lg-5 py-3">
           <h3 className="mb-4 text-start" style={{ fontSize: '24px', color: '#333' }}>People Are Also Looking For</h3>
           <div className="d-flex flex-wrap gap-2">
             <a href="#" className="search-tag-pill">Cashew Royale</a>

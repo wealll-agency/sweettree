@@ -14,7 +14,7 @@ export default function AboutPage() {
       {/* Breadcrumb Banner */}
       <section className="breadcrumb-banner position-relative about-hero-banner">
         <div className="position-absolute top-0 start-0 w-100 h-100 about-hero-overlay"></div>
-        <div className="container position-relative h-100 d-flex flex-column justify-content-center text-center about-hero-content">
+        <div className="container-fluid px-4 px-lg-5 position-relative h-100 d-flex flex-column justify-content-center text-center about-hero-content">
           <h1 className="text-white fw-bold mb-3 about-hero-title">About Sweettree</h1>
           <nav aria-label="breadcrumb">
             <ol className="breadcrumb justify-content-center mb-0 about-breadcrumb">
@@ -27,7 +27,7 @@ export default function AboutPage() {
 
       {/* Our Story Section */}
       <section className="our-story py-5 mt-md-4 mb-md-2">
-        <div className="container">
+        <div className="container-fluid px-4 px-lg-5">
           <div className="row align-items-center gy-5">
             <div className="col-lg-6 position-relative">
               <div className="position-relative about-story-img-wrap">
@@ -71,7 +71,7 @@ export default function AboutPage() {
 
       {/* Why Choose Us */}
       <section className="why-choose-us py-5" style={{ backgroundColor: '#fcfaf8' }}>
-        <div className="container py-4">
+        <div className="container-fluid px-4 px-lg-5 py-4">
           <div className="text-center mb-5">
             <span className="d-inline-block px-3 py-1 rounded-pill mb-2 fw-bold about-advantage-badge">WHY CHOOSE SWEETTREE</span>
             <h2 className="fw-bold about-advantage-title">The Sweettree Advantage</h2>
@@ -119,7 +119,7 @@ export default function AboutPage() {
 
       {/* Mission & Vision Section */}
       <section className="about-mission-section py-5 my-md-2" style={{ backgroundColor: '#fff' }}>
-        <div className="container py-3">
+        <div className="container-fluid px-4 px-lg-5 py-3">
           <div className="row align-items-center mb-5 pb-lg-4">
             <div className="col-lg-6 order-lg-2 position-relative mb-4 mb-lg-0">
               <div className="about-mission-img-wrap">
@@ -153,7 +153,7 @@ export default function AboutPage() {
 
       {/* Wholesale / CTA Banner */}
       <section className="cta-banner my-5 py-md-3">
-        <div className="container">
+        <div className="container-fluid px-4 px-lg-5">
           <div className="position-relative overflow-hidden rounded-4 shadow-sm text-center text-md-start about-cta-container">
             <Image src="/wholesale-banner.jpg" alt="Wholesale" fill style={{ objectFit: 'cover' }} className="position-absolute about-cta-bg-img" />
             <div className="position-absolute w-100 h-100 about-cta-bg-overlay"></div>
@@ -176,7 +176,7 @@ export default function AboutPage() {
 
       {/* FAQ Section */}
       <section className="faq-section bg-white pt-3 pb-5">
-        <div className="container" style={{ maxWidth: '900px' }}>
+        <div className="container-fluid px-4 px-lg-5" style={{ maxWidth: '900px' }}>
           <h2 className="main-title mb-5" style={{ fontWeight: 800, fontSize: '38px' }}>FAQs</h2>
           <div className="accordion custom-accordion" id="faqAccordion">
             <div className="accordion-item">
@@ -210,7 +210,7 @@ export default function AboutPage() {
 
       {/* People Are Also Looking For Section */}
       <section className="tags-section bg-white py-5">
-        <div className="container py-3">
+        <div className="container-fluid px-4 px-lg-5 py-3">
           <h3 className="mb-4 text-start" style={{ fontSize: '24px', color: '#333' }}>People Are Also Looking For</h3>
           <div className="d-flex flex-wrap gap-2">
             <a href="#" className="search-tag-pill">Cashew Royale</a>

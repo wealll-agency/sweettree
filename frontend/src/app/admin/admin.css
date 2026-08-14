@@ -7,6 +7,15 @@
   color: #333 !important;
 }
 
+/* Hide scrollbar for the sidebar but keep functionality */
+.sidebar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.sidebar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Base text sizing */
 .admin-wrapper p, 
 .admin-wrapper span, 

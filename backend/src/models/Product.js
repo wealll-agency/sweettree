@@ -35,6 +35,8 @@ const productSchema = new mongoose.Schema({
   healthyProduct: { type: Boolean, default: false },
   newArrival: { type: Boolean, default: false },
   totalSold: { type: Number, default: 0 },
+  averageRating: { type: Number, default: 0 },
+  numReviews: { type: Number, default: 0 },
   
   description: { type: String, required: true },
   ingredients: [{ type: String }],

@@ -5,7 +5,7 @@ const Navigation = () => {
   return (
     <>
       <nav className="main-nav d-none d-lg-block">
-        <div className="container">
+        <div className="container-fluid px-4 px-lg-5">
           <ul className="nav-links">
             <li><Link href="/">🏠 HOME</Link></li>
             <li><Link href="/shop">🛍️ SHOP </Link></li>
@@ -18,7 +18,7 @@ const Navigation = () => {
       </nav>
 
       {/* Mobile Search Bar */}
-      <div className="container d-block d-lg-none mt-2 mb-2">
+      <div className="container-fluid px-4 px-lg-5 d-block d-lg-none mt-2 mb-2">
         <form className="header-search-form w-100" style={{ height: '40px', borderColor: '#004c03' }}>
           <input type="text" style={{ flexGrow: 1, padding: '0 15px', fontSize: '13px' }} />
           <button type="submit" style={{ padding: '0 15px' }}><i className="fas fa-search"></i></button>

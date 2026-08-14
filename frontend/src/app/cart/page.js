@@ -84,7 +84,7 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="container py-5 text-center animate-fade-in">
+      <div className="container-fluid px-4 px-lg-5 py-5 text-center animate-fade-in">
         <div className="glass-card bg-white p-5 max-w-lg mx-auto">
           <i className="fas fa-shopping-bag fa-3x text-muted mb-3 d-block"></i>
           <h2 className="fw-bold mb-2" style={{ color: '#203d74' }}>Your Cart is Empty</h2>
@@ -96,7 +96,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="container py-5">
+    <div className="container-fluid px-4 px-lg-5 py-5">
       <h1 className="fw-bold mb-4" style={{ color: '#203d74' }}>Shopping Cart</h1>
 
       <div className="row g-4">
@@ -127,7 +127,7 @@ export default function CartPage() {
                           className="rounded object-fit-cover"
                         />
                         <div>
-                          <Link href={`/shop-details?name=${encodeURIComponent(item.name)}`} className="fw-bold text-dark text-decoration-none hover-green">
+                          <Link href={`/shop-details?id=${item.product}`} className="fw-bold text-dark text-decoration-none hover-green">
                             {item.name}
                           </Link>
                           <span className="d-block text-muted fs-8">Size: {item.size}</span>

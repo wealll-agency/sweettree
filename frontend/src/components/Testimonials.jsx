@@ -7,7 +7,7 @@ import { Autoplay, Navigation } from 'swiper/modules';
 const Testimonials = () => {
   return (
     <section className="testimonials-section">
-      <div className="container py-4">
+      <div className="container-fluid px-4 px-lg-5 py-4">
         <div className="d-flex justify-content-between align-items-center mb-5">
           <h2 className="fw-bold mb-0">Words From Our Delighted Customer</h2>
         </div>

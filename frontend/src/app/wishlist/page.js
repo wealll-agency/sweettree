@@ -24,7 +24,7 @@ export default function WishlistPage() {
 
   if (wishlistItems.length === 0) {
     return (
-      <div className="container py-5 text-center animate-fade-in">
+      <div className="container-fluid px-4 px-lg-5 py-5 text-center animate-fade-in">
         <div className="glass-card bg-white p-5 max-w-lg mx-auto">
           <Heart size={56} className="text-muted mb-3 mx-auto" />
           <h2 className="fw-bold mb-2">Your Wishlist is Empty</h2>
@@ -36,12 +36,12 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="container py-5 animate-fade-in">
+    <div className="container-fluid px-4 px-lg-5 py-5 animate-fade-in">
       <h1 className="fw-bold mb-4 display-font">My Wishlist</h1>
 
-      <div className="row g-4">
+      <div className="products-grid">
         {wishlistItems.map((product) => (
-          <div key={product._id} className="col-sm-6 col-md-4 col-lg-3">
+          <div key={product._id}>
             <ProductCard 
               product={{
                 ...product,

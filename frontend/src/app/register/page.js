@@ -42,7 +42,7 @@ function RegisterContent() {
   };
 
   return (
-    <div className="container py-5 d-flex justify-content-center align-items-center" style={{ minHeight: '70vh' }}>
+    <div className="container-fluid px-4 px-lg-5 py-5 d-flex justify-content-center align-items-center" style={{ minHeight: '70vh' }}>
       <div className="glass-card p-4 p-md-5 w-100 animate-fade-in" style={{ maxWidth: '480px' }}>
         
         <div className="text-center mb-4">

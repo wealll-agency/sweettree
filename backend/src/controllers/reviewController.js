@@ -1,5 +1,6 @@
 import Review from '../models/Review.js';
 import Order from '../models/Order.js';
+import Product from '../models/Product.js';
 import { logActivity } from '../middleware/logger.js';
 
 // @desc    Add review for a product
@@ -33,6 +34,16 @@ export const createProductReview = async (req, res, next) => {
       comment,
       images: images || [],
       isVerifiedPurchase
+    });
+
+    // Update Product average rating and number of reviews
+    const reviews = await Review.find({ product: productId });
+    const numReviews = reviews.length;
+    const avgRating = reviews.reduce((acc, item) => item.rating + acc, 0) / numReviews;
+
+    await Product.findByIdAndUpdate(productId, {
+      averageRating: avgRating,
+      numReviews: numReviews
     });
 
     await logActivity(req.user._id, 'ADD_REVIEW', `Submitted product review for product ID: ${productId}`, req);

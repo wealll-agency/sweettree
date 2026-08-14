@@ -37,7 +37,7 @@ export default function OrderHistoryPage() {
 
   if (!mounted || authLoading || !user) {
     return (
-      <div className="container py-5 d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
+      <div className="container-fluid px-4 px-lg-5 py-5 d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
         <div className="spinner-border text-success" role="status">
           <span className="visually-hidden">Checking session...</span>
         </div>
@@ -46,7 +46,7 @@ export default function OrderHistoryPage() {
   }
 
   return (
-    <div className="container py-5">
+    <div className="container-fluid px-4 px-lg-5 py-5">
       <h1 className="fw-bold mb-4" style={{ color: '#203d74' }}>My Orders</h1>
 
       {orderLoading ? (
@@ -108,6 +108,14 @@ export default function OrderHistoryPage() {
                       {item.product && item.product.images && item.product.images.length > 0 ? (
                         <Image 
                           src={item.product.images[0].replace('/assets/images/', '/')} 
+                          alt={item.name} 
+                          width={80}
+                          height={80}
+                          style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} 
+                        />
+                      ) : item.combo && item.combo.image ? (
+                        <Image 
+                          src={item.combo.image.replace('/assets/images/', '/')} 
                           alt={item.name} 
                           width={80}
                           height={80}

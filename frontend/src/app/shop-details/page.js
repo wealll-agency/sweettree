@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -11,6 +12,7 @@ import { Star, MessageCircle, Heart, Plus, Minus } from 'lucide-react';
 import { toggleWishlist } from '../../store/wishlistSlice';
 import api from '../../utils/axiosConfig';
 import { useNotification } from '../../context/NotificationContext';
+import ProductCard from '../../components/ProductCard';
 
 function ShopDetailsContent() {
   const searchParams = useSearchParams();
@@ -33,6 +35,11 @@ function ShopDetailsContent() {
   const [reviewError, setReviewError] = useState('');
   const [reviewSuccess, setReviewSuccess] = useState('');
   const [notifyLoading, setNotifyLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const productIdParam = searchParams.get('id');
   const productNameParam = searchParams.get('name') || '';
@@ -51,7 +58,9 @@ function ShopDetailsContent() {
   // 2. Resolve the real product: either the fetched selectedProduct (if id param) or matched from list (if name param)
   let realProduct = null;
   if (productIdParam) {
-    realProduct = selectedProduct;
+    if (selectedProduct && selectedProduct._id === productIdParam) {
+      realProduct = selectedProduct;
+    }
   } else if (productNameParam && products && products.length > 0) {
     realProduct = products.find(p => {
       const pName = p.name.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
@@ -94,7 +103,7 @@ function ShopDetailsContent() {
 
   if (!realProduct) {
     return (
-      <div className="container py-5 text-center d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
+      <div className="container-fluid px-4 px-lg-5 py-5 text-center d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
         <div className="spinner-border text-success mb-3" role="status">
           <span className="visually-hidden">Loading product details...</span>
         </div>
@@ -102,6 +111,24 @@ function ShopDetailsContent() {
       </div>
     );
   }
+
+  // Calculate Related Products
+  const relatedProducts = products
+    ? products
+        .filter(p => p._id !== realProduct._id && p.isActive)
+        .sort((a, b) => {
+          let scoreA = 0;
+          let scoreB = 0;
+          if (a.category === realProduct.category) scoreA += 1;
+          if (a.subCategory && a.subCategory === realProduct.subCategory) scoreA += 2;
+
+          if (b.category === realProduct.category) scoreB += 1;
+          if (b.subCategory && b.subCategory === realProduct.subCategory) scoreB += 2;
+          
+          return scoreB - scoreA;
+        })
+        .slice(0, 4)
+    : [];
 
   const handleAddToCart = () => {
     const mockProduct = {
@@ -176,7 +203,7 @@ function ShopDetailsContent() {
 
   const handleNotifyMe = async () => {
     if (!user) {
-      router.push(`/login?redirect=/shop-details?name=${encodeURIComponent(realProduct.name)}`);
+      router.push(`/login?redirect=/shop-details?id=${realProduct._id}`);
       return;
     }
     
@@ -190,6 +217,24 @@ function ShopDetailsContent() {
       showAlert(error.response?.data?.message || 'Failed to subscribe to notifications', 'error');
     } finally {
       setNotifyLoading(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: realProduct.name,
+      text: `Check out ${realProduct.name} on Sweettree!`,
+      url: window.location.href,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        showAlert('Link copied to clipboard!', 'success');
+      }
+    } catch (err) {
+      console.log('Share canceled or failed', err);
     }
   };
 
@@ -207,7 +252,7 @@ function ShopDetailsContent() {
   };
 
   return (
-    <div className="container py-4 mt-2 bg-white animate-fade-in">
+    <div className="container-fluid px-4 px-lg-5 py-4 mt-2 bg-white animate-fade-in">
       {/* Breadcrumb */}
       <nav className="mb-4" style={{ fontSize: '13px', color: '#666' }}>
         <Link href="/" style={{ textDecoration: 'none', color: '#666' }}>Home</Link> &gt; 
@@ -267,16 +312,16 @@ function ShopDetailsContent() {
         <div className="col-lg-7 ps-lg-5">
           <div className="d-flex justify-content-between align-items-start mb-2">
             <h1 className="fw-bold mb-2" style={{ fontSize: '24px', color: '#333', maxWidth: '80%' }}>{realProduct.name}</h1>
-            <i className="fas fa-share-alt" style={{ fontSize: '20px', cursor: 'pointer', color: '#666' }}></i>
+            <i className="fas fa-share-alt" onClick={handleShare} style={{ fontSize: '20px', cursor: 'pointer', color: '#666', padding: '5px' }}></i>
           </div>
           
           <div className="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom">
             <div className="d-flex text-warning">
               {[...Array(5).keys()].map(x => (
-                <Star key={x} fill={x < Math.round(realProduct.rating || 5) ? "#F59E0B" : "none"} color="#F59E0B" size={14} />
+                <Star key={x} fill={x < Math.round(realProduct.averageRating > 0 ? realProduct.averageRating : 5) ? "#F59E0B" : "none"} color="#F59E0B" size={14} />
               ))}
             </div>
-            <span className="badge bg-success text-white">{realProduct.rating || '5.0'}</span>
+            <span className="badge bg-success text-white">{realProduct.averageRating > 0 ? realProduct.averageRating.toFixed(1) : '5.0'}</span>
             <span className="text-muted" style={{ fontSize: '13px' }}>{reviews.length} reviews</span>
           </div>
 
@@ -284,7 +329,11 @@ function ShopDetailsContent() {
             <span className="fw-bold" style={{ fontSize: '32px', color: '#005B6E' }}>₹{finalPrice}</span>
             {realProduct.discount > 0 && (
               <>
-                <span className="badge bg-danger">{realProduct.discount}% OFF</span>
+                <span className="badge bg-danger">
+                  {realProduct.discountType === 'Flat' 
+                    ? `₹${realProduct.discount} OFF` 
+                    : `${realProduct.discount}% OFF`}
+                </span>
               </>
             )}
           </div>
@@ -328,7 +377,8 @@ function ShopDetailsContent() {
               </div>
           </div>
 
-          <div className="d-flex gap-3 mb-4">
+          {/* Desktop Actions */}
+          <div className="d-flex gap-3 mb-4 d-none d-md-flex">
              {realProduct.stock <= 0 ? (
                <button onClick={handleNotifyMe} className="btn w-100 py-3 fw-bold" style={{ backgroundColor: '#6c757d', color: 'white' }} disabled={notifyLoading}>
                  {notifyLoading ? 'Subscribing...' : 'Notify Me When Available'}
@@ -344,29 +394,22 @@ function ShopDetailsContent() {
              <button onClick={() => dispatch(toggleWishlist(realProduct))} className="btn btn-outline-dark px-3"><Heart size={20} fill={isInWishlist ? 'var(--accent-color)' : 'none'} color={isInWishlist ? 'var(--accent-color)' : 'currentColor'} /></button>
           </div>
 
-          <div className="mb-4 pt-2">
-             <div className="d-flex">
-                <input type="text" className="form-control rounded-start rounded-0 py-2 border-dark" value={pincode} onChange={(e) => setPincode(e.target.value)} style={{ maxWidth: '250px' }} />
-                <button className="btn btn-dark rounded-end rounded-0 px-4">Check Now</button>
-             </div>
-             <div className="d-flex align-items-center gap-3 mt-3">
-                <div style={{ fontSize: '13px' }}><i className="fas fa-truck text-muted me-1"></i> Estimate Delivery Date</div>
-                <div style={{ fontSize: '13px' }}><i className="fas fa-wallet text-muted me-1"></i> COD AVAILABLE</div>
-             </div>
-          </div>
+
+
         </div>
       </div>
 
-      <div className="border-top pt-5 mb-5 text-center px-4" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      {/* Desktop Version: Tabs */}
+      <div className="d-none d-md-block border-top pt-5 mb-5 text-center px-4">
         <div className="d-flex justify-content-center gap-5 border-bottom mb-4">
-           {['description', 'ingredients', 'benefits', 'additional info', 'reviews'].map((tab) => (
+           {['description', 'ingredients', 'benefits'].map((tab) => (
              <button 
                 key={tab} 
                 className={`btn border-0 text-capitalize fw-bold pb-3 rounded-0 ${activeTab === tab ? 'border-bottom border-dark border-2' : 'text-muted'}`}
                 onClick={() => setActiveTab(tab)}
                 style={{ fontSize: '14px' }}
              >
-                {tab === 'reviews' ? `Reviews (${reviews.length})` : tab}
+                {tab}
              </button>
            ))}
         </div>
@@ -386,116 +429,188 @@ function ShopDetailsContent() {
              {realProduct.benefits?.length > 0 ? realProduct.benefits.join(', ') : 'No benefits specified.'}
            </p>
         )}
-        {activeTab === 'additional info' && (
-           <div className="text-muted text-start px-3" style={{ fontSize: '14px', lineHeight: '1.8' }}>
-             <ul className="list-unstyled">
-                <li><strong>SKU:</strong> {realProduct.sku || 'N/A'}</li>
-                <li><strong>Category:</strong> {realProduct.category || 'N/A'}</li>
-                {realProduct.subCategory && <li><strong>Sub Category:</strong> {realProduct.subCategory}</li>}
-                {realProduct.subSubCategory && <li><strong>Sub Sub Category:</strong> {realProduct.subSubCategory}</li>}
-                {realProduct.brand && <li><strong>Brand:</strong> {realProduct.brand}</li>}
-                <li><strong>Product Type:</strong> {realProduct.productType || 'Physical'}</li>
-                {realProduct.batchNumber && <li><strong>Batch Number:</strong> {realProduct.batchNumber}</li>}
-                {realProduct.expiryDate && <li><strong>Expiry Date:</strong> {new Date(realProduct.expiryDate).toLocaleDateString()}</li>}
-             </ul>
-           </div>
-        )}
-        {activeTab === 'reviews' && (
-          <div className="text-start animate-fade-in">
-            <div className="row g-4">
-              
-              {/* Reviews List */}
-              <div className="col-lg-7">
-                <h5 className="fw-bold mb-4">Customer Feedback</h5>
-                
-                {reviewsLoading ? (
-                  <p className="text-muted">Loading reviews...</p>
-                ) : reviews.length === 0 ? (
-                  <p className="text-muted">No reviews yet for this product. Be the first to write a review!</p>
-                ) : (
-                  <div className="d-flex flex-column gap-3">
-                    {reviews.map((rev) => (
-                      <div key={rev._id} className="border-bottom pb-3">
-                        <div className="d-flex align-items-center justify-content-between mb-2">
-                          <h6 className="fw-bold m-0">{rev.user?.name || 'Anonymous User'}</h6>
-                          <small className="text-muted">{new Date(rev.createdAt).toLocaleDateString()}</small>
-                        </div>
-                        
-                        <div className="d-flex align-items-center gap-2 mb-2">
-                          <div className="d-flex text-warning">
-                            {[...Array(rev.rating).keys()].map(x => <Star key={x} fill="#F59E0B" color="#F59E0B" size={14} />)}
-                          </div>
-                          {rev.isVerifiedPurchase && (
-                            <span className="badge bg-success-subtle text-success fs-8">Verified Purchase</span>
-                          )}
-                        </div>
-                        <p className="text-muted m-0 fs-7">{rev.comment}</p>
-                      </div>
-                    ))}
+      </div>
+
+      {/* Mobile Version: Accordion Dropdown */}
+      <div className="d-md-none px-4 mb-5 text-start">
+        <div className="accordion" id="productDetailsAccordion">
+          <div className="accordion-item border-0 border-bottom border-top rounded-0">
+            <h2 className="accordion-header" id="headingDetails">
+              <button 
+                className="accordion-button collapsed bg-white shadow-none fw-bold px-0 text-dark" 
+                type="button" 
+                data-bs-toggle="collapse" 
+                data-bs-target="#collapseDetails" 
+                aria-expanded="false" 
+                aria-controls="collapseDetails"
+                style={{ fontSize: '15px' }}
+              >
+                Product Details
+              </button>
+            </h2>
+            <div id="collapseDetails" className="accordion-collapse collapse" aria-labelledby="headingDetails" data-bs-parent="#productDetailsAccordion">
+              <div className="accordion-body px-0 py-3">
+                {realProduct.description && (
+                  <div className="mb-3">
+                    <h6 className="fw-bold" style={{ fontSize: '14px', color: '#005B6E' }}>Description</h6>
+                    <p className="text-muted mb-0" style={{ fontSize: '13px', lineHeight: '1.6' }}>{realProduct.description}</p>
+                  </div>
+                )}
+                {realProduct.ingredients?.length > 0 && (
+                  <div className="mb-3">
+                    <h6 className="fw-bold" style={{ fontSize: '14px', color: '#005B6E' }}>Ingredients</h6>
+                    <p className="text-muted mb-0" style={{ fontSize: '13px', lineHeight: '1.6' }}>{realProduct.ingredients.join(', ')}</p>
+                  </div>
+                )}
+                {realProduct.benefits?.length > 0 && (
+                  <div>
+                    <h6 className="fw-bold" style={{ fontSize: '14px', color: '#005B6E' }}>Benefits</h6>
+                    <p className="text-muted mb-0" style={{ fontSize: '13px', lineHeight: '1.6' }}>{realProduct.benefits.join(', ')}</p>
                   </div>
                 )}
               </div>
-
-              {/* Write a Review Form */}
-              <div className="col-lg-5">
-                <div className="bg-light p-4 rounded-3 border">
-                  <h5 className="fw-bold mb-3">Write a Review</h5>
-                  
-                  {user ? (
-                    <form onSubmit={handleReviewSubmit}>
-                      <div className="mb-3">
-                        <label className="fw-medium mb-1">Rating</label>
-                        <select 
-                          className="form-select"
-                          value={rating}
-                          onChange={(e) => setRating(Number(e.target.value))}
-                        >
-                          <option value="5">5 Stars (Excellent)</option>
-                          <option value="4">4 Stars (Good)</option>
-                          <option value="3">3 Stars (Average)</option>
-                          <option value="2">2 Stars (Poor)</option>
-                          <option value="1">1 Star (Very Poor)</option>
-                        </select>
-                      </div>
-
-                      <div className="mb-3">
-                        <label className="fw-medium mb-1">Your Comment</label>
-                        <textarea
-                          rows="4"
-                          className="form-control"
-                          value={comment}
-                          onChange={(e) => setComment(e.target.value)}
-                        ></textarea>
-                      </div>
-
-                      {reviewError && <div className="alert alert-danger p-2 fs-7 mb-3">{reviewError}</div>}
-                      {reviewSuccess && <div className="alert alert-success p-2 fs-7 mb-3">{reviewSuccess}</div>}
-
-                      <button type="submit" className="btn btn-brand w-100 py-2" style={{ backgroundColor: '#005B6E', border: '1px solid #005B6E', color: 'white' }}>
-                        Submit Review
-                      </button>
-                    </form>
-                  ) : (
-                    <div className="text-center py-3">
-                      <MessageCircle className="text-muted mb-2" size={32} />
-                      <p className="text-muted fs-7 mb-3">You must be logged in to review products.</p>
-                      <Link href="/login" className="btn btn-brand btn-sm">Log In</Link>
-                    </div>
-                  )}
-                </div>
-              </div>
-
             </div>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Recommended Products */}
+      <div className="container-fluid px-4 px-lg-5 mb-5 animate-fade-in">
+        <h5 className="fw-bold mb-4 text-uppercase text-start" style={{ fontSize: '16px', letterSpacing: '0.05em', color: '#005B6E' }}>Recommended Products</h5>
+        <div className="products-grid recommended-grid">
+          {relatedProducts.length > 0 ? relatedProducts.map((prod) => (
+            <div key={prod._id}>
+              <ProductCard product={prod} />
+            </div>
+          )) : (
+            <p className="text-muted w-100 mt-4 text-center">No related products found.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Customer Reviews Section (Always Visible) */}
+      <div className="container-fluid px-4 px-lg-5 mb-5 animate-fade-in text-start">
+        <h5 className="fw-bold mb-4 text-uppercase" style={{ fontSize: '16px', letterSpacing: '0.05em', color: '#005B6E' }}>Customer Reviews ({reviews.length})</h5>
+        <div className="row g-4">
+          
+          {/* Reviews List */}
+          <div className="col-lg-7">
+            <h5 className="fw-bold mb-4">Customer Feedback</h5>
+            
+            {reviewsLoading ? (
+              <p className="text-muted">Loading reviews...</p>
+            ) : reviews.length === 0 ? (
+              <p className="text-muted">No reviews yet for this product. Be the first to write a review!</p>
+            ) : (
+              <div className="d-flex flex-column gap-3">
+                {reviews.map((rev) => (
+                  <div key={rev._id} className="border-bottom pb-3">
+                    <div className="d-flex align-items-center justify-content-between mb-2">
+                      <h6 className="fw-bold m-0">{rev.user?.name || 'Anonymous User'}</h6>
+                      <small className="text-muted">{new Date(rev.createdAt).toLocaleDateString()}</small>
+                    </div>
+                    
+                    <div className="d-flex align-items-center gap-2 mb-2">
+                      <div className="d-flex text-warning">
+                        {[...Array(rev.rating).keys()].map(x => <Star key={x} fill="#F59E0B" color="#F59E0B" size={14} />)}
+                      </div>
+                      {rev.isVerifiedPurchase && (
+                        <span className="badge bg-success-subtle text-success fs-8">Verified Purchase</span>
+                      )}
+                    </div>
+                    <p className="text-muted m-0 fs-7">{rev.comment}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Write a Review Form */}
+          <div className="col-lg-5">
+            <div className="bg-light p-4 rounded-3 border">
+              <h5 className="fw-bold mb-3">Write a Review</h5>
+              
+              {user ? (
+                <form onSubmit={handleReviewSubmit}>
+                  <div className="mb-3">
+                    <label className="fw-medium mb-1">Rating</label>
+                    <select 
+                      className="form-select"
+                      value={rating}
+                      onChange={(e) => setRating(Number(e.target.value))}
+                    >
+                      <option value="5">5 Stars (Excellent)</option>
+                      <option value="4">4 Stars (Good)</option>
+                      <option value="3">3 Stars (Average)</option>
+                      <option value="2">2 Stars (Poor)</option>
+                      <option value="1">1 Star (Very Poor)</option>
+                    </select>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="fw-medium mb-1">Your Comment</label>
+                    <textarea
+                      rows="4"
+                      className="form-control"
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                    ></textarea>
+                  </div>
+
+                  {reviewError && <div className="alert alert-danger p-2 fs-7 mb-3">{reviewError}</div>}
+                  {reviewSuccess && <div className="alert alert-success p-2 fs-7 mb-3">{reviewSuccess}</div>}
+
+                  <button type="submit" className="btn btn-brand w-100 py-2" style={{ backgroundColor: '#005B6E', border: '1px solid #005B6E', color: 'white' }}>
+                    Submit Review
+                  </button>
+                </form>
+              ) : (
+                <div className="text-center py-3">
+                  <MessageCircle className="text-muted mb-2" size={32} />
+                  <p className="text-muted fs-7 mb-3">You must be logged in to review products.</p>
+                  <Link href="/login" className="btn btn-brand btn-sm" style={{ backgroundColor: '#005B6E', color: 'white' }}>Log In</Link>
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Mobile Sticky Actions (Rendered via Portal to guarantee fixed positioning) */}
+      {mounted && typeof document !== 'undefined' && createPortal(
+        <div className="d-md-none mobile-sticky-actions">
+           <div className="d-flex justify-content-between align-items-center mb-2">
+              <span style={{ fontSize: '12px', color: '#6c757d', fontWeight: '500' }}>Final Price</span>
+              <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#212529' }}>₹{finalPrice}</span>
+           </div>
+           <div className="d-flex gap-2">
+             {realProduct.stock <= 0 ? (
+               <button onClick={handleNotifyMe} className="btn w-100 py-2 fw-bold" style={{ backgroundColor: '#6c757d', color: 'white', fontSize: '13px' }} disabled={notifyLoading}>
+                 {notifyLoading ? 'Subscribing...' : 'Notify Me'}
+               </button>
+             ) : (
+               <>
+                 <button onClick={handleAddToCart} className="btn flex-fill py-2 fw-bold bg-white" style={{ border: '1px solid #005B6E', color: '#005B6E', fontSize: '13px' }}>
+                   ADD TO CART
+                 </button>
+                 <button onClick={handleBuyNow} className="btn flex-fill py-2 fw-bold" style={{ backgroundColor: '#005B6E', color: 'white', border: '1px solid #005B6E', fontSize: '13px' }}>
+                   BUY NOW
+                 </button>
+               </>
+             )}
+           </div>
+        </div>,
+        document.body
+      )}
+
     </div>
   );
 }
 
 export default function ShopDetailsPage() {
   return (
-    <Suspense fallback={<div className="container py-5 text-center">Loading product details...</div>}>
+    <Suspense fallback={<div className="container-fluid px-4 px-lg-5 py-5 text-center">Loading product details...</div>}>
       <ShopDetailsContent />
     </Suspense>
   );

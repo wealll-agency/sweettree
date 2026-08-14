@@ -46,7 +46,7 @@ export default function ContactPage() {
 
       {/* Contact Hero Section */}
       <section className="contact-hero-section">
-        <div className="container text-center">
+        <div className="container-fluid px-4 px-lg-5 text-center">
           <h1 className="contact-hero-title">We're Happy to Help!</h1>
           <p className="contact-hero-subtitle">Have any queries or feedback? We would be happy to assist you.</p>
           <p className="contact-hero-time">10:00 AM - 7:00 PM (Monday to Saturday)</p>
@@ -55,7 +55,7 @@ export default function ContactPage() {
 
       {/* Contact Form Section */}
       <section className="contact-form-section">
-        <div className="container">
+        <div className="container-fluid px-4 px-lg-5">
           <div className="contact-wrapper-box d-flex align-items-center flex-column flex-md-row">
             {/* Sidebar */}
             <div className="contact-sidebar">
@@ -170,7 +170,7 @@ export default function ContactPage() {
 
       {/* Contact Details from TopBar */}
       <section className="contact-info-blocks py-5 mb-5" style={{ backgroundColor: '#f8f9fa' }}>
-        <div className="container text-center">
+        <div className="container-fluid px-4 px-lg-5 text-center">
           <div className="row g-4 justify-content-center">
             <div className="col-md-4">
               <div className="p-4 bg-white rounded shadow-sm h-100 border-top border-3 border-success">
@@ -199,7 +199,7 @@ export default function ContactPage() {
 
       {/* People Are Also Looking For Section */}
       <section className="tags-section bg-white py-5">
-        <div className="container py-3">
+        <div className="container-fluid px-4 px-lg-5 py-3">
           <h3 className="mb-4 text-start" style={{ fontSize: '24px', color: '#333' }}>People Are Also Looking For</h3>
           <div className="d-flex flex-wrap gap-2">
             <a href="#" className="search-tag-pill">Cashew Royale</a>

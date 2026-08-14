@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { DollarSign } from 'lucide-react';
+import api from '../../utils/axiosConfig';
 import styles from './EarningStatistics.module.css';
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -28,34 +28,60 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-export default function EarningStatistics({ data }) {
+export default function EarningStatistics({ data: initialData }) {
   const [activeTab, setActiveTab] = useState('This Year');
+  const [chartData, setChartData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Format data specifically for the chart based on the provided sales data
-  // We map the backend data over a fixed 12-month array so the chart always renders a full line.
-  const baseMonths = [
-    { name: 'Jan', inHouse: 0, seller: 0, commission: 0 },
-    { name: 'Feb', inHouse: 0, seller: 0, commission: 0 },
-    { name: 'Mar', inHouse: 0, seller: 0, commission: 0 },
-    { name: 'Apr', inHouse: 0, seller: 0, commission: 0 },
-    { name: 'May', inHouse: 0, seller: 0, commission: 0 },
-    { name: 'Jun', inHouse: 0, seller: 0, commission: 0 },
-    { name: 'Jul', inHouse: 0, seller: 0, commission: 0 },
-    { name: 'Aug', inHouse: 0, seller: 0, commission: 0 },
-    { name: 'Sep', inHouse: 0, seller: 0, commission: 0 },
-    { name: 'Oct', inHouse: 0, seller: 0, commission: 0 },
-    { name: 'Nov', inHouse: 0, seller: 0, commission: 0 },
-    { name: 'Dec', inHouse: 0, seller: 0, commission: 0 },
-  ];
+  useEffect(() => {
+    fetchChartData(activeTab);
+  }, [activeTab]);
 
-  const displayData = baseMonths.map(month => {
-    // Find if the backend returned data for this month (e.g. "Jun 2026" starts with "Jun")
-    const found = data.find(d => d.name && d.name.startsWith(month.name));
-    if (found) {
-      return { ...month, inHouse: found.revenue };
+  const fetchChartData = async (tab) => {
+    let range = 'year';
+    if (tab === 'This Month') range = 'month';
+    if (tab === 'This Week') range = 'week';
+
+    try {
+      setLoading(true);
+      const res = await api.get(`/reports/sales-chart?range=${range}`);
+      if (res.data.success) {
+        formatAndSetData(res.data.data, range);
+      }
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+      formatAndSetData([], range);
+    } finally {
+      setLoading(false);
     }
-    return month;
-  });
+  };
+
+  const formatAndSetData = (rawData, range) => {
+    let formatted = [];
+    if (range === 'year') {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      formatted = months.map((m, idx) => {
+        const found = rawData.find(d => d._id?.month === idx + 1);
+        return { name: m, inHouse: found ? found.revenue : 0, seller: 0, commission: 0 };
+      });
+    } else if (range === 'month') {
+      const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+      for (let i = 1; i <= daysInMonth; i++) {
+        const found = rawData.find(d => d._id?.day === i);
+        formatted.push({ name: i.toString(), inHouse: found ? found.revenue : 0, seller: 0, commission: 0 });
+      }
+    } else if (range === 'week') {
+      const displayDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const mapMongoToDisplay = { 2: 'Mon', 3: 'Tue', 4: 'Wed', 5: 'Thu', 6: 'Fri', 7: 'Sat', 1: 'Sun' };
+      
+      formatted = displayDays.map(d => {
+        const mongoId = Object.keys(mapMongoToDisplay).find(key => mapMongoToDisplay[key] === d);
+        const found = rawData.find(x => x._id?.dayOfWeek == mongoId);
+        return { name: d, inHouse: found ? found.revenue : 0, seller: 0, commission: 0 };
+      });
+    }
+    setChartData(formatted);
+  };
 
   const yAxisTickFormatter = (value) => {
     if (value >= 1000) {
@@ -66,7 +92,6 @@ export default function EarningStatistics({ data }) {
 
   return (
     <div className={styles.cardContainer}>
-      {/* Header */}
       <div className={styles.header}>
         <h5 className={styles.title}>
           <span className="text-warning">💰</span> Sales Overview
@@ -77,6 +102,7 @@ export default function EarningStatistics({ data }) {
               key={tab}
               className={`${styles.btn} ${activeTab === tab ? styles.active : ''}`}
               onClick={() => setActiveTab(tab)}
+              disabled={loading}
             >
               {tab}
             </button>
@@ -84,7 +110,6 @@ export default function EarningStatistics({ data }) {
         </div>
       </div>
 
-      {/* Legend */}
       <div className={styles.legendContainer}>
         <div className={styles.legendItem}>
           <div className={`${styles.legendBox} ${styles.inHouseBox}`}></div>
@@ -100,65 +125,69 @@ export default function EarningStatistics({ data }) {
         </div>
       </div>
 
-      {/* Chart */}
-      <div className={styles.chartWrapper}>
+      <div className={styles.chartWrapper} style={{ position: 'relative' }}>
+        {loading && <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.6)', zIndex: 10, fontSize: '13px', color: '#666'}}>Updating Data...</div>}
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
-            data={displayData}
-            margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+            data={chartData}
+            margin={{ top: 10, right: 0, left: -20, bottom: 0 }}
           >
             <defs>
               <linearGradient id="colorInHouse" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#82ca9d" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#2ecc71" stopOpacity={0.2}/>
+                <stop offset="95%" stopColor="#2ecc71" stopOpacity={0}/>
               </linearGradient>
               <linearGradient id="colorSeller" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#007bff" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#007bff" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#3498db" stopOpacity={0.2}/>
+                <stop offset="95%" stopColor="#3498db" stopOpacity={0}/>
               </linearGradient>
               <linearGradient id="colorCommission" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#fca311" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#fca311" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#f39c12" stopOpacity={0.2}/>
+                <stop offset="95%" stopColor="#f39c12" stopOpacity={0}/>
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={true} stroke="#f0f0f0" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
             <XAxis 
               dataKey="name" 
               axisLine={false} 
               tickLine={false} 
-              tick={{ fill: '#6c757d', fontSize: 12 }} 
+              tick={{ fill: '#999', fontSize: 12 }} 
               dy={10}
             />
             <YAxis 
               axisLine={false} 
               tickLine={false} 
-              tick={{ fill: '#6c757d', fontSize: 12 }} 
+              tick={{ fill: '#999', fontSize: 12 }} 
               tickFormatter={yAxisTickFormatter}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#eee', strokeWidth: 1, strokeDasharray: '3 3' }} />
+            
             <Area 
               type="monotone" 
-              dataKey="inHouse" 
-              stroke="#82ca9d" 
-              strokeWidth={2}
+              dataKey="commission" 
+              stroke="#f39c12" 
               fillOpacity={1} 
-              fill="url(#colorInHouse)" 
+              fill="url(#colorCommission)" 
+              strokeWidth={2}
+              activeDot={{ r: 4, strokeWidth: 0, fill: '#f39c12' }}
             />
             <Area 
               type="monotone" 
               dataKey="seller" 
-              stroke="#007bff" 
-              strokeWidth={2}
+              stroke="#3498db" 
               fillOpacity={1} 
               fill="url(#colorSeller)" 
+              strokeWidth={2}
+              activeDot={{ r: 4, strokeWidth: 0, fill: '#3498db' }}
             />
             <Area 
               type="monotone" 
-              dataKey="commission" 
-              stroke="#fca311" 
-              strokeWidth={2}
+              dataKey="inHouse" 
+              stroke="#2ecc71" 
               fillOpacity={1} 
-              fill="url(#colorCommission)" 
+              fill="url(#colorInHouse)" 
+              strokeWidth={2}
+              activeDot={{ r: 4, strokeWidth: 0, fill: '#2ecc71' }}
             />
           </AreaChart>
         </ResponsiveContainer>

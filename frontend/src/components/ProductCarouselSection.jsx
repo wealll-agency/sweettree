@@ -11,7 +11,7 @@ const ProductCarouselSection = ({ title, products }) => {
   return (
     <>
       <section className="section-wrapper animated-gradient-bg pb-5 relative-nav">
-        <div className="container text-center">
+        <div className="container-fluid px-4 px-lg-5 text-center">
           <h2 className="main-title">{title}</h2>
           <Swiper
             modules={[Autoplay, Navigation]}

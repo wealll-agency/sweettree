@@ -11,7 +11,7 @@ import 'swiper/css/navigation';
 const CollectionSlider = () => {
   return (
     <section className="section-wrapper bg-white collection-bg-section pb-2 mt-4 relative-nav popout-slider-wrapper">
-      <div className="container text-center">
+      <div className="container-fluid px-4 px-lg-5 text-center">
         <Swiper
           modules={[Autoplay, Navigation]}
           spaceBetween={20}
@@ -27,43 +27,43 @@ const CollectionSlider = () => {
           className="collection-slider mx-auto"
         >
           <SwiperSlide>
-            <Link href="#" className="collection-card" style={{ background: '#945A45' }}>
+            <Link href="/shop?category=Almond" className="collection-card" style={{ background: '#945A45' }}>
               <Image src="/collection1.png" alt="Almond" width={150} height={150} className="collection-img" />
               <div className="collection-name">Almond</div>
             </Link>
           </SwiperSlide>
           <SwiperSlide>
-            <Link href="#" className="collection-card" style={{ background: '#005B6E' }}>
+            <Link href="/shop?category=Cashew" className="collection-card" style={{ background: '#005B6E' }}>
               <Image src="/collection2.png" alt="Cashew" width={150} height={150} className="collection-img" />
               <div className="collection-name">Cashew</div>
             </Link>
           </SwiperSlide>
           <SwiperSlide>
-            <Link href="#" className="collection-card" style={{ background: '#525D3F' }}>
+            <Link href="/shop?category=Pista" className="collection-card" style={{ background: '#525D3F' }}>
               <Image src="/collection3.png" alt="Pista" width={150} height={150} className="collection-img" />
               <div className="collection-name">Pista</div>
             </Link>
           </SwiperSlide>
           <SwiperSlide>
-            <Link href="#" className="collection-card" style={{ background: '#C88330' }}>
+            <Link href="/shop?category=Raisin" className="collection-card" style={{ background: '#C88330' }}>
               <Image src="/collection4.png" alt="Raisin" width={150} height={150} className="collection-img" />
               <div className="collection-name">Raisin</div>
             </Link>
           </SwiperSlide>
           <SwiperSlide>
-            <Link href="#" className="collection-card" style={{ background: '#731A2B' }}>
+            <Link href="/shop?category=Walnut" className="collection-card" style={{ background: '#731A2B' }}>
               <Image src="/collection5.png" alt="Walnut" width={150} height={150} className="collection-img" />
               <div className="collection-name">Walnut</div>
             </Link>
           </SwiperSlide>
           <SwiperSlide>
-            <Link href="#" className="collection-card" style={{ background: '#945A45' }}>
+            <Link href="/shop?category=Fig" className="collection-card" style={{ background: '#945A45' }}>
               <Image src="/collection6.png" alt="Fig" width={150} height={150} className="collection-img" />
               <div className="collection-name">Fig</div>
             </Link>
           </SwiperSlide>
           <SwiperSlide>
-            <Link href="#" className="collection-card" style={{ background: '#005B6E' }}>
+            <Link href="/shop?category=Mixes" className="collection-card" style={{ background: '#005B6E' }}>
               <Image src="/collection7.png" alt="Mix" width={150} height={150} className="collection-img" />
               <div className="collection-name">Mix</div>
             </Link>

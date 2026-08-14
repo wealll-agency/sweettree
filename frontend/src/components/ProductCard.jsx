@@ -1,7 +1,8 @@
 import React, { useEffect, memo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Star, Heart } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Star, Heart, ShoppingCart, Leaf, ShieldCheck, Zap, Droplet, Flame, Award } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../store/cartSlice';
 import { toggleWishlist } from '../store/wishlistSlice';
@@ -12,11 +13,11 @@ import 'swiper/css';
 import 'swiper/css/effect-fade';
 
 const ProductCard = ({ product }) => {
+  const router = useRouter();
   const dispatch = useDispatch();
   const wishlistItems = useSelector((state) => state.wishlist?.items || []);
   const dbProducts = useSelector((state) => state.products?.items || []);
 
-  // Dynamically load products if this is a static card with no ID and DB products aren't loaded yet
   useEffect(() => {
     const isValidId = product._id && /^[0-9a-fA-F]{24}$/.test(product._id);
     if (!isValidId && dbProducts.length === 0) {
@@ -24,7 +25,6 @@ const ProductCard = ({ product }) => {
     }
   }, [dispatch, product._id, dbProducts.length]);
 
-  // Resolve matching DB product for static cards to get correct MongoDB _id
   const resolvedProduct = product._id && /^[0-9a-fA-F]{24}$/.test(product._id)
     ? product
     : dbProducts.find(p => {
@@ -46,7 +46,6 @@ const ProductCard = ({ product }) => {
   } else if (resolvedProduct.discountedPrice !== undefined) {
     calculatedDiscountedPrice = resolvedProduct.discountedPrice;
   }
-
 
   const handleToggleWishlist = (e) => {
     e.preventDefault();
@@ -70,7 +69,7 @@ const ProductCard = ({ product }) => {
         _id: productId,
         name: resolvedProduct.name,
         price: parseInt(finalPrice.toString().replace(/,/g, '')),
-        discount: 0, // Prevent double-discounting since price is already the final price
+        discount: 0,
         images: [resolvedProduct.image || (resolvedProduct.images && resolvedProduct.images[0]) || '/placeholder.png'],
         stock: resolvedProduct.stock || 100
       }, 
@@ -78,7 +77,6 @@ const ProductCard = ({ product }) => {
       size: resolvedProduct.unit || 'Default'
     }));
 
-    // Trigger offcanvas programmatically
     if (typeof document !== 'undefined') {
       const offcanvasElement = document.getElementById('cartOffcanvas');
       if (offcanvasElement && window.bootstrap) {
@@ -89,97 +87,156 @@ const ProductCard = ({ product }) => {
   };
 
   const imageSrc = resolvedProduct.image || (resolvedProduct.images && resolvedProduct.images[0]) || '/placeholder.png';
-  const cleanImageSrc = imageSrc.replace('/assets/images/', '/');
-
   const allImages = resolvedProduct.images && resolvedProduct.images.length > 0 
     ? resolvedProduct.images 
     : (resolvedProduct.image ? [resolvedProduct.image] : ['/placeholder.png']);
 
+  const icons = [Leaf, ShieldCheck, Droplet, Zap];
+
+  const getBadge = () => {
+    if (product.tagLeft) {
+       return { text: product.tagLeft.toUpperCase(), class: 'badge-green', icon: <Flame size={12} fill="white" /> };
+    }
+    if (resolvedProduct.isFeatured) {
+       return { text: 'BEST SELLER', class: 'badge-green', icon: <Flame size={12} fill="white" /> };
+    }
+    if (resolvedProduct.newArrival) {
+       return { text: 'NEW ARRIVAL', class: 'badge-orange', icon: <Star size={12} fill="white" /> };
+    }
+    if (resolvedProduct.category && resolvedProduct.category.toLowerCase().includes('premium')) {
+       return { text: 'PREMIUM', class: 'badge-red', icon: <Award size={12} fill="white" /> };
+    }
+    if (resolvedProduct.healthyProduct) {
+       return { text: 'HEALTHY CHOICE', class: 'badge-green', icon: <Leaf size={12} fill="white" /> };
+    }
+    return null;
+  };
+  
+  const badge = getBadge();
+
   return (
-    <div className="item h-100 px-2 py-3">
-      <div className="Sweettree-product-card">
-        <div className="product-tags d-flex justify-content-between">
-          <span className={`tag-left ${resolvedProduct.newArrival ? 'bg-success' : (product.tagLeftClass || '')}`}>
-            {resolvedProduct.newArrival ? 'NEW ARRIVAL' : (product.tagLeft || 'PREMIUM')}
-          </span>
-          {(product.tagRight || resolvedProduct.discount > 0) ? (
-            <span className={`tag-right ${product.tagRightClass || ''} ms-auto`}>
-              {product.tagRight || (resolvedProduct.discount > 0 ? (resolvedProduct.discountType === 'Flat' ? `₹${resolvedProduct.discount} OFF` : `${resolvedProduct.discount}% OFF`) : '')}
-            </span>
-          ) : null}
-        </div>
-        <Link href={`/shop-details?name=${encodeURIComponent(resolvedProduct.name)}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-          <div className="product-img-box position-relative" style={{ minHeight: '200px', overflow: 'hidden', opacity: resolvedProduct.stock <= 0 ? 0.7 : 1 }}>
+    <div className="item h-100">
+      <article className="product-card">
+        
+        <div className="product-card__media">
+          <div className="product-card__badges">
+            {badge ? (
+              <span className={`product-card__category-badge ${badge.class}`}>
+                 {badge.icon} {badge.text}
+              </span>
+            ) : <span></span>}
+
+            {resolvedProduct.discount > 0 && (
+              <span className="product-card__discount-badge">
+                {resolvedProduct.discountType === 'Flat' ? `₹${resolvedProduct.discount} OFF` : `${resolvedProduct.discount}% OFF`}
+              </span>
+            )}
+          </div>
+
+          <div className="product-card__image-wrapper">
             {resolvedProduct.stock <= 0 && (
-              <div className="position-absolute w-100 d-flex justify-content-center align-items-center" style={{ top: '40%', zIndex: 20 }}>
-                <span className="badge bg-danger px-3 py-2 fs-6 shadow-sm">OUT OF STOCK</span>
+              <div style={{
+                position: 'absolute', inset: 0, zIndex: 8,
+                background: 'rgba(248,250,252,0.7)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{
+                  background: '#ef4444', color: 'white', fontWeight: '700',
+                  fontSize: '12px', padding: '6px 16px', borderRadius: '9999px',
+                  boxShadow: '0 4px 12px rgba(239,68,68,0.3)', letterSpacing: '0.05em',
+                }}>OUT OF STOCK</span>
               </div>
             )}
-            <Swiper
-              modules={[Autoplay, EffectFade]}
-              effect="fade"
-              autoplay={{ delay: Math.floor(Math.random() * 2000) + 2500, disableOnInteraction: false }}
-              loop={allImages.length > 1}
-              allowTouchMove={false}
-              className="w-100 h-100"
-            >
-              {allImages.map((img, idx) => (
-                <SwiperSlide key={idx} className="position-relative w-100 h-100" style={{ minHeight: '200px' }}>
-                  <Image 
-                    src={img.replace('/assets/images/', '/')} 
-                    alt={`${resolvedProduct.name} ${idx}`} 
-                    fill 
-                    sizes="(max-width: 768px) 100vw, 33vw" 
-                    style={{ objectFit: 'contain' }} 
-                  />
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-          <div className="card-divider"></div>
-          <div className="product-meta d-flex justify-content-between align-items-center">
-            <span className="brand-text">{resolvedProduct.brand || 'Sweettree'}</span>
-            <div className="rating-heart d-flex align-items-center gap-2">
-              <span className="rating-badge d-flex align-items-center gap-1">
-                <Star size={12} fill="#ffb800" stroke="#ffb800" /> {resolvedProduct.rating || '5.0'}
-              </span>
-              <button 
-                onClick={handleToggleWishlist} 
-                className="btn btn-link p-0 border-0 m-0 text-decoration-none d-flex align-items-center" 
-                style={{ zIndex: 10, position: 'relative' }}
+
+            <Link href={`/shop-details?id=${resolvedProduct._id}`} style={{ display: 'block', position: 'relative', height: '100%', width: '100%' }}>
+              <Swiper
+                modules={[Autoplay, EffectFade]}
+                effect="fade"
+                autoplay={{ delay: Math.floor(Math.random() * 2000) + 2500, disableOnInteraction: false }}
+                loop={allImages.length > 1}
+                allowTouchMove={false}
+                className="position-absolute top-0 start-0 w-100 h-100"
               >
-                <Heart 
-                  size={18} 
-                  fill={isWishlisted ? "var(--primary-color)" : "none"} 
-                  className={isWishlisted ? "text-danger" : "text-muted"} 
-                  style={{ transition: 'color 0.2s ease, fill 0.2s ease' }} 
-                />
-              </button>
-            </div>
+                {allImages.map((img, idx) => (
+                  <SwiperSlide key={idx} className="position-relative w-100 h-100">
+                    <Image 
+                      src={img.replace('/assets/images/', '/')} 
+                      alt={`${resolvedProduct.name} ${idx}`} 
+                      fill 
+                      sizes="(max-width: 768px) 100vw, 33vw" 
+                      className="product-card__image product-card__image--contain"
+                    />
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            </Link>
+
           </div>
-          <h3 className="product-name" style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            height: '38px'
-          }} title={resolvedProduct.name}>{resolvedProduct.name}</h3>
-          <div className="product-pricing">
-            MRP: <del>₹{resolvedProduct.price}</del> <span className="current-price">₹{calculatedDiscountedPrice}</span> 
-            {(product.perGram || resolvedProduct.perGram) && <span className="per-gram">({product.perGram || resolvedProduct.perGram})</span>}
+        </div>
+
+
+
+        <div className="product-card__content">
+          <div className="product-card__meta">
+            <span className="product-card__brand">
+              {resolvedProduct.brand || 'SWEETTREE'}
+            </span>
+            <span className="product-card__rating">
+              <Star size={12} fill="#ffb800" color="#ffb800" stroke="#ffb800" />
+              {resolvedProduct.averageRating > 0 ? resolvedProduct.averageRating.toFixed(1) : '5.0'}
+            </span>
           </div>
-        </Link>
-        {resolvedProduct.stock <= 0 ? (
-          <Link href={`/shop-details?name=${encodeURIComponent(resolvedProduct.name)}`} className="btn btn-secondary w-100 mt-2" style={{ backgroundColor: '#6c757d', color: 'white', fontWeight: '600' }}>
-            Notify Me
+
+          <Link href={`/shop-details?id=${resolvedProduct._id}`} style={{ textDecoration: 'none', marginBottom: 'auto' }}>
+            <h3 className="product-card__title" title={resolvedProduct.name}>
+              {resolvedProduct.name}
+            </h3>
           </Link>
-        ) : (
-          <button onClick={handleAddToCart} className="Sweettree-btn-cart w-100 mt-2">Add To Cart</button>
-        )}
-      </div>
+
+          <div className="product-card__pricing">
+            <span className="product-card__price">
+              ₹{calculatedDiscountedPrice}
+            </span>
+            {resolvedProduct.discount > 0 && (
+              <>
+                <span className="product-card__mrp">₹{resolvedProduct.price}</span>
+              </>
+            )}
+          </div>
+
+          <div className="product-card__actions" style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
+            {resolvedProduct.stock <= 0 ? (
+              <Link
+                href={`/shop-details?id=${resolvedProduct._id}`}
+                className="product-card__cart"
+                style={{ flex: 1, background: '#f1f5f9', color: '#64748b', textDecoration: 'none', border: '1.5px solid #e2e8f0', boxShadow: 'none' }}
+              >
+                Notify Me
+              </Link>
+            ) : (
+              <button 
+                onClick={handleAddToCart} 
+                className="product-card__cart"
+                style={{ flex: 1 }}
+                aria-label="Add product to cart"
+              >
+                <ShoppingCart size={18} /> Add To Cart
+              </button>
+            )}
+            <button
+              className="product-card__wishlist-btn"
+              onClick={handleToggleWishlist}
+              aria-label="Toggle wishlist"
+            >
+              <Heart size={20} fill={isWishlisted ? '#ef4444' : 'none'} color={isWishlisted ? '#ef4444' : '#1e3a5f'} />
+            </button>
+          </div>
+        </div>
+
+      </article>
     </div>
   );
 };
 
 export default memo(ProductCard);
+
