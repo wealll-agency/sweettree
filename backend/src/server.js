@@ -32,6 +32,7 @@ import delhiveryRoutes from './routes/delhivery.routes.js';
 import warehouseRoutes from './routes/warehouse.routes.js';
 import bannerRoutes from './routes/bannerRoutes.js';
 import comboRoutes from './routes/comboRoutes.js';
+import customSectionRoutes from './routes/customSectionRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -117,6 +118,7 @@ app.use('/api/delhivery', delhiveryRoutes);
 app.use('/api/warehouses', warehouseRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/combos', comboRoutes);
+app.use('/api/custom-sections', customSectionRoutes);
 
 // Root route
 app.get('/', (req, res) => {

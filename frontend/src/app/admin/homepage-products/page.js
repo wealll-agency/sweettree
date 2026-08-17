@@ -7,6 +7,7 @@ import { Save, AlertCircle } from 'lucide-react';
 import { useNotification } from '../../../context/NotificationContext';
 import Image from 'next/image';
 import api from '../../../utils/axiosConfig.js';
+import CustomSectionsManager from './CustomSectionsManager';
 
 export default function HomepageProductsPage() {
   const dispatch = useDispatch();
@@ -320,6 +321,15 @@ export default function HomepageProductsPage() {
                 Top Selling (Manual)
               </button>
             </li>
+            <li className="nav-item">
+              <button 
+                className={`nav-link fw-medium border-0 ${activeTab === 'customSections' ? 'text-brand border-bottom border-brand border-3' : 'text-muted'}`}
+                onClick={() => setActiveTab('customSections')}
+                style={{ backgroundColor: 'transparent' }}
+              >
+                Custom Sections
+              </button>
+            </li>
           </ul>
         </div>
         <div className="card-body p-4">
@@ -396,6 +406,10 @@ export default function HomepageProductsPage() {
                   </div>
                   {renderProductList('manualTopSelling')}
                 </div>
+              )}
+
+              {activeTab === 'customSections' && (
+                <CustomSectionsManager allProducts={products} />
               )}
             </>
           )}

@@ -9,6 +9,7 @@ import ScrollToTop from '../components/ScrollToTop';
 
 
 import { NotificationProvider } from '../context/NotificationContext';
+import CookieConsent from '../components/CookieConsent';
 
 const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-inter' });
 const outfit = Outfit({ subsets: ['latin'], display: 'swap', variable: '--font-outfit' });
@@ -48,6 +49,7 @@ export default function RootLayout({ children }) {
             <ConditionalFooter />
           </NotificationProvider>
         </ReduxProvider>
+        <CookieConsent />
         <Script 
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" 
           strategy="lazyOnload" 

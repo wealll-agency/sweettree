@@ -20,24 +20,28 @@ export default function Home() {
   const [topSellingProducts, setTopSellingProducts] = useState([]);
   const [healthyProducts, setHealthyProducts] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [customSections, setCustomSections] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchHomepageProducts = async () => {
       try {
-        const [topRes, newRes, featRes] = await Promise.all([
+        const [topRes, newRes, featRes, customRes] = await Promise.all([
           api.get(`/products?topSelling=true&limit=8&inStock=true`),
           api.get(`/products?healthyProduct=true&limit=8&inStock=true`),
-          api.get(`/products?homepage=true&limit=8&inStock=true`)
+          api.get(`/products?homepage=true&limit=8&inStock=true`),
+          api.get(`/custom-sections?activeOnly=true`)
         ]);
 
         const topData = topRes.data;
         const newData = newRes.data;
         const featData = featRes.data;
+        const customData = customRes.data;
 
         if (topData.success) setTopSellingProducts(topData.products || []);
         if (newData.success) setHealthyProducts(newData.products || []);
         if (featData.success) setFeaturedProducts(featData.products || []);
+        if (customData.success) setCustomSections(customData.sections || []);
       } catch (error) {
         console.error("Error fetching homepage products:", error);
       } finally {
@@ -61,6 +65,13 @@ export default function Home() {
         </div>
       )}
       <ShopByPurpose />
+      {customSections.map(section => (
+        section.products && section.products.length > 0 && (
+          <div key={section._id} className="py-2">
+            <ProductCarouselSection title={section.title} products={section.products} />
+          </div>
+        )
+      ))}
       <CashewsBanner />
       {/* <RecentBlogs /> */}
       <Faqs />

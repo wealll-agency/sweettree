@@ -50,8 +50,10 @@ const Footer = () => {
             <ul className="list-unstyled d-flex flex-column gap-3">
               <li><Link href="/contact" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>Contact</Link></li>
               <li><Link href="#" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>Faqs</Link></li>
-              <li><Link href="#" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>Terms & Condition</Link></li>
-              <li><Link href="#" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>Privacy Policy</Link></li>
+              <li><Link href="/terms-and-conditions" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>Terms & Conditions</Link></li>
+              <li><Link href="/privacy-policy" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>Privacy Policy</Link></li>
+              <li><Link href="/refund-and-cancellation-policy" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>Refund & Cancellation</Link></li>
+              <li><Link href="/shipping-policy" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>Shipping Policy</Link></li>
             </ul>
           </div>
 
