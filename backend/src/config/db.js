@@ -13,22 +13,26 @@ const connectDB = async () => {
   };
 
   mongoose.connection.on('disconnected', () => {
-    console.error('MongoDB disconnected! PM2/Docker will handle restart if the process crashes, but mongoose will attempt to reconnect.');
+    console.error(`\x1b[31m❌ Database:\x1b[0m    Disconnected! PM2/Docker will attempt restart.\x1b[0m`);
   });
 
   mongoose.connection.on('reconnected', () => {
-    console.log('MongoDB reconnected successfully!');
+    console.log(`\x1b[32m✅ Database:\x1b[0m    Reconnected successfully!\x1b[0m`);
   });
 
   mongoose.connection.on('error', (err) => {
-    console.error(`MongoDB pool connection error: ${err.message}`);
+    console.error(`\x1b[31m❌ Database:\x1b[0m    Pool connection error: ${err.message}\x1b[0m`);
   });
 
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/sweettree', options);
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`\x1b[32m✅ Database:\x1b[0m    Connected to MongoDB cluster \x1b[36m(${conn.connection.host})\x1b[0m`);
   } catch (error) {
-    console.error(`MongoDB connection error during startup: ${error.message}`);
+    console.error(`\n\x1b[31m\x1b[1m❌ FATAL STARTUP ERROR\x1b[0m`);
+    console.error(`\x1b[31m====================================================\x1b[0m`);
+    console.error(`\x1b[31m❌ Database:\x1b[0m    Connection failed during startup`);
+    console.error(`\x1b[31m❌ Details:\x1b[0m     ${error.message}`);
+    console.error(`\x1b[31m====================================================\x1b[0m\n`);
     // Delay exit slightly to ensure logs flush
     setTimeout(() => {
       process.exit(1);

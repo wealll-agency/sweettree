@@ -58,5 +58,5 @@ export const cleanupAbandonedOrders = async () => {
 export const initCronJobs = () => {
   // Run every 15 minutes
   setInterval(cleanupAbandonedOrders, 15 * 60 * 1000).unref();
-  console.log('Cron jobs initialized.');
+  console.log(`\x1b[32m✅ Cron Jobs:\x1b[0m   Initialized background tasks\x1b[0m`);
 };

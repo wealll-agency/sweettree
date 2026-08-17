@@ -53,8 +53,11 @@ if (process.env.NODE_ENV === 'production') {
   const requiredKeys = ['CCAVENUE_MERCHANT_ID', 'CCAVENUE_WORKING_KEY', 'CCAVENUE_ACCESS_CODE'];
   const missingKeys = requiredKeys.filter(key => !process.env[key]);
   if (missingKeys.length > 0) {
-    console.error(`\n[FATAL ERROR] Missing CCAvenue Payment Keys in production: ${missingKeys.join(', ')}`);
-    console.error('Shutting down server to prevent silent checkout failures. Please provide these in your environment variables.\n');
+    console.error(`\n\x1b[31m\x1b[1m❌ FATAL STARTUP ERROR\x1b[0m`);
+    console.error(`\x1b[31m====================================================\x1b[0m`);
+    console.error(`\x1b[31m❌ Missing Keys:\x1b[0m CCAvenue Payment Keys in production: ${missingKeys.join(', ')}`);
+    console.error(`\x1b[31m❌ Action:\x1b[0m       Shutting down server to prevent silent checkout failures.`);
+    console.error(`\x1b[31m====================================================\x1b[0m\n`);
     process.exit(1);
   }
 }
@@ -138,18 +141,24 @@ if (process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH) {
       cert: fs.readFileSync(process.env.SSL_CERT_PATH)
     };
     server = https.createServer(options, app).listen(PORT, () => {
-      console.log(`HTTPS Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      console.log(`\n\x1b[36m\x1b[1m🚀 SweetTree Enterprise API\x1b[0m`);
+      console.log(`\x1b[36m====================================================\x1b[0m`);
+      console.log(`\x1b[32m✅ HTTPS Server:\x1b[0m Running in \x1b[33m${process.env.NODE_ENV || 'development'}\x1b[0m mode on port \x1b[33m${PORT}\x1b[0m`);
     });
   } catch (error) {
     console.error(`Failed to start HTTPS server: ${error.message}`);
     console.log("Falling back to HTTP server...");
     server = app.listen(PORT, () => {
-      console.log(`HTTP Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      console.log(`\n\x1b[36m\x1b[1m🚀 SweetTree Enterprise API\x1b[0m`);
+      console.log(`\x1b[36m====================================================\x1b[0m`);
+      console.log(`\x1b[32m✅ HTTP Server:\x1b[0m  Running in \x1b[33m${process.env.NODE_ENV || 'development'}\x1b[0m mode on port \x1b[33m${PORT}\x1b[0m`);
     });
   }
 } else {
   server = app.listen(PORT, () => {
-    console.log(`HTTP Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    console.log(`\n\x1b[36m\x1b[1m🚀 SweetTree Enterprise API\x1b[0m`);
+    console.log(`\x1b[36m====================================================\x1b[0m`);
+    console.log(`\x1b[32m✅ HTTP Server:\x1b[0m  Running in \x1b[33m${process.env.NODE_ENV || 'development'}\x1b[0m mode on port \x1b[33m${PORT}\x1b[0m`);
   });
 }
 
