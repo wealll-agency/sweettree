@@ -33,8 +33,8 @@ export default function ShippingPolicy() {
                 We believe in transparent pricing. Our shipping charges are structured as follows:
               </p>
               <ul style={{ color: '#555', lineHeight: '1.8' }}>
-                <li><strong>Free Shipping:</strong> On all orders with a taxable value strictly greater than <strong>₹500</strong>.</li>
-                <li><strong>Flat Rate:</strong> A nominal shipping fee of <strong>₹40</strong> applies to orders with a taxable value of ₹500 or below.</li>
+                <li><strong>Free Shipping:</strong> On all orders with a taxable value strictly greater than <strong>₹2000</strong>.</li>
+                <li><strong>Flat Rate:</strong> A nominal shipping fee of <strong>₹80</strong> applies to orders with a taxable value of ₹2000 or below.</li>
               </ul>
               <p style={{ color: '#555', lineHeight: '1.8' }}>
                 Applicable shipping fees will be calculated and displayed clearly at checkout before you complete your payment.
