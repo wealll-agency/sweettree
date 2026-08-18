@@ -126,7 +126,7 @@ export const refreshTokenUser = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'super_secret_jwt_key_for_sweettree_2026_enterprise');
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
 
     if (!user) {
@@ -135,7 +135,7 @@ export const refreshTokenUser = async (req, res, next) => {
 
     const accessToken = jwt.sign(
       { id: user._id },
-      process.env.JWT_SECRET || 'super_secret_jwt_key_for_sweettree_2026_enterprise',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 

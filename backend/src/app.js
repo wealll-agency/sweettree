@@ -35,6 +35,8 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 // Middlewares
 app.use(helmet({
   crossOriginResourcePolicy: false // Allows loading local static upload files in local frontend/admin images
@@ -66,14 +68,6 @@ app.use(cookieParser());
 // Static Folder for Local Uploads
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
-// Prevent caching for API routes (fixes live server stale data issues)
-app.use('/api', (req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.setHeader('Surrogate-Control', 'no-store');
-  next();
-});
 
 // Apply global rate limiting to all API routes
 app.use('/api', apiLimiter);

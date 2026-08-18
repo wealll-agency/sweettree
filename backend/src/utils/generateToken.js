@@ -3,13 +3,13 @@ import jwt from 'jsonwebtoken';
 const generateToken = (res, userId, rememberMe = true) => {
   const accessToken = jwt.sign(
     { id: userId },
-    process.env.JWT_SECRET || 'super_secret_jwt_key_for_sweettree_2026_enterprise',
+    process.env.JWT_SECRET,
     { expiresIn: rememberMe ? '7d' : '1d' }
   );
 
   const refreshToken = jwt.sign(
     { id: userId },
-    process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'super_secret_jwt_key_for_sweettree_2026_enterprise',
+    process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
     { expiresIn: rememberMe ? '30d' : '1d' }
   );
 

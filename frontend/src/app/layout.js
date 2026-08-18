@@ -6,6 +6,7 @@ import ReduxProvider from '../components/ReduxProvider';
 import ConditionalHeader from '../components/ConditionalHeader';
 import ConditionalFooter from '../components/ConditionalFooter';
 import ScrollToTop from '../components/ScrollToTop';
+import ChunkErrorHandler from '../components/ChunkErrorHandler';
 
 
 import { NotificationProvider } from '../context/NotificationContext';
@@ -37,6 +38,7 @@ export default function RootLayout({ children }) {
         <link rel="stylesheet" href="/assets/css/style.css" />
       </head>
       <body className={`${inter.variable} ${outfit.variable} ${inter.className} d-flex flex-column min-vh-100`}>
+        <ChunkErrorHandler />
         <ReduxProvider>
           <NotificationProvider>
             <Suspense fallback={null}>

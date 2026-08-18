@@ -128,16 +128,23 @@ const calculateOrderTotals = async (items, couponCode) => {
 // @access  Private
 export const createOrder = async (req, res, next) => {
   const { items, deliveryAddress, couponCode, paymentMode = 'CCAvenue' } = req.body;
+  const session = await mongoose.startSession();
 
   try {
+    session.startTransaction();
+
     if (!items || items.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({ success: false, message: 'No items in order' });
     }
 
     if (paymentMode === 'COD') {
-      const codSetting = await SystemSetting.findOne({ key: 'cod' });
+      const codSetting = await SystemSetting.findOne({ key: 'cod' }).session(session);
       const hasCodPermission = codSetting ? codSetting.value : true;
       if (!hasCodPermission) {
+        await session.abortTransaction();
+        session.endSession();
         return res.status(403).json({ success: false, message: 'Cash on Delivery (COD) is currently disabled globally.' });
       }
     }
@@ -173,14 +180,14 @@ export const createOrder = async (req, res, next) => {
       orderStatus: 'Placed'
     });
 
-    const savedOrder = await order.save();
+    const savedOrder = await order.save({ session });
 
     // 2. Reduce Stock in Inventory & Product Collections
     for (const item of validatedItems) {
       if (item.itemType === 'Combo') {
         for (const comp of item.comboComponentsSnapshot) {
           const deductQty = comp.quantity * item.quantity;
-          await Product.findByIdAndUpdate(comp.product, { $inc: { stock: -deductQty, totalSold: deductQty } }, { runValidators: true });
+          await Product.findByIdAndUpdate(comp.product, { $inc: { stock: -deductQty, totalSold: deductQty } }, { runValidators: true, session });
           await Inventory.findOneAndUpdate(
             { product: comp.product },
             { 
@@ -194,11 +201,11 @@ export const createOrder = async (req, res, next) => {
                 }
               }
             },
-            { runValidators: true }
+            { runValidators: true, session }
           );
         }
       } else {
-        await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity, totalSold: item.quantity } }, { runValidators: true });
+        await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity, totalSold: item.quantity } }, { runValidators: true, session });
         await Inventory.findOneAndUpdate(
           { product: item.product },
           { 
@@ -212,7 +219,7 @@ export const createOrder = async (req, res, next) => {
               }
             }
           },
-          { runValidators: true }
+          { runValidators: true, session }
         );
       }
     }
@@ -221,21 +228,25 @@ export const createOrder = async (req, res, next) => {
     if (couponCode && discount > 0) {
       await Coupon.findOneAndUpdate(
         { code: couponCode.toUpperCase() },
-        { $inc: { usageCount: 1 } }
+        { $inc: { usageCount: 1 } },
+        { session }
       );
     }
 
     // If COD, we can skip CCAvenue processing
     if (paymentMode === 'COD') {
-      await Payment.create({
+      await Payment.create([{
         order: savedOrder._id,
         ccavenueOrderId: `COD-${savedOrder._id}`,
         amount: totalAmount,
         status: 'Created',
         paymentMode: 'COD'
-      });
+      }], { session });
 
       await logActivity(req.user._id, 'CREATE_ORDER', `Created COD order ID: ${savedOrder._id}`, req);
+
+      await session.commitTransaction();
+      session.endSession();
 
       return res.status(201).json({
         success: true,
@@ -245,12 +256,12 @@ export const createOrder = async (req, res, next) => {
     }
 
     // 3. Create Payment ledger record for CCAvenue
-    await Payment.create({
+    await Payment.create([{
       order: savedOrder._id,
       ccavenueOrderId: savedOrder._id.toString(),
       amount: totalAmount,
       status: 'Created'
-    });
+    }], { session });
 
     // 4. Prepare CCAvenue Payload
     const merchant_id = process.env.CCAVENUE_MERCHANT_ID || 'M_ID';
@@ -299,6 +310,9 @@ export const createOrder = async (req, res, next) => {
 
     await logActivity(req.user._id, 'CREATE_ORDER', `Created order ID: ${savedOrder._id}, initiating CCAvenue transaction`, req);
 
+    await session.commitTransaction();
+    session.endSession();
+
     res.status(201).json({
       success: true,
       order: savedOrder,
@@ -306,6 +320,10 @@ export const createOrder = async (req, res, next) => {
       accessCode: access_code
     });
   } catch (error) {
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    session.endSession();
     next(error);
   }
 };
@@ -314,6 +332,7 @@ export const createOrder = async (req, res, next) => {
 // @route   POST /api/orders/ccavenue-callback
 // @access  Public
 export const ccavenueCallback = async (req, res, next) => {
+  let session;
   try {
     const { encResp } = req.body;
     if (!encResp) {
@@ -337,15 +356,15 @@ export const ccavenueCallback = async (req, res, next) => {
     const payment_mode = params.get('payment_mode');
     const failure_message = params.get('failure_message');
 
-    const order = await Order.findById(order_id);
-    if (!order) {
-      return res.status(404).send('Order not found');
-    }
-
-    // Safely extract the primary frontend URL if comma-separated
+    // Safely extract the primary frontend URL early for error redirects
     let frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     if (frontendUrl.includes(',')) {
       frontendUrl = frontendUrl.split(',')[0].trim();
+    }
+
+    const order = await Order.findById(order_id);
+    if (!order) {
+      return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent('Order not found.')}`);
     }
 
     // Idempotency: Prevent duplicate stock deductions or restorals on page refresh
@@ -356,7 +375,10 @@ export const ccavenueCallback = async (req, res, next) => {
       return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent(failure_message || 'Payment Failed')}`);
     }
 
-    const payment = await Payment.findOne({ ccavenueOrderId: order_id });
+    session = await mongoose.startSession();
+    session.startTransaction();
+
+    const payment = await Payment.findOne({ ccavenueOrderId: order_id }).session(session);
 
     if (order_status === 'Success') {
       const response_amount = params.get('amount') || params.get('mer_amount') || params.get('net_amount_debit');
@@ -366,7 +388,7 @@ export const ccavenueCallback = async (req, res, next) => {
         order.ccavenueTrackingId = tracking_id;
         order.ccavenueBankRefNo = bank_ref_no;
         order.paymentMode = payment_mode;
-        await order.save();
+        await order.save({ session });
 
         if (payment) {
           payment.status = 'Failed';
@@ -375,11 +397,11 @@ export const ccavenueCallback = async (req, res, next) => {
           payment.paymentMode = payment_mode;
           payment.failureMessage = `Amount mismatch (Paid: ${response_amount}, Expected: ${order.totalAmount})`;
           payment.encResponse = encResp;
-          await payment.save();
+          await payment.save({ session });
         }
 
         for (const item of order.items) {
-          await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true });
+          await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true, session });
           await Inventory.findOneAndUpdate(
             { product: item.product },
             { 
@@ -393,10 +415,12 @@ export const ccavenueCallback = async (req, res, next) => {
                 }
               }
             },
-            { runValidators: true }
+            { runValidators: true, session }
           );
         }
 
+        await session.commitTransaction();
+        session.endSession();
         return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent('Payment failed due to amount mismatch. Please contact support.')}`);
       }
 
@@ -406,7 +430,7 @@ export const ccavenueCallback = async (req, res, next) => {
       order.ccavenueTrackingId = tracking_id;
       order.ccavenueBankRefNo = bank_ref_no;
       order.paymentMode = payment_mode;
-      await order.save();
+      await order.save({ session });
 
       if (payment) {
         payment.status = 'Captured';
@@ -414,16 +438,18 @@ export const ccavenueCallback = async (req, res, next) => {
         payment.ccavenueBankRefNo = bank_ref_no;
         payment.paymentMode = payment_mode;
         payment.encResponse = encResp;
-        await payment.save();
+        await payment.save({ session });
       }
 
+      await session.commitTransaction();
+      session.endSession();
       return res.redirect(`${frontendUrl}/user/orders/${order._id}?success=true`);
     } else {
       order.paymentStatus = 'Failed';
       order.ccavenueTrackingId = tracking_id;
       order.ccavenueBankRefNo = bank_ref_no;
       order.paymentMode = payment_mode;
-      await order.save();
+      await order.save({ session });
 
       if (payment) {
         payment.status = 'Failed';
@@ -432,11 +458,11 @@ export const ccavenueCallback = async (req, res, next) => {
         payment.paymentMode = payment_mode;
         payment.failureMessage = failure_message;
         payment.encResponse = encResp;
-        await payment.save();
+        await payment.save({ session });
       }
 
       for (const item of order.items) {
-        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true });
+        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true, session });
         await Inventory.findOneAndUpdate(
           { product: item.product },
           { 
@@ -450,15 +476,26 @@ export const ccavenueCallback = async (req, res, next) => {
               }
             }
           },
-          { runValidators: true }
+          { runValidators: true, session }
         );
       }
 
+      await session.commitTransaction();
+      session.endSession();
       return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent(failure_message || 'Payment Failed')}`);
     }
   } catch (error) {
+    if (session && session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    if (session) {
+      session.endSession();
+    }
     console.error('CCAvenue Callback Error:', error);
-    next(error);
+    
+    let fUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    if (fUrl.includes(',')) fUrl = fUrl.split(',')[0].trim();
+    return res.redirect(`${fUrl}/checkout?error=${encodeURIComponent('Payment processing failed due to an internal server error.')}`);
   }
 };
 

@@ -60,6 +60,13 @@ let cronInterval;
 export const initCronJobs = () => {
   if (cronInterval) return; // Prevent duplicate initialization
   
+  // If running in a cluster/PM2, only run cron on the first instance
+  const instanceId = process.env.NODE_APP_INSTANCE;
+  if (instanceId && instanceId !== '0') {
+    console.log(`\x1b[33m⏳ Cron Jobs:\x1b[0m   Skipped on instance ${instanceId} to prevent duplication\x1b[0m`);
+    return;
+  }
+  
   // Run every 15 minutes
   cronInterval = setInterval(cleanupAbandonedOrders, 15 * 60 * 1000);
   cronInterval.unref();

@@ -12,10 +12,6 @@ git pull origin main
 echo "--> Setting up Backend..."
 cd backend
 npm install
-
-# Restart Backend using PM2 (Uncomment and adjust the name if you use PM2)
-# pm2 restart sweettree-backend || pm2 start src/server.js --name sweettree-backend
-
 cd ..
 
 # 3. Setup Frontend
@@ -24,13 +20,15 @@ cd frontend
 npm install
 
 echo "--> Building Next.js Frontend for production..."
+rm -rf .next
 npm run build
-
-# Restart Frontend using PM2 (Uncomment and adjust the name if you use PM2)
-# pm2 restart sweettree-frontend || pm2 start npm --name "sweettree-frontend" -- start
-
 cd ..
+
+# 4. Restart PM2 services
+echo "--> Restarting PM2 processes..."
+pm2 restart ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs
 
 echo "==========================================="
 echo "   ✅ Deployment Completed Successfully!   "
 echo "==========================================="
+

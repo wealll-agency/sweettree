@@ -1,12 +1,20 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from the root .env file
-dotenv.config({ path: path.join(__dirname, '../../../.env') });
+// Try standard backend-level .env first (production standard), fallback to monorepo root for local dev
+const localEnvPath = path.resolve(process.cwd(), '.env');
+const rootEnvPath = path.join(__dirname, '../../../.env');
+
+if (fs.existsSync(localEnvPath)) {
+  dotenv.config({ path: localEnvPath });
+} else {
+  dotenv.config({ path: rootEnvPath });
+}
 
 const getEnvVar = (key, defaultValue) => {
   const value = process.env[key] || defaultValue;

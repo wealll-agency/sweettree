@@ -10,10 +10,6 @@ git pull origin main
 Write-Host "--> Setting up Backend..." -ForegroundColor Yellow
 Set-Location -Path "backend"
 npm install
-
-# Restart Backend using PM2 (Uncomment and adjust the name if you use PM2)
-# pm2 restart sweettree-backend || pm2 start src/server.js --name sweettree-backend
-
 Set-Location -Path ".."
 
 # 3. Setup Frontend
@@ -22,13 +18,15 @@ Set-Location -Path "frontend"
 npm install
 
 Write-Host "--> Building Next.js Frontend for production..." -ForegroundColor Yellow
+if (Test-Path ".next") { Remove-Item -Recurse -Force ".next" }
 npm run build
-
-# Restart Frontend using PM2 (Uncomment and adjust the name if you use PM2)
-# pm2 restart sweettree-frontend || pm2 start npm --name "sweettree-frontend" -- start
-
 Set-Location -Path ".."
+
+# 4. Restart PM2 services
+Write-Host "--> Restarting PM2 processes..." -ForegroundColor Yellow
+pm2 restart ecosystem.config.cjs --update-env
 
 Write-Host "===========================================" -ForegroundColor Green
 Write-Host "   ✅ Deployment Completed Successfully!   " -ForegroundColor Green
 Write-Host "===========================================" -ForegroundColor Green
+

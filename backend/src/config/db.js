@@ -25,7 +25,7 @@ const connectDB = async () => {
   });
 
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/sweettree', options);
+    const conn = await mongoose.connect(process.env.MONGODB_URI, options);
     console.log(`\x1b[32m✅ Database:\x1b[0m    Connected to MongoDB cluster \x1b[36m(${conn.connection.host})\x1b[0m`);
   } catch (error) {
     console.error(`\n\x1b[31m\x1b[1m❌ FATAL STARTUP ERROR\x1b[0m`);

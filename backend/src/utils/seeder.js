@@ -109,7 +109,8 @@ const productsData = [
 const seedData = async () => {
   try {
     // Determine MONGODB_URI local fallback if not defined in process.env
-    const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/sweettree';
+    const uri = process.env.MONGODB_URI;
+    if (!uri) throw new Error('MONGODB_URI is required to run seeder.');
     console.log(`Seeding database at: ${uri}`);
     
     await mongoose.connect(uri);

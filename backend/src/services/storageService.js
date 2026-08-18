@@ -76,7 +76,10 @@ export const uploadFile = async (file) => {
   fs.writeFileSync(localPath, file.buffer);
 
   // Return local server URL (Express will serve public statically)
-  const port = process.env.PORT || 5000;
-  const baseUrl = process.env.BACKEND_URL || `http://localhost:${port}`;
-  return `${baseUrl}/uploads/${fileName}`;
+  const baseUrl = process.env.BACKEND_URL;
+  if (!baseUrl && process.env.NODE_ENV === 'production') {
+    throw new Error('BACKEND_URL must be provided in production when using local storage fallback.');
+  }
+  const finalBaseUrl = baseUrl || `http://localhost:${process.env.PORT || 5000}`;
+  return `${finalBaseUrl}/uploads/${fileName}`;
 };
