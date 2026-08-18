@@ -78,7 +78,7 @@ export default function ShippingPolicy() {
                 If you experience significant delays or have any questions regarding your shipment, please reach out to us:
               </p>
               <div className="bg-light p-4 rounded-3 mt-3">
-                <p className="mb-1"><strong>Email:</strong> info@webmail.com</p>
+                <p className="mb-1"><strong>Email:</strong> support@sweetree.com</p>
                 <p className="mb-1"><strong>Phone:</strong> +91 9748724689</p>
               </div>
             </section>

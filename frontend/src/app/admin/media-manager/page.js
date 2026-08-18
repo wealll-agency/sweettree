@@ -33,6 +33,16 @@ export default function MediaManagerPage() {
       allowMultiple: true 
     },
     { 
+      id: 'ComboBox', 
+      title: 'Combo Box Banner', 
+      subtitle: 'Recommended: 1400 × 280 px | Aspect Ratio: 5:1 | Format: WebP / JPG / PNG', 
+      expectedRatio: 5/1, 
+      recWidth: 1400, 
+      recHeight: 280,
+      previewClass: 'ratio-trending',
+      allowMultiple: true 
+    },
+    { 
       id: 'Middle', 
       title: 'Promotional Banner', 
       subtitle: 'Recommended: 1400 × 400 px | Aspect Ratio: 7:2 | Format: WebP / JPG / PNG', 
@@ -45,11 +55,11 @@ export default function MediaManagerPage() {
     { 
       id: 'Bottom', 
       title: 'Mobile Hero Banner', 
-      subtitle: 'Recommended: 1080 × 1350 px | Aspect Ratio: 4:5 | Format: WebP / JPG / PNG', 
-      expectedRatio: 4/5, 
-      recWidth: 1080, 
-      recHeight: 1350,
-      previewClass: 'ratio-hero-mobile-portrait',
+      subtitle: 'Recommended: 382 × 286 px | Aspect Ratio: 4:3 | Format: WebP / JPG / PNG', 
+      expectedRatio: 4/3, 
+      recWidth: 382, 
+      recHeight: 286,
+      previewClass: 'ratio-4x3',
       allowMultiple: true 
     }
   ];

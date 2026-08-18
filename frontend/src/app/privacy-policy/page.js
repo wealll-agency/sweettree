@@ -130,7 +130,7 @@ export default function PrivacyPolicy() {
                 If you have questions or comments about this notice, or wish to report a grievance regarding your privacy, you may contact us at:
               </p>
               <div className="bg-light p-4 rounded-3 mt-3">
-                <p className="mb-1"><strong>Email:</strong> info@webmail.com</p>
+                <p className="mb-1"><strong>Email:</strong> support@sweetree.com</p>
                 <p className="mb-1"><strong>Phone:</strong> +91 9748724689</p>
                 <p className="mb-0"><strong>Address:</strong> 33, Maharshi Devendra Road, Kolkata-700006</p>
               </div>

@@ -176,7 +176,7 @@ export default function ContactPage() {
               <div className="p-4 bg-white rounded shadow-sm h-100 border-top border-3 border-success">
                 <i className="fas fa-envelope fa-2x mb-3 text-success"></i>
                 <h5 className="fw-bold mb-2">Email Us</h5>
-                <p className="text-muted m-0">info@webmail.com</p>
+                <p className="text-muted m-0">support@sweetree.com</p>
               </div>
             </div>
             <div className="col-md-4">

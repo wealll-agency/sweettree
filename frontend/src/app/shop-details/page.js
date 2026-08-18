@@ -475,7 +475,7 @@ function ShopDetailsContent() {
       </div>
 
       {/* Recommended Products */}
-      <div className="container-fluid px-4 px-lg-5 mb-5 animate-fade-in">
+      <div className="mb-5 animate-fade-in">
         <h5 className="fw-bold mb-4 text-uppercase text-start" style={{ fontSize: '16px', letterSpacing: '0.05em', color: '#005B6E' }}>Recommended Products</h5>
         <div className="products-grid recommended-grid">
           {relatedProducts.length > 0 ? relatedProducts.map((prod) => (
@@ -489,7 +489,7 @@ function ShopDetailsContent() {
       </div>
 
       {/* Customer Reviews Section (Always Visible) */}
-      <div className="container-fluid px-4 px-lg-5 mb-5 animate-fade-in text-start">
+      <div className="mb-5 animate-fade-in text-start">
         <h5 className="fw-bold mb-4 text-uppercase" style={{ fontSize: '16px', letterSpacing: '0.05em', color: '#005B6E' }}>Customer Reviews ({reviews.length})</h5>
         <div className="row g-4">
           
@@ -527,7 +527,7 @@ function ShopDetailsContent() {
 
           {/* Write a Review Form */}
           <div className="col-lg-5">
-            <div className="bg-light p-4 rounded-3 border">
+            <div className="bg-light p-4 rounded-0 rounded-lg-3 border-0 border-top border-bottom border-lg mx-n4 mx-lg-0">
               <h5 className="fw-bold mb-3">Write a Review</h5>
               
               {user ? (
