@@ -24,6 +24,7 @@ function ComboListingContent() {
   const [viewType, setViewType] = useState('grid');
   const [sortBy, setSortBy] = useState('Best Selling');
   const { showAlert } = useNotification();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchBanners = async () => {

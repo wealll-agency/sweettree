@@ -55,8 +55,21 @@ export const cleanupAbandonedOrders = async () => {
   }
 };
 
+let cronInterval;
+
 export const initCronJobs = () => {
+  if (cronInterval) return; // Prevent duplicate initialization
+  
   // Run every 15 minutes
-  setInterval(cleanupAbandonedOrders, 15 * 60 * 1000).unref();
+  cronInterval = setInterval(cleanupAbandonedOrders, 15 * 60 * 1000);
+  cronInterval.unref();
   console.log(`\x1b[32m✅ Cron Jobs:\x1b[0m   Initialized background tasks\x1b[0m`);
+};
+
+export const stopCronJobs = () => {
+  if (cronInterval) {
+    clearInterval(cronInterval);
+    cronInterval = null;
+    console.log(`[Cron] Background tasks stopped.`);
+  }
 };

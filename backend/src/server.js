@@ -1,57 +1,19 @@
-import express from 'express'; // Trigger restart
-import 'express-async-errors'; // Catch async route errors
-import dotenv from 'dotenv';
-import cors from 'cors';
-import helmet from 'helmet';
-import cookieParser from 'cookie-parser';
-import compression from 'compression';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import fs from 'fs';
 import https from 'https';
 import mongoose from 'mongoose';
 
 // Config imports
+import config from './config/env.js';
 import connectDB from './config/db.js';
-import errorHandler from './middleware/errorHandler.js';
-import { apiLimiter } from './middleware/rateLimiter.js';
-import mongoSanitize from 'express-mongo-sanitize';
-
-// Route imports
-import authRoutes from './routes/authRoutes.js';
-import productRoutes from './routes/productRoutes.js';
-import orderRoutes from './routes/orderRoutes.js';
-import reportRoutes from './routes/reportRoutes.js';
-import couponRoutes from './routes/couponRoutes.js';
-import reviewRoutes from './routes/reviewRoutes.js';
-import uploadRoutes from './routes/uploadRoutes.js';
-import refundRoutes from './routes/refundRoutes.js';
-import enquiryRoutes from './routes/enquiryRoutes.js';
-import notificationRoutes from './routes/notificationRoutes.js';
-import delhiveryRoutes from './routes/delhivery.routes.js';
-import warehouseRoutes from './routes/warehouse.routes.js';
-import bannerRoutes from './routes/bannerRoutes.js';
-import comboRoutes from './routes/comboRoutes.js';
-import customSectionRoutes from './routes/customSectionRoutes.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-dotenv.config({ path: path.join(__dirname, '../../.env') });
-
-const app = express();
-
-// Connect to MongoDB
-connectDB();
-
-// Initialize Cron Jobs
-import { initCronJobs } from './utils/cronJobs.js';
-initCronJobs();
+import app from './app.js';
+import { initCronJobs, stopCronJobs } from './utils/cronJobs.js';
 
 // Validate critical payment environment variables
-if (process.env.NODE_ENV === 'production') {
-  const requiredKeys = ['CCAVENUE_MERCHANT_ID', 'CCAVENUE_WORKING_KEY', 'CCAVENUE_ACCESS_CODE'];
-  const missingKeys = requiredKeys.filter(key => !process.env[key]);
+if (config.NODE_ENV === 'production') {
+  const missingKeys = Object.entries(config.CCAVENUE)
+    .filter(([_, value]) => !value)
+    .map(([key]) => `CCAVENUE_${key}`);
+    
   if (missingKeys.length > 0) {
     console.error(`\n\x1b[31m\x1b[1m❌ FATAL STARTUP ERROR\x1b[0m`);
     console.error(`\x1b[31m====================================================\x1b[0m`);
@@ -62,152 +24,114 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
-// Middlewares
-app.use(helmet({
-  crossOriginResourcePolicy: false // Allows loading local static upload files in local frontend/admin images
-}));
-app.use(compression());
-const allowedOrigins = [
-  'http://localhost:3000', 
-  'http://localhost:3001', 
-  'http://localhost:7051',
-  'https://sweettreeon.com',
-  'https://www.sweettreeon.com'
-];
-if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(...process.env.FRONTEND_URL.split(',').map(url => url.trim()));
-}
-
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
-}));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-
-// Static Folder for Local Uploads
-app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
-
-// Prevent caching for API routes (fixes live server stale data issues)
-app.use('/api', (req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.setHeader('Surrogate-Control', 'no-store');
-  next();
-});
-
-// Apply global rate limiting to all API routes
-app.use('/api', apiLimiter);
-
-// Sanitize NoSQL injections
-app.use(mongoSanitize());
-
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/coupons', couponRoutes);
-app.use('/api/reviews', reviewRoutes);
-app.use('/api/uploads', uploadRoutes);
-app.use('/api/refunds', refundRoutes);
-app.use('/api/enquiries', enquiryRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/delhivery', delhiveryRoutes);
-app.use('/api/warehouses', warehouseRoutes);
-app.use('/api/banners', bannerRoutes);
-app.use('/api/combos', comboRoutes);
-app.use('/api/custom-sections', customSectionRoutes);
-
-// Root route
-app.get('/', (req, res) => {
-  res.json({ success: true, message: 'Sweettree Enterprise E-commerce API Active' });
-});
-
-// Centralized error handler
-app.use(errorHandler);
-
-const PORT = process.env.PORT || 5000;
 let server;
 
-if (process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH) {
+// Start Server Lifecycle
+const startServer = async () => {
   try {
-    const options = {
-      key: fs.readFileSync(process.env.SSL_KEY_PATH),
-      cert: fs.readFileSync(process.env.SSL_CERT_PATH)
-    };
-    server = https.createServer(options, app).listen(PORT, () => {
-      console.log(`\n\x1b[36m\x1b[1m🚀 SweetTree Enterprise API\x1b[0m`);
-      console.log(`\x1b[36m====================================================\x1b[0m`);
-      console.log(`\x1b[32m✅ HTTPS Server:\x1b[0m Running in \x1b[33m${process.env.NODE_ENV || 'development'}\x1b[0m mode on port \x1b[33m${PORT}\x1b[0m`);
-    });
-  } catch (error) {
-    console.error(`Failed to start HTTPS server: ${error.message}`);
-    console.log("Falling back to HTTP server...");
-    server = app.listen(PORT, () => {
-      console.log(`\n\x1b[36m\x1b[1m🚀 SweetTree Enterprise API\x1b[0m`);
-      console.log(`\x1b[36m====================================================\x1b[0m`);
-      console.log(`\x1b[32m✅ HTTP Server:\x1b[0m  Running in \x1b[33m${process.env.NODE_ENV || 'development'}\x1b[0m mode on port \x1b[33m${PORT}\x1b[0m`);
-    });
-  }
-} else {
-  server = app.listen(PORT, () => {
-    console.log(`\n\x1b[36m\x1b[1m🚀 SweetTree Enterprise API\x1b[0m`);
-    console.log(`\x1b[36m====================================================\x1b[0m`);
-    console.log(`\x1b[32m✅ HTTP Server:\x1b[0m  Running in \x1b[33m${process.env.NODE_ENV || 'development'}\x1b[0m mode on port \x1b[33m${PORT}\x1b[0m`);
-  });
-}
+    // 1. Connect to Database first
+    await connectDB();
 
+    // 2. Start HTTP(S) Server
+    const PORT = config.PORT;
 
-// Graceful Shutdown Handler
-const gracefulShutdown = () => {
-  console.log('Initiating graceful shutdown...');
-  server.close(async () => {
-    console.log('HTTP/HTTPS server closed.');
-    try {
-      await mongoose.connection.close(false);
-      console.log('MongoDB connection closed.');
-      process.exit(0);
-    } catch (err) {
-      console.error('Error closing MongoDB connection:', err);
-      process.exit(1);
+    if (config.SSL_KEY_PATH && config.SSL_CERT_PATH) {
+      try {
+        const options = {
+          key: fs.readFileSync(config.SSL_KEY_PATH),
+          cert: fs.readFileSync(config.SSL_CERT_PATH)
+        };
+        server = https.createServer(options, app).listen(PORT, onListening);
+      } catch (error) {
+        console.error(`Failed to start HTTPS server: ${error.message}`);
+        console.log("Falling back to HTTP server...");
+        server = app.listen(PORT, onListening);
+      }
+    } else {
+      server = app.listen(PORT, onListening);
     }
-  });
-  
-  // Force shutdown if it takes too long (10s)
-  setTimeout(() => {
-    console.error('Could not close connections in time, forcefully shutting down');
+
+    // Attach error handler to handle EADDRINUSE explicitly
+    server.on('error', (error) => {
+      if (error.syscall !== 'listen') throw error;
+
+      if (error.code === 'EADDRINUSE') {
+        console.error(`\n\x1b[31m\x1b[1m❌ FATAL STARTUP ERROR\x1b[0m`);
+        console.error(`\x1b[31m====================================================\x1b[0m`);
+        console.error(`\x1b[31m❌ Port Conflict:\x1b[0m Port ${PORT} is already in use.`);
+        console.error(`\x1b[31m❌ Action:\x1b[0m        Another process is likely running. Shutting down safely.`);
+        console.error(`\x1b[31m====================================================\x1b[0m\n`);
+        process.exit(1);
+      } else {
+        throw error;
+      }
+    });
+
+  } catch (error) {
+    console.error(`[CRITICAL] Server failed to start: ${error.message}`, error);
     process.exit(1);
-  }, 10000);
+  }
 };
 
-// Listen for termination signals (e.g., from Docker, PM2, or Ctrl+C)
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
+const onListening = () => {
+  console.log(`\n\x1b[36m\x1b[1m🚀 SweetTree Enterprise API\x1b[0m`);
+  console.log(`\x1b[36m====================================================\x1b[0m`);
+  console.log(`\x1b[32m✅ HTTP Server:\x1b[0m  Running in \x1b[33m${config.NODE_ENV}\x1b[0m mode on port \x1b[33m${config.PORT}\x1b[0m`);
+  
+  // 3. Initialize Cron Jobs only after successful port binding
+  initCronJobs();
+};
+
+// Graceful Shutdown Handler
+let isShuttingDown = false;
+const gracefulShutdown = (signal) => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  
+  console.log(`\n[Server] Received ${signal}. Initiating graceful shutdown...`);
+  
+  // Stop background jobs
+  stopCronJobs();
+
+  if (server) {
+    server.close(async () => {
+      console.log('[Server] HTTP/HTTPS server closed.');
+      try {
+        if (mongoose.connection.readyState === 1) {
+          await mongoose.connection.close(false);
+          console.log('[Database] MongoDB connection closed.');
+        }
+        process.exit(0);
+      } catch (err) {
+        console.error('[Database] Error closing MongoDB connection:', err);
+        process.exit(1);
+      }
+    });
+    
+    // Force shutdown if connections do not close in time (10s)
+    setTimeout(() => {
+      console.error('[Server] Could not close connections in time, forcefully shutting down');
+      process.exit(1);
+    }, 10000);
+  } else {
+    process.exit(0);
+  }
+};
+
+// Listen for termination signals (Docker, PM2, Ctrl+C)
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 process.on('unhandledRejection', (err) => {
   console.error(`[CRITICAL] Unhandled Rejection: ${err.message}`, err);
-  // In production, unhandled rejections should trigger a clean restart via PM2
-  // to avoid zombie memory states causing 502 Bad Gateway errors.
-  gracefulShutdown();
+  gracefulShutdown('unhandledRejection');
 });
 
 process.on('uncaughtException', (err) => {
   console.error(`[CRITICAL] Uncaught Exception: ${err.message}`, err);
-  // Immediately shut down on synchronous fatal errors so PM2 can revive
+  // Immediately shut down on synchronous fatal errors
   process.exit(1);
 });
 
-// Trigger reload for nodemon configuration updates.
-
-// Reload trigger 2
-
-// Reload trigger 3
-
-// Reload trigger 4
-
-// Reload trigger 5
+// Start the server
+startServer();

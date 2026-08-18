@@ -24,8 +24,13 @@ function StateHydrator() {
     if (cart) {
       try {
         const parsedCart = JSON.parse(cart);
-        // Only keep items that have a valid 24-character hex ID for the product
-        const validCart = parsedCart.filter(item => typeof item.product === 'string' && /^[0-9a-fA-F]{24}$/.test(item.product));
+        // Only keep items that have a valid 24-character hex ID for the product or combo
+        const validCart = parsedCart.filter(item => {
+          if (item.itemType === 'Combo') {
+            return typeof item.combo === 'string' && /^[0-9a-fA-F]{24}$/.test(item.combo);
+          }
+          return typeof item.product === 'string' && /^[0-9a-fA-F]{24}$/.test(item.product);
+        });
         
         if (validCart.length !== parsedCart.length) {
           localStorage.setItem('sweettree_cart', JSON.stringify(validCart));
@@ -39,7 +44,12 @@ function StateHydrator() {
     // Wishlist Hydration
     const wishlist = localStorage.getItem('sweettree_wishlist');
     if (wishlist) {
-      dispatch(hydrateWishlist(JSON.parse(wishlist)));
+      try {
+        dispatch(hydrateWishlist(JSON.parse(wishlist)));
+      } catch (e) {
+        console.error("Failed to parse wishlist", e);
+        localStorage.removeItem('sweettree_wishlist');
+      }
     }
 
     // Session Restoration on Startup
