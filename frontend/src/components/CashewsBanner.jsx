@@ -30,8 +30,9 @@ const CashewsBanner = () => {
 
   const getImageUrl = (url) => {
     if (!url) return '';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:7050';
+    if (url.includes('localhost:')) return url.replace(/http:\/\/localhost:\d+/, baseUrl);
     if (url.startsWith('http') || url.startsWith('/')) return url;
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5000';
     return `${baseUrl}${url}`;
   };
 

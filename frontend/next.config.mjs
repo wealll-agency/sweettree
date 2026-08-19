@@ -8,7 +8,7 @@ const nextConfig = {
   distDir: process.env.BUILD_DIR || '.next',
   compress: true,
   images: {
-    dangerouslyAllowLocalIP: true,
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',

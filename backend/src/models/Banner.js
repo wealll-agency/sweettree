@@ -13,7 +13,7 @@ const bannerSchema = new mongoose.Schema({
   placement: {
     type: String,
     required: true,
-    enum: ['Hero', 'Middle', 'Bottom', 'Promotional']
+    enum: ['Hero', 'Middle', 'Bottom', 'Promotional', 'ComboBox']
   },
   targetLink: {
     type: String,

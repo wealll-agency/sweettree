@@ -4,7 +4,7 @@ const getInitialCart = () => {
   return [];
 };
 
-const calculateTotals = (items, discountPercentage = 0, applicableProducts = [], isCombo = false) => {
+const calculateTotals = (items, discountType = 'percentage', discountPercentage = 0, flatDiscountAmount = 0, applicableProducts = [], isCombo = false, minPurchaseAmount = 0) => {
   let subtotal = 0;
   let discountableSubtotal = 0;
 
@@ -30,10 +30,21 @@ const calculateTotals = (items, discountPercentage = 0, applicableProducts = [],
     }
   });
 
-  const discount = Math.round((discountableSubtotal * discountPercentage) / 100);
+  let discount = 0;
+  if (discountType === 'flat') {
+    discount = Math.min(flatDiscountAmount, discountableSubtotal);
+  } else {
+    discount = Math.round((discountableSubtotal * discountPercentage) / 100);
+  }
+
+  // Critical fix: Nullify discount if subtotal drops below the required minimum
+  if (minPurchaseAmount > 0 && subtotal < minPurchaseAmount) {
+    discount = 0;
+  }
+
   const taxableAmount = subtotal - discount;
   const tax = Math.round(taxableAmount * 0.05); // 5% GST
-  const shippingFee = taxableAmount > 500 || items.length === 0 ? 0 : 40;
+  const shippingFee = taxableAmount >= 1999 || items.length === 0 ? 0 : 80;
   const total = taxableAmount + tax + shippingFee;
 
   return { subtotal, discount, tax, shippingFee, total };
@@ -44,9 +55,12 @@ const cartSlice = createSlice({
   initialState: {
     items: getInitialCart(),
     couponCode: '',
+    discountType: 'percentage',
     discountPercentage: 0,
+    flatDiscountAmount: 0,
     applicableProducts: [],
     isCombo: false,
+    minPurchaseAmount: 0,
     subtotal: 0,
     discount: 0,
     tax: 0,
@@ -93,7 +107,7 @@ const cartSlice = createSlice({
         localStorage.setItem('sweettree_cart', JSON.stringify(state.items));
       }
 
-      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts, state.isCombo);
+      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount);
       Object.assign(state, totals);
     },
     removeFromCart: (state, action) => {
@@ -107,7 +121,7 @@ const cartSlice = createSlice({
         localStorage.setItem('sweettree_cart', JSON.stringify(state.items));
       }
 
-      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts, state.isCombo);
+      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount);
       Object.assign(state, totals);
     },
     updateCartQuantity: (state, action) => {
@@ -124,38 +138,44 @@ const cartSlice = createSlice({
         localStorage.setItem('sweettree_cart', JSON.stringify(state.items));
       }
 
-      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts, state.isCombo);
+      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount);
       Object.assign(state, totals);
     },
     applyCouponCode: (state, action) => {
-      const { code, discountPercentage, applicableProducts, isCombo } = action.payload;
+      const { code, discountType, discountPercentage, flatDiscountAmount, applicableProducts, isCombo, minPurchaseAmount } = action.payload;
       state.couponCode = code;
-      state.discountPercentage = discountPercentage;
+      state.discountType = discountType || 'percentage';
+      state.discountPercentage = discountPercentage || 0;
+      state.flatDiscountAmount = flatDiscountAmount || 0;
       state.applicableProducts = applicableProducts || [];
       state.isCombo = isCombo || false;
+      state.minPurchaseAmount = minPurchaseAmount || 0;
 
-      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts, state.isCombo);
+      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount);
       Object.assign(state, totals);
     },
     clearCart: (state) => {
       state.items = [];
       state.couponCode = '';
+      state.discountType = 'percentage';
       state.discountPercentage = 0;
+      state.flatDiscountAmount = 0;
       state.applicableProducts = [];
       state.isCombo = false;
+      state.minPurchaseAmount = 0;
       if (typeof window !== 'undefined') {
         localStorage.removeItem('sweettree_cart');
       }
-      const totals = calculateTotals([], 0, [], false);
+      const totals = calculateTotals([], 'percentage', 0, 0, [], false, 0);
       Object.assign(state, totals);
     },
     recalculateCart: (state) => {
-      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts, state.isCombo);
+      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount);
       Object.assign(state, totals);
     },
     hydrateCart: (state, action) => {
       state.items = action.payload;
-      const totals = calculateTotals(state.items, state.discountPercentage, state.applicableProducts, state.isCombo);
+      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount);
       Object.assign(state, totals);
     }
   }

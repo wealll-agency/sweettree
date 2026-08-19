@@ -5,48 +5,89 @@ import { Autoplay, Navigation, EffectCoverflow } from 'swiper/modules';
 import Link from 'next/link';
 import Image from 'next/image';
 
+import { useState, useEffect } from 'react';
+import api from '../utils/axiosConfig';
+
 export const NuttyDelightOffers = () => {
+  const [banners, setBanners] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const res = await api.get('/banners');
+        if (res.data.success) {
+          const promoBanners = res.data.banners.filter(b => b.placement === 'Promotional');
+          if (promoBanners.length > 0) {
+            setBanners(promoBanners);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch trending banners:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBanners();
+  }, []);
+
+  const displayBanners = banners.length > 0 ? banners : [
+    { _id: '1', image: '/offer1.jpg', title: 'Payday Sale' },
+    { _id: '2', image: '/offer3.jpg', title: 'Tiny Seeds' },
+    { _id: '3', image: '/offer2.jpg', title: 'Rare Crop' },
+    { _id: '4', image: '/offer1.jpg', title: 'Payday Sale' },
+    { _id: '5', image: '/offer3.jpg', title: 'Tiny Seeds' }
+  ];
+
+  const getImageUrl = (url) => {
+    if (!url) return '';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:7050';
+    if (url.includes('localhost:')) return url.replace(/http:\/\/localhost:\d+/, baseUrl);
+    if (url.startsWith('http') || url.startsWith('/')) return url;
+    return `${baseUrl}${url}`;
+  };
+
   return (
     <section className="section-wrapper bg-white pb-3 pb-md-5 relative-nav nutty-delight-section">
       <div className="container-fluid px-4 px-lg-5 text-center offers-container-override">
         <h2 className="main-title offers-title">Trending Now</h2>
-        <Swiper
-          modules={[Autoplay, Navigation]}
-          grabCursor={true}
-          centeredSlides={true}
-          loop={false}
-          navigation={true}
-          autoplay={{ delay: 3000, disableOnInteraction: false }}
-          breakpoints={{
-            0: {
-              slidesPerView: 1.2,
-              spaceBetween: 15,
-            },
-            768: {
-              slidesPerView: 2,
-              spaceBetween: 20,
-            },
-            1024: {
-              slidesPerView: 3,
-              spaceBetween: 0,
-            },
-          }}
-          className="offers-slider mx-auto pb-4 pb-md-5 px-4 w-100"
-        >
-          {[
-            { img: '/offer1.jpg', alt: 'Payday Sale' },
-            { img: '/offer3.jpg', alt: 'Tiny Seeds' },
-            { img: '/offer2.jpg', alt: 'Rare Crop' },
-            { img: '/offer1.jpg', alt: 'Payday Sale' },
-            { img: '/offer3.jpg', alt: 'Tiny Seeds' },
-          ].map((slide, idx) => (
-            <SwiperSlide key={idx}>
-              <div className="offer-card mx-auto" style={{ borderRadius: '20px', overflow: 'hidden' }}>
-                <Image src={slide.img} alt={slide.alt} width={400} height={400} style={{ width: '100%', height: 'auto', display: 'block' }} />
-              </div>
-            </SwiperSlide>
-          ))}
-        </Swiper>
+        
+        {loading ? (
+          <div className="d-flex justify-content-center gap-3 py-4">
+            <div className="placeholder-glow" style={{ width: '400px', height: '400px', borderRadius: '20px', backgroundColor: '#eee' }}></div>
+            <div className="placeholder-glow d-none d-md-block" style={{ width: '400px', height: '400px', borderRadius: '20px', backgroundColor: '#eee' }}></div>
+            <div className="placeholder-glow d-none d-lg-block" style={{ width: '400px', height: '400px', borderRadius: '20px', backgroundColor: '#eee' }}></div>
+          </div>
+        ) : (
+          <Swiper
+            modules={[Autoplay, Navigation]}
+            grabCursor={true}
+            centeredSlides={true}
+            loop={displayBanners.length > 3}
+            navigation={true}
+            autoplay={{ delay: 3000, disableOnInteraction: false }}
+            breakpoints={{
+              0: { slidesPerView: 1.2, spaceBetween: 15 },
+              768: { slidesPerView: 2, spaceBetween: 20 },
+              1024: { slidesPerView: 3, spaceBetween: 0 },
+            }}
+            className="offers-slider mx-auto pb-4 pb-md-5 px-4 w-100"
+          >
+            {displayBanners.map((banner, idx) => (
+              <SwiperSlide key={banner._id || idx}>
+                <div className="offer-card mx-auto" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+                  {banner.targetLink ? (
+                    <Link href={banner.targetLink} className="d-block w-100 h-100">
+                      <Image src={getImageUrl(banner.image)} alt={banner.title || 'Trending Banner'} width={400} height={400} style={{ width: '100%', height: 'auto', display: 'block', aspectRatio: '1/1', objectFit: 'cover' }} />
+                    </Link>
+                  ) : (
+                    <Image src={getImageUrl(banner.image)} alt={banner.title || 'Trending Banner'} width={400} height={400} style={{ width: '100%', height: 'auto', display: 'block', aspectRatio: '1/1', objectFit: 'cover' }} />
+                  )}
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        )}
       </div>
 
       <style jsx global>{`

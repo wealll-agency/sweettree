@@ -5,7 +5,7 @@ import { logActivity } from '../middleware/logger.js';
 // @route   POST /api/coupons
 // @access  Private/Admin/Manager
 export const createCoupon = async (req, res, next) => {
-  const { code, discountPercentage, expiryDate, usageLimit, applicableProducts, isCombo } = req.body;
+  const { code, discountType, discountPercentage, flatDiscountAmount, expiryDate, usageLimit, applicableProducts, isCombo, minPurchaseAmount } = req.body;
 
   try {
     const codeUpper = code.toUpperCase().trim();
@@ -17,10 +17,13 @@ export const createCoupon = async (req, res, next) => {
 
     const coupon = await Coupon.create({
       code: codeUpper,
-      discountPercentage,
+      discountType: discountType || 'percentage',
+      discountPercentage: discountPercentage || 0,
+      flatDiscountAmount: flatDiscountAmount || 0,
       expiryDate: new Date(expiryDate),
       usageLimit: usageLimit || 100,
       isCombo: isCombo || false,
+      minPurchaseAmount: minPurchaseAmount || 0,
       applicableProducts: applicableProducts || []
     });
 
@@ -36,7 +39,7 @@ export const createCoupon = async (req, res, next) => {
 // @route   POST /api/coupons/apply
 // @access  Private
 export const applyCoupon = async (req, res, next) => {
-  const { code } = req.body;
+  const { code, cartSubtotal } = req.body;
 
   try {
     if (!code) {
@@ -53,12 +56,20 @@ export const applyCoupon = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Coupon is expired, inactive, or has reached its usage limit' });
     }
 
+    if (cartSubtotal !== undefined && coupon.minPurchaseAmount > 0 && cartSubtotal < coupon.minPurchaseAmount) {
+      const difference = coupon.minPurchaseAmount - cartSubtotal;
+      return res.status(400).json({ success: false, message: `Add ₹${difference} more to apply this coupon` });
+    }
+
     res.json({
       success: true,
       message: 'Coupon applied successfully',
-      discountPercentage: coupon.discountPercentage,
+      discountType: coupon.discountType || 'percentage',
+      discountPercentage: coupon.discountPercentage || 0,
+      flatDiscountAmount: coupon.flatDiscountAmount || 0,
       code: coupon.code,
       isCombo: coupon.isCombo,
+      minPurchaseAmount: coupon.minPurchaseAmount,
       applicableProducts: coupon.applicableProducts
     });
   } catch (error) {

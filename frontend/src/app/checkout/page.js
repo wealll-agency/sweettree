@@ -18,7 +18,7 @@ export default function CheckoutPage() {
   const router = useRouter();
 
   const { user } = useSelector((state) => state.auth);
-  const { items, couponCode, subtotal, discount, tax, shippingFee, total, isCombo, applicableProducts, discountPercentage } = useSelector((state) => state.cart);
+  const { items, couponCode, subtotal, discount, tax, shippingFee, total, isCombo, applicableProducts, discountPercentage, minPurchaseAmount } = useSelector((state) => state.cart);
   const { loading, error } = useSelector((state) => state.orders);
   const { showAlert } = useNotification();
 
@@ -34,6 +34,7 @@ export default function CheckoutPage() {
   const [couponInput, setCouponInput] = useState('');
   const [couponError, setCouponError] = useState('');
   const [couponSuccess, setCouponSuccess] = useState('');
+  const [availableCoupons, setAvailableCoupons] = useState([]);
 
   // New Address Form fields
   const [addrName, setAddrName] = useState('');
@@ -77,6 +78,19 @@ export default function CheckoutPage() {
         setPaymentError(params.get('error'));
       }
     }
+
+    // Fetch available coupons
+    const fetchCoupons = async () => {
+      try {
+        const res = await api.get('/coupons');
+        if (res.data.success) {
+          setAvailableCoupons(res.data.coupons.filter(c => c.isActive && new Date(c.expiryDate) > new Date()));
+        }
+      } catch (err) {
+        console.error('Failed to load coupons', err);
+      }
+    };
+    fetchCoupons();
 
     // Fetch recommended products
     const fetchRecommended = async () => {
@@ -271,18 +285,22 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleApplyCoupon = async (e) => {
-    e.preventDefault();
+  const handleApplyCoupon = async (e, codeToApply = null) => {
+    if (e) e.preventDefault();
+    const code = codeToApply || couponInput;
     setCouponError('');
     setCouponSuccess('');
     
-    if (!couponInput.trim()) {
+    if (!code || !code.trim()) {
       setCouponError('Please enter a coupon code.');
       return;
     }
 
     try {
-      const response = await api.post(`/coupons/apply`, { code: couponInput.trim() });
+      const response = await api.post(`/coupons/apply`, { 
+        code: code.trim(),
+        cartSubtotal: subtotal
+      });
       
       const applicableProducts = response.data.applicableProducts || [];
 
@@ -297,12 +315,26 @@ export default function CheckoutPage() {
 
       dispatch(applyCouponCode({
         code: response.data.code,
+        discountType: response.data.discountType,
         discountPercentage: response.data.discountPercentage,
+        flatDiscountAmount: response.data.flatDiscountAmount,
         applicableProducts: applicableProducts,
-        isCombo: response.data.isCombo
+        isCombo: response.data.isCombo,
+        minPurchaseAmount: response.data.minPurchaseAmount
       }));
 
-      setCouponSuccess(`Coupon "${response.data.code}" applied! ${response.data.discountPercentage}% Discount.`);
+      const displayDiscount = response.data.discountType === 'flat' ? `₹${response.data.flatDiscountAmount}` : `${response.data.discountPercentage}%`;
+      setCouponSuccess(`Coupon "${response.data.code}" applied! ${displayDiscount} Discount.`);
+      setCouponInput(''); // Clear input if applied from modal
+      
+      // Close modal if open
+      if (typeof window !== 'undefined' && window.bootstrap) {
+        const modalEl = document.getElementById('couponsModal');
+        if (modalEl) {
+          const bsModal = window.bootstrap.Modal.getInstance(modalEl);
+          if (bsModal) bsModal.hide();
+        }
+      }
     } catch (error) {
       setCouponError(error.response?.data?.message || 'Failed to apply coupon');
       dispatch(applyCouponCode({ code: '', discountPercentage: 0, applicableProducts: [], isCombo: false }));
@@ -573,7 +605,17 @@ export default function CheckoutPage() {
 
             {/* Coupon Entry */}
             <div className="mt-3 mb-4 border-top pt-3">
-              <h6 className="fw-bold fs-7 mb-2 text-dark">Have a coupon?</h6>
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <h6 className="fw-bold fs-7 mb-0 text-dark">Have a coupon?</h6>
+                <button 
+                  type="button" 
+                  className="btn btn-link text-brand p-0 text-decoration-none fs-8 fw-semibold"
+                  data-bs-toggle="modal"
+                  data-bs-target="#couponsModal"
+                >
+                  View all coupons
+                </button>
+              </div>
               <form onSubmit={handleApplyCoupon} className="d-flex gap-2">
                 <input
                   type="text"
@@ -584,7 +626,9 @@ export default function CheckoutPage() {
                 <button type="submit" className="btn btn-sm btn-brand px-3">Apply</button>
               </form>
               {couponError && <div className="text-danger fs-8 mt-1">{couponError}</div>}
-              {couponSuccess && <div className="text-success fs-8 mt-1">{couponSuccess}</div>}
+              {couponSuccess && (!minPurchaseAmount || subtotal >= minPurchaseAmount) && (
+                <div className="text-success fs-8 mt-1">{couponSuccess}</div>
+              )}
               {couponCode && (
                 <div className="d-flex justify-content-between align-items-center mt-3 bg-light p-2 rounded border">
                   <span className="fw-semibold text-success fs-7">Code: {couponCode}</span>
@@ -596,10 +640,16 @@ export default function CheckoutPage() {
                   }}>Remove</button>
                 </div>
               )}
-              {isCombo && discount === 0 && couponCode && (
+              {isCombo && discount === 0 && couponCode && (!minPurchaseAmount || subtotal >= minPurchaseAmount) && (
                 <div className="alert alert-warning py-2 px-3 mt-3 fs-8 mb-0">
                   <i className="fas fa-exclamation-circle me-1"></i>
                   <strong>Combo Incomplete!</strong> You must add all required combo products to your cart to activate the {discountPercentage}% discount.
+                </div>
+              )}
+              {couponCode && minPurchaseAmount > 0 && subtotal < minPurchaseAmount && (
+                <div className="alert alert-warning py-2 px-3 mt-3 fs-8 mb-0">
+                  <i className="fas fa-exclamation-triangle me-1"></i>
+                  <strong>Minimum Purchase Not Met!</strong> Add ₹{minPurchaseAmount - subtotal} more to unlock this coupon discount.
                 </div>
               )}
             </div>
@@ -713,6 +763,76 @@ export default function CheckoutPage() {
                 {loading ? 'Processing...' : 'PAY NOW'}
              </button>
            </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Coupons Modal (Rendered via Portal to fix stacking context issues) */}
+      {isMounted && typeof document !== 'undefined' && createPortal(
+        <div className="modal fade" id="couponsModal" tabIndex="-1" aria-labelledby="couponsModalLabel" aria-hidden="true">
+          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div className="modal-content border-0 shadow-lg">
+              <div className="modal-header border-bottom bg-light">
+                <h5 className="modal-title fw-bold fs-5 text-dark" id="couponsModalLabel">Available Coupons</h5>
+                <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div className="modal-body p-4 bg-light">
+                {availableCoupons.length === 0 ? (
+                  <div className="text-center text-muted py-5">
+                    <i className="bi bi-ticket-perforated fs-1 mb-3 text-secondary opacity-50"></i>
+                    <p>No coupons available right now.</p>
+                  </div>
+                ) : (
+                  <div className="d-flex flex-column gap-3">
+                    {availableCoupons.map(coupon => {
+                      const gap = (coupon.minPurchaseAmount || 0) - subtotal;
+                      const isApplicable = gap <= 0;
+
+                      return (
+                        <div key={coupon._id} className={`card border-0 shadow-sm ${isApplicable ? 'border-success border' : 'opacity-75'}`}>
+                          <div className="card-body p-3">
+                            <div className="d-flex justify-content-between align-items-start mb-2">
+                              <div className="border border-success border-dashed px-3 py-1 rounded bg-success bg-opacity-10 text-success fw-bold fs-6" style={{ letterSpacing: '1px', borderStyle: 'dashed', borderWidth: '2px' }}>
+                                {coupon.code}
+                              </div>
+                              {isApplicable ? (
+                                <button 
+                                  type="button" 
+                                  className="btn btn-sm btn-success px-4 fw-bold shadow-sm"
+                                  onClick={() => handleApplyCoupon(null, coupon.code)}
+                                >
+                                  Apply
+                                </button>
+                              ) : (
+                                <button 
+                                  type="button" 
+                                  className="btn btn-sm btn-outline-secondary px-4 fw-bold"
+                                  onClick={() => showAlert(`Add ₹${gap.toFixed(2)} more to unlock this offer!`, 'warning')}
+                                >
+                                  Apply
+                                </button>
+                              )}
+                            </div>
+                            <h5 className="fw-bold text-dark mb-1">
+                              {coupon.discountType === 'flat' ? `₹${coupon.flatDiscountAmount} OFF` : `${coupon.discountPercentage}% OFF`}
+                            </h5>
+                            {coupon.minPurchaseAmount > 0 && (
+                              <p className="text-muted fs-7 mb-0">On minimum purchase of ₹{coupon.minPurchaseAmount}</p>
+                            )}
+                            {!isApplicable && gap > 0 && (
+                              <div className="mt-3 text-danger fs-7 fw-semibold bg-danger bg-opacity-10 px-3 py-2 rounded d-inline-block border border-danger border-opacity-25 w-100 text-center">
+                                <i className="fas fa-lock me-1"></i> Add ₹{gap.toFixed(2)} more to unlock
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>,
         document.body
       )}

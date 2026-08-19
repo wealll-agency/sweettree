@@ -20,16 +20,18 @@ export default function MediaManagerPage() {
       recWidth: 1920, 
       recHeight: 750,
       previewClass: 'ratio-hero',
+      previewMaxWidth: '100%',
       allowMultiple: true 
     },
     { 
       id: 'Promotional', 
       title: 'Trending Now Banner', 
-      subtitle: 'Recommended: 1400 × 280 px | Aspect Ratio: 5:1 | Format: WebP / JPG / PNG', 
-      expectedRatio: 5/1, 
-      recWidth: 1400, 
-      recHeight: 280,
-      previewClass: 'ratio-trending',
+      subtitle: 'Recommended: 600 × 600 px | Aspect Ratio: 1:1 | Format: WebP / JPG / PNG', 
+      expectedRatio: 1, 
+      recWidth: 600, 
+      recHeight: 600,
+      previewClass: 'ratio-1x1',
+      previewMaxWidth: '300px',
       allowMultiple: true 
     },
     { 
@@ -40,6 +42,7 @@ export default function MediaManagerPage() {
       recWidth: 1400, 
       recHeight: 280,
       previewClass: 'ratio-trending',
+      previewMaxWidth: '100%',
       allowMultiple: true 
     },
     { 
@@ -50,6 +53,7 @@ export default function MediaManagerPage() {
       recWidth: 1400, 
       recHeight: 400,
       previewClass: 'ratio-promo',
+      previewMaxWidth: '100%',
       allowMultiple: true 
     },
     { 
@@ -60,6 +64,7 @@ export default function MediaManagerPage() {
       recWidth: 382, 
       recHeight: 286,
       previewClass: 'ratio-4x3',
+      previewMaxWidth: '300px',
       allowMultiple: true 
     }
   ];
@@ -208,8 +213,9 @@ export default function MediaManagerPage() {
 
   const getImageUrl = (url) => {
     if (!url) return '';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:7050';
+    if (url.includes('localhost:')) return url.replace(/http:\/\/localhost:\d+/, baseUrl);
     if (url.startsWith('http') || url.startsWith('/')) return url;
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5000';
     return `${baseUrl}${url}`;
   };
 
@@ -285,7 +291,7 @@ export default function MediaManagerPage() {
                         <label className="fw-semibold mb-1" style={{ fontSize: '12px', color: '#6B7280' }}>LIVE BANNER PREVIEW</label>
                         <div 
                           className={`banner-img-container ${section.previewClass} rounded shadow-sm`} 
-                          style={{ border: '2px dashed #E5E7EB', backgroundColor: '#F9FAFB' }}
+                          style={{ border: '2px dashed #E5E7EB', backgroundColor: '#F9FAFB', maxWidth: section.previewMaxWidth || '100%' }}
                         >
                           {banner.image ? (
                             <img src={getImageUrl(banner.image)} alt="Preview" />

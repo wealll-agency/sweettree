@@ -62,9 +62,12 @@ export default function CartPage() {
 
       dispatch(applyCouponCode({
         code: response.data.code,
+        discountType: response.data.discountType,
         discountPercentage: response.data.discountPercentage,
+        flatDiscountAmount: response.data.flatDiscountAmount,
         applicableProducts: applicableProducts,
-        isCombo: response.data.isCombo
+        isCombo: response.data.isCombo,
+        minPurchaseAmount: response.data.minPurchaseAmount
       }));
 
       setCouponSuccess(`Coupon "${response.data.code}" applied! ${response.data.discountPercentage}% Discount.`);

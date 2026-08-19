@@ -3,6 +3,7 @@ module.exports = {
     {
       name: 'sweettree-backend',
       script: './backend/src/server.js',
+      cwd: '/var/www/sweettree/current',
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,
@@ -20,7 +21,7 @@ module.exports = {
       name: 'sweettree-frontend',
       script: 'node_modules/next/dist/bin/next',
       args: 'start -p 7051',
-      cwd: './frontend',
+      cwd: '/var/www/sweettree/current/frontend',
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,
@@ -30,8 +31,8 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 7051
       },
-      error_file: './logs/frontend-err.log',
-      out_file: './logs/frontend-out.log',
+      error_file: '../logs/frontend-err.log',
+      out_file: '../logs/frontend-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm Z'
     }
   ]

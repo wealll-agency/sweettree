@@ -107,7 +107,11 @@ const calculateOrderTotals = async (items, couponCode) => {
   if (couponCode) {
     const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
     if (coupon && coupon.isValid()) {
-      discount = Math.round((subtotal * coupon.discountPercentage) / 100);
+      if (coupon.discountType === 'flat') {
+        discount = Math.min(coupon.flatDiscountAmount || 0, subtotal);
+      } else {
+        discount = Math.round((subtotal * (coupon.discountPercentage || 0)) / 100);
+      }
     }
   }
 

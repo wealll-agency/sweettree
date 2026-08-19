@@ -4,13 +4,26 @@ import { useSelector, useDispatch } from 'react-redux';
 import { addToCart, removeFromCart } from '../store/cartSlice';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart, Trash2 } from 'lucide-react';
+import { ShoppingCart, Trash2, Receipt, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 
 const CartOffcanvas = () => {
   const dispatch = useDispatch();
   const router = useRouter();
-  const { items, subtotal, discount, total } = useSelector((state) => state.cart);
+  const { items, subtotal, discount, tax, shippingFee, total } = useSelector((state) => state.cart);
+  const dbProducts = useSelector((state) => state.products?.items || []);
+
+  let calculatedTotalMrp = 0;
+  items.forEach(item => {
+    const dbProduct = dbProducts.find(p => p._id === item.product);
+    const mrp = dbProduct ? dbProduct.price : item.price;
+    calculatedTotalMrp += (mrp * item.quantity);
+  });
+  if (calculatedTotalMrp < subtotal) calculatedTotalMrp = subtotal;
+
+  const mrpDiscount = calculatedTotalMrp - subtotal;
+  const totalSavings = mrpDiscount + discount;
+  const savingsPercent = calculatedTotalMrp > 0 ? Math.round((totalSavings / calculatedTotalMrp) * 100) : 0;
 
   const handleIncrement = (product, size) => {
     dispatch(addToCart({ product, quantity: 1, size }));
@@ -29,10 +42,21 @@ const CartOffcanvas = () => {
     dispatch(removeFromCart({ product: productId, size }));
   };
 
-  // Sweettree free shipping threshold is usually 1000 for this layout
-  const freeShippingThreshold = 1000;
-  const remainingForFreeShipping = freeShippingThreshold - total;
-  const progressPercent = Math.min((total / freeShippingThreshold) * 100, 100);
+  const handleProductClick = (productId) => {
+    if (typeof window !== 'undefined' && window.bootstrap) {
+      const offcanvasEl = document.getElementById('cartOffcanvas');
+      if (offcanvasEl) {
+        const bsOffcanvas = window.bootstrap.Offcanvas.getInstance(offcanvasEl);
+        if (bsOffcanvas) bsOffcanvas.hide();
+      }
+    }
+    router.push(`/shop-details?id=${productId}`);
+  };
+
+  // Sweettree free shipping threshold is 1999
+  const freeShippingThreshold = 1999;
+  const remainingForFreeShipping = freeShippingThreshold - subtotal;
+  const progressPercent = Math.min((subtotal / freeShippingThreshold) * 100, 100);
 
   // Calculate MRP (assuming item.price is the discounted price, we'll try to estimate or show subtotal)
   // Since we don't store MRP in cart, we'll use subtotal + discount as a rough MRP
@@ -82,10 +106,24 @@ const CartOffcanvas = () => {
                   <button onClick={() => handleRemove(item.product, item.size)} className="position-absolute top-0 end-0 bg-transparent border-0 text-muted p-0" style={{ right: '-5px' }}>
                     <Trash2 size={16} />
                   </button>
-                  <Image src={item.image?.startsWith('http') || item.image?.startsWith('/') ? item.image : (item.image ? `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'https://www.sweettreeon.com'}${item.image}` : '/placeholder.png')} alt={item.name} width={60} height={60} className="rounded" style={{ objectFit: 'cover' }} />
+                  <Image 
+                    src={item.image?.startsWith('http') || item.image?.startsWith('/') ? item.image : (item.image ? `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'https://www.sweettreeon.com'}${item.image}` : '/placeholder.png')} 
+                    alt={item.name} 
+                    width={60} 
+                    height={60} 
+                    className="rounded" 
+                    style={{ objectFit: 'cover', cursor: 'pointer' }} 
+                    onClick={() => handleProductClick(item.product)}
+                  />
                   <div className="ms-3 flex-grow-1">
                     <div className="text-primary fw-bold" style={{ fontSize: '10px' }}>SWEETTREE</div>
-                    <h6 className="fw-bold m-0 mb-2" style={{ fontSize: '12px', lineHeight: '1.4' }}>{item.name}</h6>
+                    <h6 
+                      className="fw-bold m-0 mb-2 text-dark" 
+                      style={{ fontSize: '12px', lineHeight: '1.4', cursor: 'pointer' }}
+                      onClick={() => handleProductClick(item.product)}
+                    >
+                      {item.name}
+                    </h6>
                     
                     <div className="d-flex justify-content-between align-items-center mt-3">
                       <div className="input-group border rounded" style={{ width: '80px', height: '30px' }}>
@@ -104,31 +142,80 @@ const CartOffcanvas = () => {
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer - Sweettree Theme with Farmley Logic */}
         {items.length > 0 && (
-          <div className="bg-white border-top p-3 shadow-sm">
-            <div className="d-flex justify-content-between mb-2 fs-7 text-muted">
-              <span>MRP:</span>
-              <span>₹{totalMrp.toFixed(2)}</span>
+          <div className="bg-white border-top shadow-sm mt-auto">
+            
+            <div className="p-3 pb-2" data-bs-toggle="collapse" data-bs-target="#cartBreakdown" aria-expanded="true" style={{ cursor: 'pointer' }}>
+              <div className="d-flex justify-content-between align-items-center">
+                <h6 className="mb-0 fw-bold d-flex align-items-center gap-2 text-dark fs-6">
+                  <Receipt size={18} className="text-danger" /> Estimated Total
+                </h6>
+                <div className="text-end d-flex align-items-center">
+                  {calculatedTotalMrp > total && (
+                    <span className="text-muted text-decoration-line-through me-2 fs-7">₹{calculatedTotalMrp.toFixed(2)}</span>
+                  )}
+                  <span className="fw-bold fs-5 text-dark">₹{total.toFixed(2)}</span>
+                  <ChevronDown size={18} className="ms-2 text-muted" />
+                </div>
+              </div>
+              {totalSavings > 0 && (
+                <div className="text-end text-success fw-bold fs-7 mt-1 me-4">
+                  You saved ₹{totalSavings.toFixed(2)}!
+                </div>
+              )}
             </div>
-            <div className="d-flex justify-content-between mb-3 fs-7 text-success">
-              <span>Offer Discount:</span>
-              <span>- ₹{discount.toFixed(2)}</span>
+
+            <div id="cartBreakdown" className="collapse show px-3">
+              <div className="py-2 border-top border-bottom border-light">
+                <div className="d-flex justify-content-between mb-2 fs-7 text-muted">
+                  <span>Total MRP:</span>
+                  <span>₹{calculatedTotalMrp.toFixed(2)}</span>
+                </div>
+                <div className="d-flex justify-content-between mb-2 fs-7 text-muted">
+                  <span>Shipping:</span>
+                  <span>{shippingFee === 0 ? <span className="text-success fw-bold">FREE</span> : `+ ₹${shippingFee.toFixed(2)}`}</span>
+                </div>
+                {mrpDiscount > 0 && (
+                  <div className="d-flex justify-content-between mb-2 fs-7 text-success">
+                    <span>Discount on MRP:</span>
+                    <span>- ₹{mrpDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+                {discount > 0 && (
+                  <div className="d-flex justify-content-between mb-2 fs-7 text-success">
+                    <span>Coupon Discount:</span>
+                    <span>- ₹{discount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="d-flex justify-content-between mb-2 fs-7 text-muted">
+                  <span>GST (5%):</span>
+                  <span>+ ₹{tax.toFixed(2)}</span>
+                </div>
+                <div className="d-flex justify-content-between mt-2 mb-2 fw-bold fs-6 text-dark">
+                  <span>Grand Total:</span>
+                  <span>₹{total.toFixed(2)}</span>
+                </div>
+              </div>
             </div>
-            <div className="d-flex justify-content-between mb-3 fw-bold fs-5 text-dark">
-              <span>Sub-Total:</span>
-              <span>₹{total.toFixed(2)}</span>
+
+            <div className="p-3 pt-2">
+              {totalSavings > 0 && (
+                <div className="text-center py-1 fw-bold mb-3 text-success" style={{ fontSize: '12px', background: '#f8fff9', border: '1px solid #d1e7dd', borderRadius: '4px' }}>
+                  You Saved ₹{totalSavings.toFixed(2)} ({savingsPercent}%) so far!
+                </div>
+              )}
+              <button className="btn btn-dark w-100 fw-bold py-2" data-bs-dismiss="offcanvas" onClick={() => {
+                const offcanvasEl = document.getElementById('cartOffcanvas');
+                if (offcanvasEl) {
+                  const bsOffcanvas = window.bootstrap.Offcanvas.getInstance(offcanvasEl);
+                  if (bsOffcanvas) bsOffcanvas.hide();
+                }
+                router.push('/checkout');
+              }}>
+                Place Order Now
+              </button>
             </div>
-            <button className="btn btn-dark w-100 fw-bold py-2" data-bs-dismiss="offcanvas" onClick={() => {
-              const offcanvasEl = document.getElementById('cartOffcanvas');
-              if (offcanvasEl) {
-                const bsOffcanvas = window.bootstrap.Offcanvas.getInstance(offcanvasEl);
-                if (bsOffcanvas) bsOffcanvas.hide();
-              }
-              router.push('/checkout');
-            }}>
-              Place Order Now
-            </button>
           </div>
         )}
       </div>

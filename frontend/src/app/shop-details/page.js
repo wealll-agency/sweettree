@@ -242,13 +242,11 @@ function ShopDetailsContent() {
   const images = realProduct.images && realProduct.images.length > 0 ? realProduct.images : ['/top_product1.png'];
 
   const getImageUrl = (url) => {
-    if (!url) return '/top_product1.png';
-    if (url.startsWith('http')) return url;
-    if (url.startsWith('/uploads/')) {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'https://www.sweettreeon.com';
-      return `${baseUrl}${url}`;
-    }
-    return url.replace('/assets/images/', '/');
+    if (!url) return '';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:7050';
+    if (url.includes('localhost:')) return url.replace(/http:\/\/localhost:\d+/, baseUrl);
+    if (url.startsWith('http') || url.startsWith('/')) return url;
+    return `${baseUrl}${url}`;
   };
 
   return (
