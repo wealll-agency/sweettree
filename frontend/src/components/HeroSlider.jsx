@@ -81,7 +81,7 @@ const HeroSlider = () => {
             modules={[Autoplay, Pagination]}
             spaceBetween={0}
             slidesPerView={1}
-            loop={true}
+            loop={displayDesktopBanners.length > 1}
             autoplay={{ delay: 5000, disableOnInteraction: false }}
             pagination={{ clickable: true }}
             autoHeight={true}
@@ -121,7 +121,7 @@ const HeroSlider = () => {
             modules={[Autoplay, Pagination]}
             spaceBetween={0}
             slidesPerView={1}
-            loop={true}
+            loop={displayMobileBanners.length > 1}
             autoplay={{ delay: 5000, disableOnInteraction: false }}
             pagination={{ clickable: true }}
             autoHeight={true}

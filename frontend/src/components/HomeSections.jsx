@@ -14,7 +14,7 @@ export const NuttyDelightOffers = () => {
           modules={[Autoplay, Navigation]}
           grabCursor={true}
           centeredSlides={true}
-          loop={true}
+          loop={false}
           navigation={true}
           autoplay={{ delay: 3000, disableOnInteraction: false }}
           breakpoints={{

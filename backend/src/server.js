@@ -129,8 +129,8 @@ process.on('unhandledRejection', (err) => {
 
 process.on('uncaughtException', (err) => {
   console.error(`[CRITICAL] Uncaught Exception: ${err.message}`, err);
-  // Immediately shut down on synchronous fatal errors
-  process.exit(1);
+  // Trigger graceful shutdown on fatal errors to allow in-flight requests to complete
+  gracefulShutdown('uncaughtException');
 });
 
 // Start the server
