@@ -154,7 +154,7 @@ function ShopContent() {
 
       {/* Shop Banner */}
       <section className="shop-banner">
-        <div className="container-fluid px-4 px-lg-5">
+        <div className="container-fluid px-1 px-md-4 px-lg-5">
           <div className="shop_banner_image">
             {promotionalBanners.length > 0 ? (
               promotionalBanners.map(banner => (
@@ -177,7 +177,7 @@ function ShopContent() {
       </section>
 
       {/* Breadcrumb and Description */}
-      <div className="container-fluid px-4 px-lg-5 py-3">
+      <div className="container-fluid px-1 px-md-4 px-lg-5 py-3">
         <nav aria-label="breadcrumb">
           <ol className="breadcrumb mb-2" style={{ fontSize: '13px' }}>
             <li className="breadcrumb-item"><Link href="/" className="text-muted">Home</Link></li>
@@ -189,7 +189,7 @@ function ShopContent() {
         </p>
       </div>
 
-      <div className="container-fluid px-4 px-lg-5 pb-5">
+      <div className="container-fluid px-1 px-md-4 px-lg-5 pb-5">
         <div className="row">
           {/* Sidebar Filters */}
           <div className="col-lg-3 d-none d-lg-block">

@@ -211,7 +211,7 @@ const ProductCard = ({ product }) => {
                 className="product-card__cart"
                 style={{ flex: 1, background: '#f1f5f9', color: '#64748b', textDecoration: 'none', border: '1.5px solid #e2e8f0', boxShadow: 'none' }}
               >
-                Notify Me
+                Notify <span className="d-none d-sm-inline">Me</span>
               </Link>
             ) : (
               <button 
@@ -220,7 +220,7 @@ const ProductCard = ({ product }) => {
                 style={{ flex: 1 }}
                 aria-label="Add product to cart"
               >
-                <ShoppingCart size={18} /> Add To Cart
+                <ShoppingCart size={18} /> Add <span className="d-none d-sm-inline">To Cart</span>
               </button>
             )}
             <button

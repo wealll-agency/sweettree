@@ -11,11 +11,11 @@ const ProductCarouselSection = ({ title, products }) => {
   return (
     <>
       <section className="section-wrapper animated-gradient-bg pb-5 relative-nav">
-        <div className="container-fluid px-4 px-lg-5 text-center">
+        <div className="container-fluid px-1 px-md-4 px-lg-5 text-center">
           <h2 className="main-title">{title}</h2>
           <Swiper
             modules={[Autoplay, Navigation]}
-            spaceBetween={10}
+            spaceBetween={8}
             navigation={true}
             loop={products.length >= 4}
             autoplay={{ delay: 2500, disableOnInteraction: false }}
@@ -45,6 +45,12 @@ const ProductCarouselSection = ({ title, products }) => {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
+        }
+        .product-slider.swiper {
+          padding-top: 15px !important;
+          padding-bottom: 25px !important;
+          margin-top: -15px !important;
+          margin-bottom: -15px !important;
         }
       `}</style>
     </>
