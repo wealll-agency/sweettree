@@ -116,7 +116,7 @@ export default function CheckoutPage() {
   // Restore Checkout State after login/registration
   useEffect(() => {
     if (user) {
-      const pendingCheckoutStr = sessionStorage.getItem('pendingCheckout');
+      const pendingCheckoutStr = localStorage.getItem('pendingCheckout');
       if (pendingCheckoutStr) {
         try {
           const state = JSON.parse(pendingCheckoutStr);
@@ -143,7 +143,7 @@ export default function CheckoutPage() {
               setShowNewAddressForm(false);
             }).catch(err => console.error("Failed to restore checkout address", err));
           }
-          sessionStorage.removeItem('pendingCheckout');
+          localStorage.removeItem('pendingCheckout');
         } catch (e) {
           console.error(e);
         }
@@ -206,7 +206,7 @@ export default function CheckoutPage() {
       const checkoutState = {
         addrName, addrPhone, pincode, locality, address, city, stateName, landmark, altPhone, addressType, paymentMode
       };
-      sessionStorage.setItem('pendingCheckout', JSON.stringify(checkoutState));
+      localStorage.setItem('pendingCheckout', JSON.stringify(checkoutState));
       router.push('/login?redirect=checkout');
       return;
     }
@@ -409,8 +409,10 @@ export default function CheckoutPage() {
                 
                 <div className="row g-2 mb-2">
                   <div className="col-md-6">
-                    <label className="form-label mb-1 fs-7 fw-semibold">Full Name*</label>
+                    <label className="form-label mb-1 fs-7 fw-semibold" htmlFor="addrName">Full Name*</label>
                     <input
+                      id="addrName"
+                      aria-label="Full Name"
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
@@ -419,8 +421,10 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="col-md-6">
-                    <label className="form-label mb-1 fs-7 fw-semibold">Phone Number*</label>
+                    <label className="form-label mb-1 fs-7 fw-semibold" htmlFor="addrPhone">Phone Number*</label>
                     <input
+                      id="addrPhone"
+                      aria-label="Phone Number"
                       type="tel"
                       required
                       className="form-control form-control-brand py-2 fs-7"
@@ -432,8 +436,10 @@ export default function CheckoutPage() {
 
                 <div className="row g-2 mb-2">
                   <div className="col-md-6">
-                    <label className="form-label mb-1 fs-7 fw-semibold">Pincode*</label>
+                    <label className="form-label mb-1 fs-7 fw-semibold" htmlFor="pincode">Pincode*</label>
                     <input
+                      id="pincode"
+                      aria-label="Pincode"
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
@@ -442,8 +448,10 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="col-md-6">
-                    <label className="form-label mb-1 fs-7 fw-semibold">Locality / Area*</label>
+                    <label className="form-label mb-1 fs-7 fw-semibold" htmlFor="locality">Locality / Area*</label>
                     <input
+                      id="locality"
+                      aria-label="Locality or Area"
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
@@ -454,8 +462,10 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="mb-2">
-                  <label className="form-label mb-1 fs-7 fw-semibold">Street Address / House No.*</label>
+                  <label className="form-label mb-1 fs-7 fw-semibold" htmlFor="address">Street Address / House No.*</label>
                   <textarea
+                    id="address"
+                    aria-label="Street Address or House Number"
                     required
                     className="form-control form-control-brand py-2 fs-7"
                     rows="2"
@@ -466,8 +476,10 @@ export default function CheckoutPage() {
 
                 <div className="row g-2 mb-2">
                   <div className="col-md-6">
-                    <label className="form-label mb-1 fs-7 fw-semibold">City / District*</label>
+                    <label className="form-label mb-1 fs-7 fw-semibold" htmlFor="city">City / District*</label>
                     <input
+                      id="city"
+                      aria-label="City or District"
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
@@ -476,8 +488,10 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="col-md-6">
-                    <label className="form-label mb-1 fs-7 fw-semibold">State*</label>
+                    <label className="form-label mb-1 fs-7 fw-semibold" htmlFor="stateName">State*</label>
                     <input
+                      id="stateName"
+                      aria-label="State"
                       type="text"
                       required
                       className="form-control form-control-brand py-2 fs-7"
@@ -489,8 +503,10 @@ export default function CheckoutPage() {
 
                 <div className="row g-2 mb-3">
                   <div className="col-md-6">
-                    <label className="form-label mb-1 fs-7 fw-semibold">Landmark (Optional)</label>
+                    <label className="form-label mb-1 fs-7 fw-semibold" htmlFor="landmark">Landmark (Optional)</label>
                     <input
+                      id="landmark"
+                      aria-label="Landmark"
                       type="text"
                       className="form-control form-control-brand py-2 fs-7"
                       value={landmark}
@@ -498,8 +514,10 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="col-md-6">
-                    <label className="form-label mb-1 fs-7 fw-semibold">Alternate Phone (Optional)</label>
+                    <label className="form-label mb-1 fs-7 fw-semibold" htmlFor="altPhone">Alternate Phone (Optional)</label>
                     <input
+                      id="altPhone"
+                      aria-label="Alternate Phone"
                       type="tel"
                       className="form-control form-control-brand py-2 fs-7"
                       value={altPhone}

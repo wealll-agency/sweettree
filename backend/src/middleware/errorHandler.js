@@ -13,7 +13,11 @@ const errorHandler = (err, req, res, next) => {
 
   // Mongoose duplicate key
   if (err.code === 11000) {
-    const message = `Duplicate field value entered: ${Object.keys(err.keyValue).join(', ')}`;
+    // Sanitize duplicate key errors so we don't expose internal db paths directly
+    let field = Object.keys(err.keyValue || {})[0] || 'field';
+    // Remove index suffixes or internal prefixes if any
+    field = field.replace(/_[0-9]+$/, '');
+    const message = `A record with this ${field} already exists. Please use a different value.`;
     return res.status(400).json({ success: false, message });
   }
 

@@ -107,10 +107,13 @@ const calculateOrderTotals = async (items, couponCode) => {
   if (couponCode) {
     const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
     if (coupon && coupon.isValid()) {
-      if (coupon.discountType === 'flat') {
-        discount = Math.min(coupon.flatDiscountAmount || 0, subtotal);
-      } else {
-        discount = Math.round((subtotal * (coupon.discountPercentage || 0)) / 100);
+      // M1 Fix: Ensure the current subtotal meets the coupon's minimum purchase requirement
+      if (!coupon.minPurchaseAmount || subtotal >= coupon.minPurchaseAmount) {
+        if (coupon.discountType === 'flat') {
+          discount = Math.min(coupon.flatDiscountAmount || 0, subtotal);
+        } else {
+          discount = Math.round((subtotal * (coupon.discountPercentage || 0)) / 100);
+        }
       }
     }
   }

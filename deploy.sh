@@ -13,9 +13,15 @@ LOCK_FILE="$DEPLOY_ROOT/deploy.lock"
 
 # 1. Deployment Lock
 if [ -f "$LOCK_FILE" ]; then
-    echo "--> ❌ Deployment is already in progress. Lock file exists at $LOCK_FILE"
-    echo "--> If this is a stale lock, run: rm -f $LOCK_FILE"
-    exit 1
+    # Check if lock is stale (older than 10 minutes)
+    if [ $(find "$LOCK_FILE" -mmin +10 2>/dev/null) ]; then
+        echo "--> ⚠️ Stale lock file detected (older than 10 minutes). Removing it."
+        rm -f "$LOCK_FILE"
+    else
+        echo "--> ❌ Deployment is already in progress. Lock file exists at $LOCK_FILE"
+        echo "--> If this is a stale lock, wait 10 minutes or run: rm -f $LOCK_FILE"
+        exit 1
+    fi
 fi
 touch "$LOCK_FILE"
 
@@ -75,8 +81,9 @@ cd "$DEPLOY_ROOT"
 ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
 
 echo "--> Reloading PM2 processes from new release..."
-# PM2 must be configured to watch the 'current' symlink path
-pm2 reload ecosystem.config.cjs --update-env || pm2 start current/ecosystem.config.cjs
+# PM2 often caches the resolved realpath of symlinks during 'reload'.
+# By using 'restart', we force it to resolve the new 'current' symlink.
+pm2 restart ecosystem.config.cjs --update-env || pm2 start current/ecosystem.config.cjs
 
 # 8. Post-Deploy Health Check
 echo "--> Running Health Checks (Waiting 5 seconds for startup)..."

@@ -24,19 +24,31 @@ const connectDB = async () => {
     console.error(`\x1b[31m❌ Database:\x1b[0m    Pool connection error: ${err.message}\x1b[0m`);
   });
 
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, options);
-    console.log(`\x1b[32m✅ Database:\x1b[0m    Connected to MongoDB cluster \x1b[36m(${conn.connection.host})\x1b[0m`);
-  } catch (error) {
-    console.error(`\n\x1b[31m\x1b[1m❌ FATAL STARTUP ERROR\x1b[0m`);
-    console.error(`\x1b[31m====================================================\x1b[0m`);
-    console.error(`\x1b[31m❌ Database:\x1b[0m    Connection failed during startup`);
-    console.error(`\x1b[31m❌ Details:\x1b[0m     ${error.message}`);
-    console.error(`\x1b[31m====================================================\x1b[0m\n`);
-    // Delay exit slightly to ensure logs flush
-    setTimeout(() => {
-      process.exit(1);
-    }, 1000);
+  let retries = 5;
+  let delay = 2000;
+
+  while (retries > 0) {
+    try {
+      const conn = await mongoose.connect(process.env.MONGODB_URI, options);
+      console.log(`\x1b[32m✅ Database:\x1b[0m    Connected to MongoDB cluster \x1b[36m(${conn.connection.host})\x1b[0m`);
+      return; // Exit loop on success
+    } catch (error) {
+      retries -= 1;
+      console.error(`\x1b[31m❌ Database:\x1b[0m    Connection failed during startup. Details: ${error.message}`);
+      if (retries === 0) {
+        console.error(`\n\x1b[31m\x1b[1m❌ FATAL STARTUP ERROR\x1b[0m`);
+        console.error(`\x1b[31m====================================================\x1b[0m`);
+        console.error(`\x1b[31m❌ Database:\x1b[0m    All connection retries failed`);
+        console.error(`\x1b[31m====================================================\x1b[0m\n`);
+        setTimeout(() => {
+          process.exit(1);
+        }, 1000);
+      } else {
+        console.log(`\x1b[33m⏳ Database:\x1b[0m    Retrying in ${delay/1000} seconds... (${retries} retries left)`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2; // Exponential backoff
+      }
+    }
   }
 };
 
