@@ -47,12 +47,12 @@ export default function CheckoutPage() {
   const [landmark, setLandmark] = useState('');
   const [altPhone, setAltPhone] = useState('');
   const [addressType, setAddressType] = useState('Home');
-    const [paymentMode, setPaymentMode] = useState('CCAvenue');
+    const [paymentMode, setPaymentMode] = useState('ICICI');
   const [hasCodPermission, setHasCodPermission] = useState(true);
 
   useEffect(() => {
     if (!hasCodPermission && paymentMode === 'COD') {
-      setPaymentMode('CCAvenue');
+      setPaymentMode('ICICI');
     }
   }, [hasCodPermission, paymentMode]);
 
@@ -71,7 +71,7 @@ export default function CheckoutPage() {
     };
     fetchGlobalSettings();
     
-    // Parse error from URL if redirected from CCAvenue failure
+    // Parse error from URL if redirected from payment failure
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('error')) {
@@ -131,7 +131,7 @@ export default function CheckoutPage() {
             setLandmark(state.landmark || '');
             setAltPhone(state.altPhone || '');
             setAddressType(state.addressType || 'Home');
-            setPaymentMode(state.paymentMode || 'CCAvenue');
+            setPaymentMode(state.paymentMode || 'ICICI');
 
             // Automatically save this address to their profile
             dispatch(addAddress({ 
@@ -244,12 +244,12 @@ export default function CheckoutPage() {
     };
 
     try {
-      // 1. Create order on backend (returns local order and CCAvenue payload)
+      // 1. Create order on backend (returns local order and ICICI payload)
       const orderResult = await dispatch(createOrder(orderData)).unwrap();
-      const { encRequest, accessCode } = orderResult;
+      const { iciciPayload } = orderResult;
       
-      // If COD, skip CCAvenue redirection and go to user profile
-      if (paymentMode === 'COD' || !encRequest) {
+      // If COD, skip ICICI redirection and go to user profile
+      if (paymentMode === 'COD') {
         // Clear cart for COD immediately
         dispatch(clearCart());
         showAlert('Order placed successfully via Cash on Delivery!', 'success');
@@ -257,31 +257,40 @@ export default function CheckoutPage() {
         return;
       }
 
-      // 2. Redirect to CCAvenue via POST
-      const form = document.createElement('form');
-      form.method = 'POST';
-      
-      const ccavenueEnv = process.env.NEXT_PUBLIC_CCAVENUE_ENV || 'production';
-      form.action = ccavenueEnv.toLowerCase() === 'test' || ccavenueEnv.toLowerCase() === 'sandbox'
-        ? 'https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction'
-        : 'https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction';
-      
-      const encInput = document.createElement('input');
-      encInput.type = 'hidden';
-      encInput.name = 'encRequest';
-      encInput.value = encRequest;
-      form.appendChild(encInput);
-      
-      const accessInput = document.createElement('input');
-      accessInput.type = 'hidden';
-      accessInput.name = 'access_code';
-      accessInput.value = accessCode;
-      form.appendChild(accessInput);
-      
-      document.body.appendChild(form);
-      form.submit();
+      if (orderResult.gatewayError) {
+        showAlert(`Payment Gateway Error: ${orderResult.gatewayError}`, 'error');
+        return;
+      }
+
+      const iciciActionUrl = orderResult.iciciActionUrl;
+      if (iciciActionUrl) {
+        window.location.href = iciciActionUrl;
+        return;
+      }
+
+      // Fallback form rendering if no paymentUrl but also no error (for non-S2S gateways)
+      if (orderResult.iciciPayload) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'https://pgpayuat.icici.bank.in/tsp/pg/api/v2/initiateSale';
+        
+        Object.keys(orderResult.iciciPayload).forEach(key => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = orderResult.iciciPayload[key];
+          form.appendChild(input);
+        });
+        
+        document.body.appendChild(form);
+        form.submit();
+      } else {
+        showAlert("Invalid payment gateway response. Please try again.", 'error');
+      }
+
     } catch (err) {
-      showAlert(err || 'Failed to place order', 'error');
+      console.error("Checkout Error:", err);
+      showAlert(err?.message || (typeof err === 'string' ? err : 'Failed to place order'), 'error');
     }
   };
 
@@ -573,13 +582,13 @@ export default function CheckoutPage() {
             </h5>
             <div className="d-flex flex-column gap-3">
               <div 
-                className={`p-3 rounded border cursor-pointer d-flex align-items-center gap-3 ${paymentMode === 'CCAvenue' ? 'border-success bg-light' : ''}`}
-                onClick={() => setPaymentMode('CCAvenue')}
+                className={`p-3 rounded border cursor-pointer d-flex align-items-center gap-3 ${paymentMode === 'ICICI' ? 'border-success bg-light' : ''}`}
+                onClick={() => setPaymentMode('ICICI')}
                 style={{ cursor: 'pointer' }}
               >
-                <input type="radio" checked={paymentMode === 'CCAvenue'} readOnly className="form-check-input mt-0" />
+                <input type="radio" checked={paymentMode === 'ICICI'} readOnly className="form-check-input mt-0" />
                 <div>
-                  <h6 className="fw-bold m-0 text-dark">CCAvenue Secure Payment</h6>
+                  <h6 className="fw-bold m-0 text-dark">ICICI Secure Payment</h6>
                   <small className="text-muted">Pay securely using Cards, Net Banking, UPI, or Wallets.</small>
                 </div>
               </div>

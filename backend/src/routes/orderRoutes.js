@@ -1,14 +1,17 @@
 import express from 'express';
 import {
   createOrder,
-  ccavenueCallback,
+  iciciCallback,
+  iciciAdvice,
   getMyOrders,
   getOrderById,
   getAllOrders,
   updateOrderStatus,
   processRefund,
   getAdminShipments,
-  getShipmentByWaybill
+  getShipmentByWaybill,
+  mockICICIGateway,
+  mockICICIProcess
 } from '../controllers/orderController.js';
 import { protect, authorizeRoles } from '../middleware/auth.js';
 import { auditRoute } from '../middleware/logger.js';
@@ -25,7 +28,13 @@ router.route('/shipments')
 router.route('/shipments/:waybill')
   .get(protect, authorizeRoles('Super Admin', 'Manager', 'Staff'), getShipmentByWaybill);
 
-router.post('/ccavenue-callback', ccavenueCallback);
+router.post('/icici-callback', iciciCallback);
+router.post('/icici-advice', iciciAdvice);
+
+// Mock Gateway Endpoints
+router.post('/mock-icici', mockICICIGateway);
+router.post('/mock-icici-process', mockICICIProcess);
+
 router.get('/my-orders', protect, getMyOrders);
 
 router.route('/:id')

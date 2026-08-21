@@ -68,7 +68,7 @@ const ordersSlice = createSlice({
   initialState: {
     list: [],
     activeOrder: null,
-    ccavenuePayload: null,
+    iciciPayload: null,
     loading: false,
     orderLoading: false,
     error: null
@@ -76,7 +76,7 @@ const ordersSlice = createSlice({
   reducers: {
     clearActiveOrder: (state) => {
       state.activeOrder = null;
-      state.ccavenuePayload = null;
+      state.iciciPayload = null;
     }
   },
   extraReducers: (builder) => {
@@ -89,10 +89,7 @@ const ordersSlice = createSlice({
       .addCase(createOrder.fulfilled, (state, action) => {
         state.loading = false;
         state.activeOrder = action.payload.order;
-        state.ccavenuePayload = {
-          encRequest: action.payload.encRequest,
-          accessCode: action.payload.accessCode
-        };
+        state.iciciPayload = action.payload.iciciPayload;
       })
       .addCase(createOrder.rejected, (state, action) => {
         state.loading = false;

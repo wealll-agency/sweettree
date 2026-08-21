@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import crypto from 'crypto';
-import { encrypt, decrypt } from '../utils/ccavenue.js';
+import axios from 'axios';
 import Order from '../models/Order.js';
 import SystemSetting from '../models/SystemSetting.js';
 import Product from '../models/Product.js';
@@ -9,9 +9,9 @@ import Inventory from '../models/Inventory.js';
 import Payment from '../models/Payment.js';
 import Coupon from '../models/Coupon.js';
 import { logActivity } from '../middleware/logger.js';
+import { generateICICISecureHash, verifyICICISecureHash, processICICIRefund } from '../services/iciciService.js';
 
-// CCAvenue configuration will be drawn directly from environment variables
-
+// ICICI configuration will be drawn directly from environment variables
 // Helper: Calculate order totals
 const calculateOrderTotals = async (items, couponCode) => {
   let subtotal = 0;
@@ -134,7 +134,7 @@ const calculateOrderTotals = async (items, couponCode) => {
 // @route   POST /api/orders
 // @access  Private
 export const createOrder = async (req, res, next) => {
-  const { items, deliveryAddress, couponCode, paymentMode = 'CCAvenue' } = req.body;
+  const { items, deliveryAddress, couponCode, paymentMode = 'ICICI' } = req.body;
   const session = await mongoose.startSession();
 
   try {
@@ -240,11 +240,13 @@ export const createOrder = async (req, res, next) => {
       );
     }
 
-    // If COD, we can skip CCAvenue processing
+    const merchantTranId = crypto.randomBytes(10).toString('hex');
+
+    // If COD, we can skip ICICI processing
     if (paymentMode === 'COD') {
       await Payment.create([{
         order: savedOrder._id,
-        ccavenueOrderId: `COD-${savedOrder._id}`,
+        merchantTranId: `COD-${merchantTranId}`,
         amount: totalAmount,
         status: 'Created',
         paymentMode: 'COD'
@@ -262,70 +264,84 @@ export const createOrder = async (req, res, next) => {
       });
     }
 
-    // 3. Create Payment ledger record for CCAvenue
+    // 3. Create Payment ledger record for ICICI
     await Payment.create([{
       order: savedOrder._id,
-      ccavenueOrderId: savedOrder._id.toString(),
+      merchantTranId,
       amount: totalAmount,
       status: 'Created'
     }], { session });
 
-    // 4. Prepare CCAvenue Payload
-    const merchant_id = process.env.CCAVENUE_MERCHANT_ID || 'M_ID';
-    const access_code = process.env.CCAVENUE_ACCESS_CODE || 'A_CODE';
-    const working_key = process.env.CCAVENUE_WORKING_KEY || 'W_KEY';
-    const hostUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}`;
-    const redirect_url = process.env.CCAVENUE_REDIRECT_URL || `${hostUrl}/api/orders/ccavenue-callback`;
-    const cancel_url = process.env.CCAVENUE_CANCEL_URL || `${hostUrl}/api/orders/ccavenue-callback`;
-
-    // Sanitize string inputs to prevent CCAvenue token parsing failures
-    const sanitize = (str) => {
-      if (!str) return '';
-      return String(str).replace(/[=&]/g, ' ').trim();
-    };
-
-    const merchantDataObj = {
-      merchant_id: merchant_id,
-      order_id: savedOrder._id.toString(),
-      currency: 'INR',
+    // 4. Prepare ICICI Payload for S2S
+    const merchantId = process.env.ICICI_MERCHANT_ID || '100000000007164';
+    const aggregatorID = 'A' + merchantId; // Typical convention or hardcoded to what we found
+    const hostUrl = process.env.API_BASE_URL || `https://www.sweettreeon.com`;
+    const returnURL = process.env.ICICI_RETURN_URL || `${hostUrl}/api/orders/icici-callback`;
+    const actionUrl = process.env.ICICI_INITIATE_SALE_URL || 'https://pgpayuat.icici.bank.in/tsp/pg/api/v2/initiateSale';
+    
+    const iciciPayload = {
+      addlParam1: "000",
+      addlParam2: "111",
+      aggregatorID: 'A' + merchantId.substring(1), // usually 'A' + merchantId or specific provided
       amount: Number(totalAmount).toFixed(2),
-      redirect_url: redirect_url,
-      cancel_url: cancel_url,
-      language: 'EN',
-      billing_name: sanitize(mappedDeliveryAddress.name),
-      billing_address: sanitize(mappedDeliveryAddress.address),
-      billing_city: sanitize(mappedDeliveryAddress.city),
-      billing_state: sanitize(mappedDeliveryAddress.state),
-      billing_zip: sanitize(mappedDeliveryAddress.pincode),
-      billing_country: 'India',
-      billing_tel: sanitize(mappedDeliveryAddress.phone)
+      currencyCode: "356", // INR
+      customerEmailID: req.user.email || "test@gmail.com",
+      customerMobileNo: String(req.user.phone || "9999999999").replace(/\D/g, '').substring(0, 10),
+      customerName: String(req.user.name || "Customer").replace(/[^a-zA-Z0-9_]/g, '').substring(0, 20),
+      merchantId: merchantId,
+      merchantTxnNo: merchantTranId, // Changed to merchantTxnNo per docs
+      payType: '0', // 0 = Redirect to gateway
+      returnURL: returnURL,
+      transactionType: "SALE",
+      txnDate: new Date().toISOString().replace(/[-:T.]/g, '').substring(0, 14) // YYYYMMDDHHMMSS
     };
 
-    let merchantData = '';
-    for (let key in merchantDataObj) {
-      merchantData += `${key}=${merchantDataObj[key]}&`;
-    }
-    // Remove the very last trailing ampersand to perfectly match standard URL encoded strings
-    merchantData = merchantData.slice(0, -1);
-
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('--- CCAvenue Plaintext Payload ---');
-      console.log(merchantData);
+    // Override aggregatorID if the user gave us one specifically (A1000...)
+    if (merchantId === "100000000007164") {
+      iciciPayload.aggregatorID = "A100000000007164";
     }
 
-    const encRequest = encrypt(merchantData, working_key);
+    // Generate Secure Hash
+    iciciPayload.secureHash = generateICICISecureHash(iciciPayload);
 
-    await logActivity(req.user._id, 'CREATE_ORDER', `Created order ID: ${savedOrder._id}, initiating CCAvenue transaction`, req);
+    await logActivity(req.user._id, 'CREATE_ORDER', `Created order ID: ${savedOrder._id}, initiating ICICI S2S payment`, req);
 
     await session.commitTransaction();
     session.endSession();
 
-    res.status(201).json({
-      success: true,
-      order: savedOrder,
-      encRequest,
-      accessCode: access_code
-    });
+    // 5. Make S2S Call to ICICI Gateway
+    try {
+      const iciciResponse = await axios.post(actionUrl, iciciPayload, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      console.log("ICICI S2S Response:", iciciResponse.data);
+
+      if (iciciResponse.data && iciciResponse.data.responseCode === '0000' && iciciResponse.data.paymentUrl) {
+        return res.status(201).json({
+          success: true,
+          order: savedOrder,
+          iciciActionUrl: iciciResponse.data.paymentUrl
+        });
+      } else {
+        // Return the error code so frontend can display it
+        return res.status(201).json({
+          success: true,
+          order: savedOrder,
+          iciciActionUrl: null,
+          gatewayError: iciciResponse.data.responseDescription || 'Payment Gateway Error'
+        });
+      }
+
+    } catch (apiError) {
+      console.error("ICICI S2S API Error:", apiError.response?.data || apiError.message);
+      return res.status(201).json({
+        success: true,
+        order: savedOrder,
+        iciciActionUrl: null,
+        gatewayError: apiError.response?.data?.responseDescription || 'Failed to connect to ICICI Gateway'
+      });
+    }
   } catch (error) {
     if (session.inTransaction()) {
       await session.abortTransaction();
@@ -335,79 +351,79 @@ export const createOrder = async (req, res, next) => {
   }
 };
 
-// @desc    Handle CCAvenue Callback (Server-to-Server form post)
-// @route   POST /api/orders/ccavenue-callback
+// @desc    Handle ICICI Callback (Server-to-Server form post from ICICI gateway)
+// @route   POST /api/orders/icici-callback
 // @access  Public
-export const ccavenueCallback = async (req, res, next) => {
+export const iciciCallback = async (req, res, next) => {
   let session;
   try {
-    const { encResp } = req.body;
-    if (!encResp) {
-      return res.status(400).send('Invalid response from CCAvenue');
-    }
-
-    const working_key = process.env.CCAVENUE_WORKING_KEY || 'W_KEY';
-    let decryptedResp;
-    try {
-      decryptedResp = decrypt(encResp, working_key);
-    } catch (err) {
-      console.error('CCAvenue Decryption Error:', err);
-      return res.status(400).send('Failed to decrypt CCAvenue response');
-    }
-
-    const params = new URLSearchParams(decryptedResp);
-    const order_id = params.get('order_id');
-    const tracking_id = params.get('tracking_id');
-    const bank_ref_no = params.get('bank_ref_no');
-    const order_status = params.get('order_status'); 
-    const payment_mode = params.get('payment_mode');
-    const failure_message = params.get('failure_message');
-
+    const responseParams = req.body;
+    
     // Safely extract the primary frontend URL early for error redirects
     let frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     if (frontendUrl.includes(',')) {
       frontendUrl = frontendUrl.split(',')[0].trim();
     }
 
-    const order = await Order.findById(order_id);
+    if (!responseParams || Object.keys(responseParams).length === 0) {
+      return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent('Invalid response from Payment Gateway')}`);
+    }
+
+    // Verify Hash
+    const isValidHash = verifyICICISecureHash(responseParams);
+    if (!isValidHash) {
+      console.error('ICICI Hash Verification Failed:', responseParams);
+      return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent('Payment verification failed (Hash Mismatch)')}`);
+    }
+
+    const { merchantTranId, amount, ResponseCode, txnId, bankRefNo, message } = responseParams;
+
+    // Find the payment ledger entry first
+    const payment = await Payment.findOne({ merchantTranId });
+    if (!payment) {
+      return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent('Transaction not found.')}`);
+    }
+
+    const order = await Order.findById(payment.order);
     if (!order) {
       return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent('Order not found.')}`);
     }
 
-    // Idempotency: Prevent duplicate stock deductions or restorals on page refresh
+    // Idempotency: Prevent duplicate processing
     if (order.paymentStatus === 'Paid') {
       return res.redirect(`${frontendUrl}/user/orders/${order._id}?success=true`);
     }
-    if (order.paymentStatus === 'Failed' && order_status !== 'Success') {
-      return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent(failure_message || 'Payment Failed')}`);
+    if (order.paymentStatus === 'Failed' && ResponseCode !== '0000') {
+      return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent(message || 'Payment Failed')}`);
     }
 
     session = await mongoose.startSession();
     session.startTransaction();
 
-    const payment = await Payment.findOne({ ccavenueOrderId: order_id }).session(session);
+    // Re-fetch with session
+    const lockedPayment = await Payment.findById(payment._id).session(session);
+    const lockedOrder = await Order.findById(order._id).session(session);
 
-    if (order_status === 'Success') {
-      const response_amount = params.get('amount') || params.get('mer_amount') || params.get('net_amount_debit');
-      
-      if (Number(response_amount) !== Number(order.totalAmount)) {
-        order.paymentStatus = 'Failed';
-        order.ccavenueTrackingId = tracking_id;
-        order.ccavenueBankRefNo = bank_ref_no;
-        order.paymentMode = payment_mode;
-        await order.save({ session });
+    // ICICI Success ResponseCode is typically '0000' (or '0' depending on exact spec). Assuming '0000'.
+    if (ResponseCode === '0000' || ResponseCode === '0') {
+      // Validate amount
+      if (Number(amount) !== Number(lockedOrder.totalAmount)) {
+        lockedOrder.paymentStatus = 'Failed';
+        lockedOrder.gatewayTxnId = txnId;
+        lockedOrder.bankRefNo = bankRefNo;
+        lockedOrder.paymentMode = 'ICICI';
+        await lockedOrder.save({ session });
 
-        if (payment) {
-          payment.status = 'Failed';
-          payment.ccavenueTrackingId = tracking_id;
-          payment.ccavenueBankRefNo = bank_ref_no;
-          payment.paymentMode = payment_mode;
-          payment.failureMessage = `Amount mismatch (Paid: ${response_amount}, Expected: ${order.totalAmount})`;
-          payment.encResponse = encResp;
-          await payment.save({ session });
-        }
+        lockedPayment.status = 'Failed';
+        lockedPayment.gatewayTxnId = txnId;
+        lockedPayment.bankRefNo = bankRefNo;
+        lockedPayment.paymentMode = 'ICICI';
+        lockedPayment.failureMessage = `Amount mismatch (Paid: ${amount}, Expected: ${lockedOrder.totalAmount})`;
+        lockedPayment.encResponse = JSON.stringify(responseParams);
+        await lockedPayment.save({ session });
 
-        for (const item of order.items) {
+        // Restore stock
+        for (const item of lockedOrder.items) {
           await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true, session });
           await Inventory.findOneAndUpdate(
             { product: item.product },
@@ -417,8 +433,8 @@ export const ccavenueCallback = async (req, res, next) => {
                 adjustments: {
                   quantityChanged: item.quantity,
                   type: 'AuditAdjustment',
-                  reason: `Amount Mismatch Stock Restoral (Order ID: ${order._id})`,
-                  adjustedBy: order.user
+                  reason: `Amount Mismatch Stock Restoral (Order ID: ${lockedOrder._id})`,
+                  adjustedBy: lockedOrder.user
                 }
               }
             },
@@ -431,44 +447,44 @@ export const ccavenueCallback = async (req, res, next) => {
         return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent('Payment failed due to amount mismatch. Please contact support.')}`);
       }
 
-      order.paymentStatus = 'Paid';
-      order.orderStatus = 'Confirmed';
-      order.confirmedAt = Date.now();
-      order.ccavenueTrackingId = tracking_id;
-      order.ccavenueBankRefNo = bank_ref_no;
-      order.paymentMode = payment_mode;
-      await order.save({ session });
+      // Success Path
+      lockedOrder.paymentStatus = 'Paid';
+      lockedOrder.orderStatus = 'Confirmed';
+      lockedOrder.confirmedAt = Date.now();
+      lockedOrder.gatewayTxnId = txnId;
+      lockedOrder.bankRefNo = bankRefNo;
+      lockedOrder.paymentMode = 'ICICI';
+      await lockedOrder.save({ session });
 
-      if (payment) {
-        payment.status = 'Captured';
-        payment.ccavenueTrackingId = tracking_id;
-        payment.ccavenueBankRefNo = bank_ref_no;
-        payment.paymentMode = payment_mode;
-        payment.encResponse = encResp;
-        await payment.save({ session });
-      }
+      lockedPayment.status = 'Captured';
+      lockedPayment.gatewayTxnId = txnId;
+      lockedPayment.bankRefNo = bankRefNo;
+      lockedPayment.paymentMode = 'ICICI';
+      lockedPayment.encResponse = JSON.stringify(responseParams);
+      await lockedPayment.save({ session });
 
       await session.commitTransaction();
       session.endSession();
-      return res.redirect(`${frontendUrl}/user/orders/${order._id}?success=true`);
+      return res.redirect(`${frontendUrl}/user/orders/${lockedOrder._id}?success=true`);
+      
     } else {
-      order.paymentStatus = 'Failed';
-      order.ccavenueTrackingId = tracking_id;
-      order.ccavenueBankRefNo = bank_ref_no;
-      order.paymentMode = payment_mode;
-      await order.save({ session });
+      // Failure Path
+      lockedOrder.paymentStatus = 'Failed';
+      lockedOrder.gatewayTxnId = txnId;
+      lockedOrder.bankRefNo = bankRefNo;
+      lockedOrder.paymentMode = 'ICICI';
+      await lockedOrder.save({ session });
 
-      if (payment) {
-        payment.status = 'Failed';
-        payment.ccavenueTrackingId = tracking_id;
-        payment.ccavenueBankRefNo = bank_ref_no;
-        payment.paymentMode = payment_mode;
-        payment.failureMessage = failure_message;
-        payment.encResponse = encResp;
-        await payment.save({ session });
-      }
+      lockedPayment.status = 'Failed';
+      lockedPayment.gatewayTxnId = txnId;
+      lockedPayment.bankRefNo = bankRefNo;
+      lockedPayment.paymentMode = 'ICICI';
+      lockedPayment.failureMessage = message || 'Payment Failed';
+      lockedPayment.encResponse = JSON.stringify(responseParams);
+      await lockedPayment.save({ session });
 
-      for (const item of order.items) {
+      // Restore stock
+      for (const item of lockedOrder.items) {
         await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true, session });
         await Inventory.findOneAndUpdate(
           { product: item.product },
@@ -478,8 +494,8 @@ export const ccavenueCallback = async (req, res, next) => {
               adjustments: {
                 quantityChanged: item.quantity,
                 type: 'AuditAdjustment',
-                reason: `Payment Failure Stock Restoral (Order ID: ${order._id})`,
-                adjustedBy: order.user
+                reason: `Payment Failure Stock Restoral (Order ID: ${lockedOrder._id})`,
+                adjustedBy: lockedOrder.user
               }
             }
           },
@@ -489,7 +505,162 @@ export const ccavenueCallback = async (req, res, next) => {
 
       await session.commitTransaction();
       session.endSession();
-      return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent(failure_message || 'Payment Failed')}`);
+      return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent(message || 'Payment Failed')}`);
+    }
+
+  } catch (error) {
+    if (session && session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    if (session) {
+      session.endSession();
+    }
+    console.error('ICICI Callback Error:', error);
+    
+    let fUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    if (fUrl.includes(',')) fUrl = fUrl.split(',')[0].trim();
+      return res.redirect(`${fUrl}/checkout?error=${encodeURIComponent('Payment processing failed due to an internal server error.')}`);
+  }
+};
+
+// @desc    Handle ICICI Payment Advice (Server-to-Server webhook)
+// @route   POST /api/orders/icici-advice
+// @access  Public
+export const iciciAdvice = async (req, res, next) => {
+  let session;
+  try {
+    const responseParams = req.body;
+    
+    if (!responseParams || Object.keys(responseParams).length === 0) {
+      return res.status(400).send('Invalid advice payload');
+    }
+
+    const isValidHash = verifyICICISecureHash(responseParams);
+    if (!isValidHash) {
+      return res.status(400).send('Hash Mismatch');
+    }
+
+    const { merchantTranId, amount, ResponseCode, txnId, bankRefNo, message } = responseParams;
+
+    const payment = await Payment.findOne({ merchantTranId });
+    if (!payment) {
+      return res.status(404).send('Transaction not found');
+    }
+
+    const order = await Order.findById(payment.order);
+    if (!order) {
+      return res.status(404).send('Order not found');
+    }
+
+    if (order.paymentStatus === 'Paid') {
+      return res.status(200).send('OK');
+    }
+    if (order.paymentStatus === 'Failed' && ResponseCode !== '0000') {
+      return res.status(200).send('OK');
+    }
+
+    session = await mongoose.startSession();
+    session.startTransaction();
+
+    const lockedPayment = await Payment.findById(payment._id).session(session);
+    const lockedOrder = await Order.findById(order._id).session(session);
+
+    if (ResponseCode === '0000' || ResponseCode === '0') {
+      if (Number(amount) !== Number(lockedOrder.totalAmount)) {
+        lockedOrder.paymentStatus = 'Failed';
+        lockedOrder.gatewayTxnId = txnId;
+        lockedOrder.bankRefNo = bankRefNo;
+        lockedOrder.paymentMode = 'ICICI';
+        await lockedOrder.save({ session });
+
+        lockedPayment.status = 'Failed';
+        lockedPayment.gatewayTxnId = txnId;
+        lockedPayment.bankRefNo = bankRefNo;
+        lockedPayment.paymentMode = 'ICICI';
+        lockedPayment.failureMessage = `Amount mismatch (Paid: ${amount}, Expected: ${lockedOrder.totalAmount})`;
+        lockedPayment.encResponse = JSON.stringify(responseParams);
+        await lockedPayment.save({ session });
+
+        for (const item of lockedOrder.items) {
+          await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true, session });
+          await Inventory.findOneAndUpdate(
+            { product: item.product },
+            { 
+              $inc: { stockQuantity: item.quantity },
+              $push: {
+                adjustments: {
+                  quantityChanged: item.quantity,
+                  type: 'AuditAdjustment',
+                  reason: `Amount Mismatch Stock Restoral (Order ID: ${lockedOrder._id})`,
+                  adjustedBy: lockedOrder.user
+                }
+              }
+            },
+            { runValidators: true, session }
+          );
+        }
+
+        await session.commitTransaction();
+        session.endSession();
+        return res.status(200).send('OK');
+      }
+
+      lockedOrder.paymentStatus = 'Paid';
+      lockedOrder.orderStatus = 'Confirmed';
+      lockedOrder.confirmedAt = Date.now();
+      lockedOrder.gatewayTxnId = txnId;
+      lockedOrder.bankRefNo = bankRefNo;
+      lockedOrder.paymentMode = 'ICICI';
+      await lockedOrder.save({ session });
+
+      lockedPayment.status = 'Captured';
+      lockedPayment.gatewayTxnId = txnId;
+      lockedPayment.bankRefNo = bankRefNo;
+      lockedPayment.paymentMode = 'ICICI';
+      lockedPayment.encResponse = JSON.stringify(responseParams);
+      await lockedPayment.save({ session });
+
+      await session.commitTransaction();
+      session.endSession();
+      return res.status(200).send('OK');
+      
+    } else {
+      lockedOrder.paymentStatus = 'Failed';
+      lockedOrder.gatewayTxnId = txnId;
+      lockedOrder.bankRefNo = bankRefNo;
+      lockedOrder.paymentMode = 'ICICI';
+      await lockedOrder.save({ session });
+
+      lockedPayment.status = 'Failed';
+      lockedPayment.gatewayTxnId = txnId;
+      lockedPayment.bankRefNo = bankRefNo;
+      lockedPayment.paymentMode = 'ICICI';
+      lockedPayment.failureMessage = message || 'Payment Failed';
+      lockedPayment.encResponse = JSON.stringify(responseParams);
+      await lockedPayment.save({ session });
+
+      for (const item of lockedOrder.items) {
+        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true, session });
+        await Inventory.findOneAndUpdate(
+          { product: item.product },
+          { 
+            $inc: { stockQuantity: item.quantity },
+            $push: {
+              adjustments: {
+                quantityChanged: item.quantity,
+                type: 'AuditAdjustment',
+                reason: `Payment Failure Stock Restoral (Order ID: ${lockedOrder._id})`,
+                adjustedBy: lockedOrder.user
+              }
+            }
+          },
+          { runValidators: true, session }
+        );
+      }
+
+      await session.commitTransaction();
+      session.endSession();
+      return res.status(200).send('OK');
     }
   } catch (error) {
     if (session && session.inTransaction()) {
@@ -498,13 +669,12 @@ export const ccavenueCallback = async (req, res, next) => {
     if (session) {
       session.endSession();
     }
-    console.error('CCAvenue Callback Error:', error);
-    
-    let fUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    if (fUrl.includes(',')) fUrl = fUrl.split(',')[0].trim();
-    return res.redirect(`${fUrl}/checkout?error=${encodeURIComponent('Payment processing failed due to an internal server error.')}`);
+    console.error('ICICI Advice Error:', error);
+    return res.status(500).send('Internal Server Error');
   }
 };
+
+
 
 // @desc    Get user orders
 // @route   GET /api/orders/my-orders
@@ -661,10 +831,20 @@ export const processRefund = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Transaction record missing' });
     }
 
-    // CCAvenue refunds are typically initiated from the merchant dashboard manually
+    // Call ICICI Refund API
+    const refundResult = await processICICIRefund(
+      'REF' + Date.now().toString(), 
+      order.totalAmount, 
+      payment.gatewayTxnId || payment.merchantTranId
+    );
+
+    if (!refundResult.success) {
+      return res.status(400).json({ success: false, message: `Refund failed at gateway: ${refundResult.message}` });
+    }
+
     payment.status = 'Refunded';
     payment.refundDetails = {
-      refundId: 'MANUAL_CCAVENUE_REFUND_' + Date.now(),
+      refundId: refundResult.refundId,
       amount: order.totalAmount,
       reason: 'Admin Initiated Refund',
       processedAt: new Date()
@@ -679,13 +859,82 @@ export const processRefund = async (req, res, next) => {
     };
     await Order.findByIdAndUpdate(order._id, updateQuery);
 
-    await logActivity(req.user._id, 'PROCESS_REFUND', `Processed manual refund record for Order ID ${order._id}`, req);
+    await logActivity(req.user._id, 'PROCESS_REFUND', `Processed refund via ICICI for Order ID ${order._id}`, req);
 
-    res.json({ success: true, message: 'Refund recorded successfully. Note: You must actually initiate the refund in your CCAvenue Dashboard.', order });
+    res.json({ success: true, message: 'Refund recorded and processed successfully via ICICI Gateway.', order });
   } catch (error) {
     next(error);
   }
 };
+
+// ==========================================
+// MOCK ICICI GATEWAY FOR LOCAL TESTING ONLY
+// ==========================================
+export const mockICICIGateway = (req, res) => {
+  const { merchantId, merchantTranId, amount, returnUrl, secureHash } = req.body;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Mock ICICI Sandbox Gateway</title>
+        <style>
+          body { font-family: sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+          .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; max-width: 400px; }
+          button { padding: 10px 20px; margin: 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+          .btn-success { background: #28a745; color: white; }
+          .btn-danger { background: #dc3545; color: white; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h2>ICICI Mock Gateway</h2>
+          <p>Merchant: ${merchantId}</p>
+          <p>Order ID: ${merchantTranId}</p>
+          <h3>Amount: ₹${amount}</h3>
+          
+          <form method="POST" action="/api/orders/mock-icici-process">
+            <input type="hidden" name="merchantTranId" value="${merchantTranId}">
+            <input type="hidden" name="amount" value="${amount}">
+            <input type="hidden" name="returnUrl" value="${returnUrl}">
+            <button type="submit" name="status" value="success" class="btn-success">Simulate Successful Payment</button>
+            <button type="submit" name="status" value="failure" class="btn-danger">Simulate Failed Payment</button>
+          </form>
+        </div>
+      </body>
+    </html>
+  `;
+  res.send(html);
+};
+
+export const mockICICIProcess = (req, res) => {
+  const { merchantTranId, amount, returnUrl, status } = req.body;
+  
+  const responseParams = {
+    merchantId: process.env.ICICI_MERCHANT_ID || 'TEST_MERCHANT_123',
+    merchantTranId: merchantTranId,
+    amount: amount,
+    ResponseCode: status === 'success' ? '0000' : 'E000',
+    txnId: 'MOCK_TXN_' + Date.now(),
+    bankRefNo: 'MOCK_BANK_' + Math.floor(Math.random() * 1000000),
+    message: status === 'success' ? 'Transaction Successful' : 'Transaction Failed'
+  };
+
+  responseParams.secureHash = generateICICISecureHash(responseParams);
+
+  const html = `
+    <html>
+      <body onload="document.forms[0].submit()">
+        <p>Processing response to your website...</p>
+        <form method="POST" action="${returnUrl}">
+          ${Object.keys(responseParams).map(k => `<input type="hidden" name="${k}" value="${responseParams[k]}">`).join('')}
+        </form>
+      </body>
+    </html>
+  `;
+  res.send(html);
+};
+
 
 // @desc    Get all shipments for admin panel
 // @route   GET /api/orders/shipments

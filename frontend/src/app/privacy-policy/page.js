@@ -58,7 +58,7 @@ export default function PrivacyPolicy() {
             <section className="mb-5">
               <h2 className="h4 fw-bold mb-3" style={{ color: '#333' }}>4. Order and Payment Information</h2>
               <p style={{ color: '#555', lineHeight: '1.8' }}>
-                All payments are processed securely through our authorized payment gateway partner, <strong>CCAvenue</strong>. 
+                All payments are processed securely through our authorized payment gateway partner, <strong>ICICI</strong>. 
                 Sweettree does not directly collect, store, or process your raw credit card numbers, debit card numbers, or UPI PINs. 
                 We only retain transaction tracking IDs and bank reference numbers to verify payment status and manage refunds.
               </p>
@@ -81,7 +81,7 @@ export default function PrivacyPolicy() {
                 We may share your data with trusted third-party vendors, service providers, and partners who perform services for us, including:
               </p>
               <ul style={{ color: '#555', lineHeight: '1.8' }}>
-                <li><strong>Payment Processors:</strong> CCAvenue for secure payment processing.</li>
+                <li><strong>Payment Processors:</strong> ICICI for secure payment processing.</li>
                 <li><strong>Shipping Partners:</strong> Logistics partners (such as Delhivery) to deliver your orders.</li>
                 <li><strong>Cloud Storage:</strong> AWS S3 for secure data and media hosting.</li>
                 <li><strong>Media Platforms:</strong> We may embed YouTube content using privacy-enhanced modes.</li>

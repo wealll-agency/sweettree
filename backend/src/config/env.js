@@ -41,10 +41,9 @@ const config = {
   SSL_KEY_PATH: process.env.SSL_KEY_PATH,
   SSL_CERT_PATH: process.env.SSL_CERT_PATH,
   
-  CCAVENUE: {
-    MERCHANT_ID: process.env.CCAVENUE_MERCHANT_ID,
-    ACCESS_CODE: process.env.CCAVENUE_ACCESS_CODE,
-    WORKING_KEY: process.env.CCAVENUE_WORKING_KEY,
+  ICICI: {
+    MERCHANT_ID: process.env.ICICI_MERCHANT_ID,
+    SECURE_HASH_KEY: process.env.ICICI_SECURE_HASH_KEY,
   },
 };
 

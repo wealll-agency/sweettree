@@ -250,8 +250,8 @@ const seedData = async () => {
       totalAmount: 712,
       paymentStatus: 'Paid',
       orderStatus: 'Delivered',
-      ccavenueTrackingId: 'track_mock12345678',
-      ccavenueBankRefNo: 'bank_mock12345678',
+      gatewayTxnId: 'track_mock12345678',
+      bankRefNo: 'bank_mock12345678',
       paymentMode: 'Credit Card',
       shippedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
       deliveredAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
@@ -259,9 +259,9 @@ const seedData = async () => {
 
     await Payment.create({
       order: order._id,
-      ccavenueOrderId: 'order_mock12345678',
-      ccavenueTrackingId: 'track_mock12345678',
-      ccavenueBankRefNo: 'bank_mock12345678',
+      merchantTranId: 'order_mock12345678',
+      gatewayTxnId: 'track_mock12345678',
+      bankRefNo: 'bank_mock12345678',
       amount: 712,
       status: 'Captured'
     });

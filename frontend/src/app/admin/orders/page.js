@@ -153,13 +153,13 @@ function AdminOrdersContent() {
   };
 
   const handleRefund = async (id) => {
-    const confirmed = await showConfirm('Are you sure you want to cancel this order and record it as refunded? (You must initiate the actual refund in your CCAvenue Dashboard)');
+    const confirmed = await showConfirm('Are you sure you want to cancel this order and record it as refunded?');
     if (confirmed) {
       setActionSuccess('');
       dispatch(refundOrder(id))
         .unwrap()
         .then((updatedOrder) => {
-          setActionSuccess('Order cancelled and refund recorded. Please process actual refund via CCAvenue.');
+          setActionSuccess('Order cancelled and refund recorded. Please process actual refund via Payment Gateway.');
           setSelectedOrder(updatedOrder);
           dispatch(fetchAdminOrders());
         })
@@ -604,20 +604,20 @@ function AdminOrdersContent() {
                   <div className="mb-2">
                     Current Status: <strong className="text-dark">{selectedOrder.orderStatus}</strong> | Payment Status: <strong className="text-dark">{selectedOrder.paymentStatus}</strong>
                   </div>
-                  {(selectedOrder.ccavenueTrackingId || selectedOrder.ccavenueBankRefNo) && (
+                  {(selectedOrder.gatewayTxnId || selectedOrder.bankRefNo) && (
                     <div className="bg-light p-3 rounded border">
                       <h6 className="fw-bold text-dark fs-8 mb-2 text-uppercase">Transaction Details</h6>
                       <div className="d-flex flex-column gap-1">
-                        {selectedOrder.ccavenueTrackingId && (
+                        {(selectedOrder.gatewayTxnId) && (
                           <div className="d-flex justify-content-between">
-                            <span>CCAvenue Tracking ID:</span>
-                            <span className="text-dark fw-medium font-monospace">{selectedOrder.ccavenueTrackingId}</span>
+                            <span>Gateway Tracking ID:</span>
+                            <span className="text-dark fw-medium font-monospace">{selectedOrder.gatewayTxnId}</span>
                           </div>
                         )}
-                        {selectedOrder.ccavenueBankRefNo && (
+                        {(selectedOrder.bankRefNo) && (
                           <div className="d-flex justify-content-between">
                             <span>Bank Reference Number:</span>
-                            <span className="text-dark fw-medium font-monospace">{selectedOrder.ccavenueBankRefNo}</span>
+                            <span className="text-dark fw-medium font-monospace">{selectedOrder.bankRefNo}</span>
                           </div>
                         )}
                         {selectedOrder.paymentMode && (

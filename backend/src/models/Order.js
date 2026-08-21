@@ -56,8 +56,8 @@ const orderSchema = new mongoose.Schema({
   packedAt: { type: Date },
   shippedAt: { type: Date },
   deliveredAt: { type: Date },
-  ccavenueTrackingId: { type: String, index: true },
-  ccavenueBankRefNo: { type: String },
+  gatewayTxnId: { type: String, index: true },
+  bankRefNo: { type: String },
   paymentMode: { type: String },
   
   // Shipping Integration Fields (Multiple shipments support)
