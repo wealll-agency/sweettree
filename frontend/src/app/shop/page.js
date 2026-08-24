@@ -144,6 +144,151 @@ function ShopContent() {
     return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
   });
 
+  // Render Filters Helper
+  const renderFilters = (prefix = '') => (
+    <>
+      <div className="filter-header d-flex justify-content-between align-items-center mb-1">
+        <h5 className="fw-bold m-0 text-dark" style={{ fontSize: '16px' }}>Filter By</h5>
+        {(priceFrom || priceTo || selectedStock || selectedBrand || selectedDiscount || selectedCategory) && (
+          <button 
+            onClick={() => {
+              setPriceFrom('');
+              setPriceTo('');
+              setSelectedStock(null);
+              setSelectedBrand(null);
+              setSelectedDiscount(null);
+              setSelectedCategory(null);
+              window.location.href = '/shop'; // Reset URL queries too
+            }}
+            className="btn btn-link text-decoration-none p-0 text-danger fs-8 fw-semibold"
+          >
+            Clear All
+          </button>
+        )}
+      </div>
+
+      {/* Price Filter */}
+      <div className="filter-section border-top py-3">
+        <div className="d-flex justify-content-between align-items-center filter-toggle" data-bs-toggle="collapse" data-bs-target={`#${prefix}priceFilter`}>
+          <span className="fw-bold" style={{ fontSize: '14px' }}>Price</span>
+          <i className="fas fa-minus small"></i>
+        </div>
+        <div id={`${prefix}priceFilter`} className="collapse show mt-3">
+          <div className="from-to-inputs d-flex align-items-center gap-2">
+            <div className="input-group input-group-sm border rounded">
+              <span className="input-group-text bg-white border-0 text-muted">₹</span>
+              <input 
+                type="number" 
+                className="form-control border-0 px-1" 
+                value={priceFrom}
+                onChange={(e) => setPriceFrom(e.target.value)}
+              />
+            </div>
+            <div className="input-group input-group-sm border rounded">
+              <span className="input-group-text bg-white border-0 text-muted">₹</span>
+              <input 
+                type="number" 
+                className="form-control border-0 px-1" 
+                value={priceTo}
+                onChange={(e) => setPriceTo(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Availability Filter */}
+      <div className="filter-section border-top py-3">
+        <div className="d-flex justify-content-between align-items-center filter-toggle collapse-indicator" data-bs-toggle="collapse" data-bs-target={`#${prefix}stockFilter`}>
+          <span className="fw-bold" style={{ fontSize: '14px' }}>Availability</span>
+          <i className="fas fa-minus small"></i>
+        </div>
+        <div id={`${prefix}stockFilter`} className="collapse show mt-3">
+          <div className="d-flex flex-wrap gap-2">
+            <button 
+              onClick={() => setSelectedStock(selectedStock === 'In Stock' ? null : 'In Stock')}
+              className={`filter-pill-btn ${selectedStock === 'In Stock' ? 'active' : ''}`}
+            >
+              In Stock
+            </button>
+            <button 
+              onClick={() => setSelectedStock(selectedStock === 'Out Of Stock' ? null : 'Out Of Stock')}
+              className={`filter-pill-btn ${selectedStock === 'Out Of Stock' ? 'active' : ''}`}
+            >
+              Out Of Stock
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Brand Filter */}
+      <div className="filter-section border-top py-3">
+        <div className="d-flex justify-content-between align-items-center filter-toggle collapse-indicator" data-bs-toggle="collapse" data-bs-target={`#${prefix}brandFilter`}>
+          <span className="fw-bold" style={{ fontSize: '14px' }}>Brand</span>
+          <i className="fas fa-minus small"></i>
+        </div>
+        <div id={`${prefix}brandFilter`} className="collapse show mt-3">
+          <div className="d-flex flex-wrap gap-2">
+            {['Sweettree', 'Sweettree ANMOL', 'Sweettree SNACKRITE'].map((brand) => (
+              <button
+                key={brand}
+                onClick={() => setSelectedBrand(selectedBrand === brand ? null : brand)}
+                className="filter-tag-btn"
+                style={selectedBrand === brand ? { backgroundColor: 'var(--primary-color)', color: '#fff', borderColor: 'var(--primary-color)' } : {}}
+              >
+                {brand}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Discount Filter */}
+      <div className="filter-section border-top py-3">
+        <div className="d-flex justify-content-between align-items-center filter-toggle collapse-indicator" data-bs-toggle="collapse" data-bs-target={`#${prefix}discountFilter`}>
+          <span className="fw-bold" style={{ fontSize: '14px' }}>Discount</span>
+          <i className="fas fa-minus small"></i>
+        </div>
+        <div id={`${prefix}discountFilter`} className="collapse show mt-3">
+          <div className="discount-grid">
+            {['10% Off', '30% Off', '50% Off'].map((disc) => (
+              <button
+                key={disc}
+                onClick={() => setSelectedDiscount(selectedDiscount === disc ? null : disc)}
+                className="filter-tag-btn"
+                style={selectedDiscount === disc ? { backgroundColor: 'var(--primary-color)', color: '#fff', borderColor: 'var(--primary-color)' } : {}}
+              >
+                {disc}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Shop By Category */}
+      <div className="filter-section border-top py-3">
+        <div className="d-flex justify-content-between align-items-center filter-toggle" data-bs-toggle="collapse" data-bs-target={`#${prefix}shopCatFilter`}>
+          <span className="fw-bold">Shop By Category</span>
+          <i className="fas fa-minus"></i>
+        </div>
+        <div id={`${prefix}shopCatFilter`} className="collapse show mt-3">
+          <div className="discount-grid">
+            {['Almond', 'Cashew', 'Dates', 'Makhana', 'Spices'].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
+                className="filter-tag-btn"
+                style={selectedCategory === cat ? { backgroundColor: 'var(--primary-color)', color: '#fff', borderColor: 'var(--primary-color)' } : {}}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <>
       <div className="marquee-wrapper">
@@ -160,7 +305,7 @@ function ShopContent() {
               promotionalBanners.map(banner => (
                 <a href={banner.targetLink || '#'} key={banner._id}>
                   <Image 
-                    src={banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5000'}${banner.image}`} 
+                    src={banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : ''}${banner.image}`} 
                     alt={banner.title || "Shop Banner"} 
                     width={1920} 
                     height={300} 
@@ -191,148 +336,28 @@ function ShopContent() {
 
       <div className="container-fluid px-1 px-md-4 px-lg-5 pb-5">
         <div className="row">
+          {/* Mobile Filter Accordion */}
+          <div className="col-12 d-lg-none mb-4">
+            <div className="accordion border-0 shadow-sm rounded" id="mobileFilterAcc">
+              <div className="accordion-item border-0">
+                <h2 className="accordion-header" id="mobileFilterHeading">
+                  <button className="accordion-button collapsed fw-bold py-3" type="button" data-bs-toggle="collapse" data-bs-target="#mobileFilterCollapse" aria-expanded="false" aria-controls="mobileFilterCollapse" style={{ backgroundColor: '#fff', color: '#333' }}>
+                    <i className="fas fa-filter me-2" style={{ color: 'var(--primary-color)' }}></i> Filter Products
+                  </button>
+                </h2>
+                <div id="mobileFilterCollapse" className="accordion-collapse collapse" aria-labelledby="mobileFilterHeading" data-bs-parent="#mobileFilterAcc">
+                  <div className="accordion-body bg-light p-4">
+                    {renderFilters('mobile_')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Sidebar Filters */}
           <div className="col-lg-3 d-none d-lg-block">
             <div className="shop-sidebar-filter card border-0 shadow-sm rounded-0 p-4 mb-4">
-              <div className="filter-header d-flex justify-content-between align-items-center mb-1">
-                <h5 className="fw-bold m-0 text-dark" style={{ fontSize: '16px' }}>Filter By</h5>
-                {(priceFrom || priceTo || selectedStock || selectedBrand || selectedDiscount || selectedCategory) && (
-                  <button 
-                    onClick={() => {
-                      setPriceFrom('');
-                      setPriceTo('');
-                      setSelectedStock(null);
-                      setSelectedBrand(null);
-                      setSelectedDiscount(null);
-                      setSelectedCategory(null);
-                      router.push('/shop'); // Reset URL queries too
-                    }}
-                    className="btn btn-link text-decoration-none p-0 text-danger fs-8 fw-semibold"
-                  >
-                    Clear All
-                  </button>
-                )}
-              </div>
-
-              {/* Price Filter */}
-              <div className="filter-section border-top py-3">
-                <div className="d-flex justify-content-between align-items-center filter-toggle" data-bs-toggle="collapse" data-bs-target="#priceFilter">
-                  <span className="fw-bold" style={{ fontSize: '14px' }}>Price</span>
-                  <i className="fas fa-minus small"></i>
-                </div>
-                <div id="priceFilter" className="collapse show mt-3">
-                  <div className="from-to-inputs d-flex align-items-center gap-2">
-                    <div className="input-group input-group-sm border rounded">
-                      <span className="input-group-text bg-white border-0 text-muted">₹</span>
-                      <input 
-                        type="number" 
-                        className="form-control border-0 px-1" 
-                        value={priceFrom}
-                        onChange={(e) => setPriceFrom(e.target.value)}
-                      />
-                    </div>
-                    <div className="input-group input-group-sm border rounded">
-                      <span className="input-group-text bg-white border-0 text-muted">₹</span>
-                      <input 
-                        type="number" 
-                        className="form-control border-0 px-1" 
-                        value={priceTo}
-                        onChange={(e) => setPriceTo(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Availability Filter */}
-              <div className="filter-section border-top py-3">
-                <div className="d-flex justify-content-between align-items-center filter-toggle collapse-indicator" data-bs-toggle="collapse" data-bs-target="#stockFilter">
-                  <span className="fw-bold" style={{ fontSize: '14px' }}>Availability</span>
-                  <i className="fas fa-minus small"></i>
-                </div>
-                <div id="stockFilter" className="collapse show mt-3">
-                  <div className="d-flex flex-wrap gap-2">
-                    <button 
-                      onClick={() => setSelectedStock(selectedStock === 'In Stock' ? null : 'In Stock')}
-                      className={`filter-pill-btn ${selectedStock === 'In Stock' ? 'active' : ''}`}
-                    >
-                      In Stock
-                    </button>
-                    <button 
-                      onClick={() => setSelectedStock(selectedStock === 'Out Of Stock' ? null : 'Out Of Stock')}
-                      className={`filter-pill-btn ${selectedStock === 'Out Of Stock' ? 'active' : ''}`}
-                    >
-                      Out Of Stock
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Brand Filter */}
-              <div className="filter-section border-top py-3">
-                <div className="d-flex justify-content-between align-items-center filter-toggle collapse-indicator" data-bs-toggle="collapse" data-bs-target="#brandFilter">
-                  <span className="fw-bold" style={{ fontSize: '14px' }}>Brand</span>
-                  <i className="fas fa-minus small"></i>
-                </div>
-                <div id="brandFilter" className="collapse show mt-3">
-                  <div className="d-flex flex-wrap gap-2">
-                    {['Sweettree', 'Sweettree ANMOL', 'Sweettree SNACKRITE'].map((brand) => (
-                      <button
-                        key={brand}
-                        onClick={() => setSelectedBrand(selectedBrand === brand ? null : brand)}
-                        className="filter-tag-btn"
-                        style={selectedBrand === brand ? { backgroundColor: 'var(--primary-color)', color: '#fff', borderColor: 'var(--primary-color)' } : {}}
-                      >
-                        {brand}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Discount Filter */}
-              <div className="filter-section border-top py-3">
-                <div className="d-flex justify-content-between align-items-center filter-toggle collapse-indicator" data-bs-toggle="collapse" data-bs-target="#discountFilter">
-                  <span className="fw-bold" style={{ fontSize: '14px' }}>Discount</span>
-                  <i className="fas fa-minus small"></i>
-                </div>
-                <div id="discountFilter" className="collapse show mt-3">
-                  <div className="discount-grid">
-                    {['10% Off', '30% Off', '50% Off'].map((disc) => (
-                      <button
-                        key={disc}
-                        onClick={() => setSelectedDiscount(selectedDiscount === disc ? null : disc)}
-                        className="filter-tag-btn"
-                        style={selectedDiscount === disc ? { backgroundColor: 'var(--primary-color)', color: '#fff', borderColor: 'var(--primary-color)' } : {}}
-                      >
-                        {disc}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Shop By Category */}
-              <div className="filter-section border-top py-3">
-                <div className="d-flex justify-content-between align-items-center filter-toggle" data-bs-toggle="collapse" data-bs-target="#shopCatFilter">
-                  <span className="fw-bold">Shop By Category</span>
-                  <i className="fas fa-minus"></i>
-                </div>
-                <div id="shopCatFilter" className="collapse show mt-3">
-                  <div className="discount-grid">
-                    {['Almond', 'Cashew', 'Dates', 'Makhana', 'Spices'].map((cat) => (
-                      <button
-                        key={cat}
-                        onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
-                        className="filter-tag-btn"
-                        style={selectedCategory === cat ? { backgroundColor: 'var(--primary-color)', color: '#fff', borderColor: 'var(--primary-color)' } : {}}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              {renderFilters('desktop_')}
             </div>
           </div>
 

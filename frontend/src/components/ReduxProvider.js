@@ -96,6 +96,12 @@ function StateHydrator() {
             return Promise.reject(error);
           }
           
+          // If the user is a guest (not logged in), don't try to refresh and don't force a redirect.
+          // This allows guests to stay on the checkout page even if fetchCoupons returns 401.
+          if (typeof window !== 'undefined' && !localStorage.getItem('sweettree_user')) {
+            return Promise.reject(error);
+          }
+
           originalRequest._retry = true;
           try {
              await axios.post(`${apiUrl}/auth/refresh`, {}, { withCredentials: true });

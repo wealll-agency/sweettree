@@ -26,4 +26,8 @@ The following rules have been strictly set by the user and MUST NOT be changed o
 - **Strict Rule:** The Warehouse Add/Edit popup MUST include 'Working Days' and 'Return Details' fields. The popup MUST be scrollable (`modal-dialog-scrollable`) and large (`modal-lg`) to prevent UI cut-offs. Do not revert these structural changes.
 
 ---
+## 6. Communication Language
+- **Strict Rule:** ALWAYS reply to the user in English, regardless of the language the user uses to communicate (e.g. Bengali, Hindi, etc.).
+
+---
 *Note to agents: Adhere to these rules unconditionally to prevent overriding critical user-approved functionality.*

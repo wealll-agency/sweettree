@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../../utils/axiosConfig';
 import { useNotification } from '../../../context/NotificationContext';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Edit2 } from 'lucide-react';
+import Image from 'next/image';
 
 export default function MediaManagerPage() {
   const [banners, setBanners] = useState([]);
@@ -66,27 +67,80 @@ export default function MediaManagerPage() {
       previewClass: 'ratio-4x3',
       previewMaxWidth: '300px',
       allowMultiple: true 
+    },
+    { 
+      id: 'AboutHero', 
+      title: 'About Page Hero Banner', 
+      subtitle: 'Recommended: 1920 × 750 px | Aspect Ratio: 1920:750 | Format: WebP / JPG / PNG', 
+      expectedRatio: 1920/750, 
+      recWidth: 1920, 
+      recHeight: 750,
+      previewClass: 'ratio-hero',
+      previewMaxWidth: '100%',
+      allowMultiple: false 
+    },
+    { 
+      id: 'AboutStory', 
+      title: 'About Our Story Banner', 
+      subtitle: 'Recommended: 800 × 600 px | Aspect Ratio: 4:3 | Format: WebP / JPG / PNG', 
+      expectedRatio: 4/3, 
+      recWidth: 800, 
+      recHeight: 600,
+      previewClass: 'ratio-4x3',
+      previewMaxWidth: '400px',
+      allowMultiple: false 
+    },
+    { 
+      id: 'AboutMission', 
+      title: 'About Mission Banner', 
+      subtitle: 'Recommended: 800 × 600 px | Aspect Ratio: 4:3 | Format: WebP / JPG / PNG', 
+      expectedRatio: 4/3, 
+      recWidth: 800, 
+      recHeight: 600,
+      previewClass: 'ratio-4x3',
+      previewMaxWidth: '400px',
+      allowMultiple: false 
+    },
+    { 
+      id: 'AboutVision', 
+      title: 'About Vision Banner', 
+      subtitle: 'Recommended: 800 × 600 px | Aspect Ratio: 4:3 | Format: WebP / JPG / PNG', 
+      expectedRatio: 4/3, 
+      recWidth: 800, 
+      recHeight: 600,
+      previewClass: 'ratio-4x3',
+      previewMaxWidth: '400px',
+      allowMultiple: false 
     }
   ];
 
   useEffect(() => {
-    fetchBanners();
+    fetchData();
   }, []);
 
-  const fetchBanners = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
       const res = await api.get('/banners?all=true');
-      if (res.data.success) {
-        setBanners(res.data.banners);
-      }
+      
+      if (res.data.success) setBanners(res.data.banners);
     } catch (error) {
-      showAlert('Failed to fetch banners', 'error');
+      showAlert('Failed to fetch data', 'error');
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchBanners = async () => {
+    try {
+      const res = await api.get('/banners?all=true');
+      if (res.data.success) setBanners(res.data.banners);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // --- Banners Logic ---
   const handleFileUpload = async (e, placement, bannerId = null) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -94,14 +148,12 @@ export default function MediaManagerPage() {
     const sectionDef = sections.find(s => s.id === placement);
     let warningMsg = null;
 
-    // Validate dimensions on frontend before saving
     const validateDimensions = () => new Promise((resolve) => {
-      const img = new Image();
+      const img = new window.Image();
       img.src = URL.createObjectURL(file);
       img.onload = () => {
         const actualRatio = img.width / img.height;
         const expectedRatio = sectionDef?.expectedRatio || 1;
-        // Check if ratio deviates by more than 5%
         if (Math.abs(actualRatio - expectedRatio) / expectedRatio > 0.05) {
           warningMsg = `⚠ Warning: Uploaded image is ${img.width}x${img.height} px (${actualRatio.toFixed(2)}:1). Recommended is ${sectionDef.recWidth}x${sectionDef.recHeight} px. Image will be cropped automatically.`;
         }
@@ -113,7 +165,7 @@ export default function MediaManagerPage() {
     await validateDimensions();
 
     const form = new FormData();
-    form.append('file', file); // Matches backend multer upload.single('file')
+    form.append('file', file);
     
     try {
       const res = await api.post('/uploads', form, {
@@ -158,10 +210,8 @@ export default function MediaManagerPage() {
 
   const handleRemove = async (banner) => {
     if (banner.isNew) {
-      // Just remove from state
       setBanners(prev => prev.filter(b => b._id !== banner._id));
     } else {
-      // Delete from database
       if (window.confirm('Are you sure you want to remove this banner?')) {
         try {
           const res = await api.delete(`/banners/${banner._id}`);
@@ -186,7 +236,7 @@ export default function MediaManagerPage() {
 
     try {
       for (const banner of sectionBanners) {
-        if (!banner.image) continue; // Skip empty rows
+        if (!banner.image) continue;
 
         if (banner.isNew) {
           await api.post('/banners', {
@@ -205,7 +255,7 @@ export default function MediaManagerPage() {
         }
       }
       showAlert(`${placement} section saved successfully!`, 'success');
-      fetchBanners(); // Refresh from DB to clear dirty flags and temp IDs
+      fetchBanners(); 
     } catch (error) {
       showAlert(`Error saving ${placement} section`, 'error');
     }
@@ -213,8 +263,7 @@ export default function MediaManagerPage() {
 
   const getImageUrl = (url) => {
     if (!url) return '';
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:7050';
-    if (url.includes('localhost:')) return url.replace(/http:\/\/localhost:\d+/, baseUrl);
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : '';
     if (url.startsWith('http') || url.startsWith('/')) return url;
     return `${baseUrl}${url}`;
   };
@@ -226,8 +275,8 @@ export default function MediaManagerPage() {
   return (
     <div className="container-fluid py-4 px-lg-5 animate-fade-in" style={{ backgroundColor: '#FFFFFF', minHeight: '100vh' }}>
       <div className="mb-4">
-        <h3 className="fw-bold mb-1" style={{ color: '#162C18' }}>Media Manager</h3>
-        <p className="text-muted small">Upload and manage all homepage banners, category headers, hero sliders, and promo videos.</p>
+        <h3 className="fw-bold mb-1" style={{ color: '#162C18' }}>Media & Blogs Manager</h3>
+        <p className="text-muted small">Upload and manage all homepage banners, category headers, hero sliders, promo videos, and write blogs.</p>
       </div>
 
       {sections.map(section => {
@@ -306,14 +355,14 @@ export default function MediaManagerPage() {
                   ))
                 )}
                 
-                {section.allowMultiple && (
+                {(section.allowMultiple || sectionBanners.length === 0) && (
                   <div className="mt-3">
                     <button 
                       className="btn btn-sm"
                       style={{ color: '#27ae60', border: '1px solid #27ae60', backgroundColor: '#fff', padding: '6px 16px', fontSize: '12px', borderRadius: '4px' }}
                       onClick={() => handleAddEmptyRow(section.id)}
                     >
-                      + Upload Another {section.id === 'Hero' ? 'Slider Image' : 'Banner'}
+                      + Upload {section.allowMultiple ? `Another ${section.id === 'Hero' ? 'Slider Image' : 'Banner'}` : 'Banner'}
                     </button>
                   </div>
                 )}
@@ -322,6 +371,7 @@ export default function MediaManagerPage() {
           </div>
         );
       })}
+
     </div>
   );
 }

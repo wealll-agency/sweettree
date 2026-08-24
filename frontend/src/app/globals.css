@@ -35,6 +35,15 @@ body {
   flex-direction: column;
 }
 
+/* Transparent Autofill Inputs (for dark auth pages) */
+.glass-input:-webkit-autofill,
+.glass-input:-webkit-autofill:hover, 
+.glass-input:-webkit-autofill:focus, 
+.glass-input:-webkit-autofill:active {
+    transition: background-color 5000s ease-in-out 0s;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
 h1,
 h2,
 h3,
@@ -1439,4 +1448,10 @@ body {
   .ratio-hero-mobile-portrait {
     aspect-ratio: 4 / 5;
   }
+}
+
+/* Hide default browser eye icon for password inputs */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
 }

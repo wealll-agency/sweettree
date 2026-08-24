@@ -1,8 +1,32 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import api from '../../utils/axiosConfig';
+
 export default function AboutPage() {
+  const [banners, setBanners] = useState({});
+
+  useEffect(() => {
+    const fetchBannersAndBlogs = async () => {
+      try {
+        const bannersRes = await api.get('/banners');
+        
+        if (bannersRes.data.success) {
+          const bannerMap = {};
+          bannersRes.data.banners.forEach(b => {
+            bannerMap[b.placement] = b.image;
+          });
+          setBanners(bannerMap);
+        }
+      } catch (error) {
+        console.error('Failed to fetch about page data', error);
+      }
+    };
+    
+    fetchBannersAndBlogs();
+  }, []);
+
   return (
     <>
       <div className="marquee-wrapper">
@@ -12,7 +36,10 @@ export default function AboutPage() {
       </div>
 
       {/* Breadcrumb Banner */}
-      <section className="breadcrumb-banner position-relative about-hero-banner">
+      <section 
+        className="breadcrumb-banner position-relative about-hero-banner"
+        style={banners.AboutHero ? { backgroundImage: `url(${banners.AboutHero})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+      >
         <div className="position-absolute top-0 start-0 w-100 h-100 about-hero-overlay"></div>
         <div className="container-fluid px-4 px-lg-5 position-relative h-100 d-flex flex-column justify-content-center text-center about-hero-content">
           <h1 className="text-white fw-bold mb-3 about-hero-title">About Sweettree</h1>
@@ -31,7 +58,7 @@ export default function AboutPage() {
           <div className="row align-items-center gy-5">
             <div className="col-lg-6 position-relative">
               <div className="position-relative about-story-img-wrap">
-                <Image src="/banner_slider_image3.jpeg" alt="Sweettree Store" width={800} height={600} style={{ width: '100%', height: 'auto' }} className="img-fluid rounded-4 shadow-lg w-100 about-story-img" />
+                <Image src={banners.AboutStory || "/banner_slider_image3.jpeg"} alt="Sweettree Store" width={800} height={600} style={{ width: '100%', height: 'auto', objectFit: 'cover' }} className="img-fluid rounded-4 shadow-lg w-100 about-story-img" unoptimized={!!banners.AboutStory} />
               </div>
               <div className="position-absolute rounded-4 d-none d-lg-block about-story-bg-shape"></div>
             </div>
@@ -123,7 +150,7 @@ export default function AboutPage() {
           <div className="row align-items-center mb-5 pb-lg-4">
             <div className="col-lg-6 order-lg-2 position-relative mb-4 mb-lg-0">
               <div className="about-mission-img-wrap">
-                <Image src="/banner_slider_image1.jpeg" alt="Our Mission" width={800} height={600} style={{ width: '100%', height: 'auto' }} className="img-fluid w-100 about-mission-img" />
+                <Image src={banners.AboutMission || "/banner_slider_image1.jpeg"} alt="Our Mission" width={800} height={600} style={{ width: '100%', height: 'auto', objectFit: 'cover' }} className="img-fluid w-100 about-mission-img" unoptimized={!!banners.AboutMission} />
               </div>
             </div>
             <div className="col-lg-6 order-lg-1 pe-lg-5 text-center text-lg-start">
@@ -137,7 +164,7 @@ export default function AboutPage() {
           <div className="row align-items-center">
             <div className="col-lg-6 position-relative mb-4 mb-lg-0">
               <div className="about-vision-img-wrap">
-                <Image src="/banner_slider_image2.jpeg" alt="Our Vision" width={800} height={600} style={{ width: '100%', height: 'auto' }} className="img-fluid w-100 about-vision-img" />
+                <Image src={banners.AboutVision || "/banner_slider_image2.jpeg"} alt="Our Vision" width={800} height={600} style={{ width: '100%', height: 'auto', objectFit: 'cover' }} className="img-fluid w-100 about-vision-img" unoptimized={!!banners.AboutVision} />
               </div>
             </div>
             <div className="col-lg-6 ps-lg-5 text-center text-lg-start">

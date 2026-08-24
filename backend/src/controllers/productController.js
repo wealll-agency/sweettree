@@ -151,6 +151,14 @@ export const createProduct = async (req, res, next) => {
       }
     }
 
+    let assignedWarehouse = warehouse === '' ? null : warehouse;
+    if (!assignedWarehouse) {
+      const defaultWarehouse = await mongoose.model('Warehouse').findOne({ isActive: true });
+      if (defaultWarehouse) {
+        assignedWarehouse = defaultWarehouse._id;
+      }
+    }
+
     const product = new Product({
       name,
       category,
@@ -185,7 +193,7 @@ export const createProduct = async (req, res, next) => {
       expiryDate: expiryDate ? new Date(expiryDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Default 1 year expiry
       stock: Number(stock) || 0,
       packSizes: (typeof packSizes === 'string' ? JSON.parse(packSizes) : (packSizes || [])).filter(p => p.weight !== '' && p.weight !== null && p.weight !== undefined && p.price !== '' && p.price !== null && p.price !== undefined),
-      warehouse: warehouse === '' ? null : warehouse
+      warehouse: assignedWarehouse
     });
 
     const createdProduct = await product.save();

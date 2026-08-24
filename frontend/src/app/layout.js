@@ -45,7 +45,7 @@ export default function RootLayout({ children }) {
               <ScrollToTop />
             </Suspense>
             <ConditionalHeader />
-            <main className="flex-grow-1">
+            <main className="flex-grow-1 d-flex flex-column">
               {children}
             </main>
             <ConditionalFooter />

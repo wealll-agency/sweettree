@@ -153,13 +153,13 @@ function AdminOrdersContent() {
   };
 
   const handleRefund = async (id) => {
-    const confirmed = await showConfirm('Are you sure you want to cancel this order and record it as refunded?');
+    const confirmed = await showConfirm('Are you sure you want to initiate a refund for this order?');
     if (confirmed) {
       setActionSuccess('');
       dispatch(refundOrder(id))
         .unwrap()
         .then((updatedOrder) => {
-          setActionSuccess('Order cancelled and refund recorded. Please process actual refund via Payment Gateway.');
+          setActionSuccess('Refund initiated successfully.');
           setSelectedOrder(updatedOrder);
           dispatch(fetchAdminOrders());
         })
@@ -596,7 +596,10 @@ function AdminOrdersContent() {
                   
                   {/* Cancel / Refund */}
                   {selectedOrder.orderStatus !== 'Delivered' && selectedOrder.orderStatus !== 'Cancelled' && user.role === 'Super Admin' && (
-                    <button onClick={() => handleRefund(selectedOrder._id)} className="btn btn-sm btn-danger">Cancel & Refund Order</button>
+                    <button onClick={() => handleStatusChange(selectedOrder._id, 'Cancelled')} className="btn btn-sm btn-danger">Cancel Order</button>
+                  )}
+                  {selectedOrder.orderStatus === 'Cancelled' && selectedOrder.paymentStatus === 'Paid' && user.role === 'Super Admin' && (
+                    <button onClick={() => handleRefund(selectedOrder._id)} className="btn btn-sm btn-warning">Initiate Refund</button>
                   )}
                 </div>
 

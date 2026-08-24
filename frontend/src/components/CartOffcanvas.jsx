@@ -146,7 +146,7 @@ const CartOffcanvas = () => {
         {items.length > 0 && (
           <div className="bg-white border-top shadow-sm mt-auto">
             
-            <div className="p-3 pb-2" data-bs-toggle="collapse" data-bs-target="#cartBreakdown" aria-expanded="true" style={{ cursor: 'pointer' }}>
+            <div className="p-3 pb-2 collapsed" data-bs-toggle="collapse" data-bs-target="#cartBreakdown" aria-expanded="false" style={{ cursor: 'pointer' }}>
               <div className="d-flex justify-content-between align-items-center">
                 <h6 className="mb-0 fw-bold d-flex align-items-center gap-2 text-dark fs-6">
                   <Receipt size={18} className="text-danger" /> Estimated Total
@@ -166,7 +166,7 @@ const CartOffcanvas = () => {
               )}
             </div>
 
-            <div id="cartBreakdown" className="collapse show px-3">
+            <div id="cartBreakdown" className="collapse px-3">
               <div className="py-2 border-top border-bottom border-light">
                 <div className="d-flex justify-content-between mb-2 fs-7 text-muted">
                   <span>Total MRP:</span>

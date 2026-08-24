@@ -788,10 +788,8 @@ export const updateOrderStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    // Restrict cancellation if already packed/shipped/delivered
-    if (status === 'Cancelled' && ['Packed', 'Shipped', 'Delivered'].includes(order.orderStatus)) {
-      return res.status(400).json({ success: false, message: 'Cannot cancel order that has already been packed, shipped or delivered' });
-    }
+    // Removed restriction to allow Admins to force-cancel orders at any stage
+
 
     const updateQuery = { $set: {} };
     updateQuery.$set.orderStatus = status || order.orderStatus;
@@ -805,7 +803,6 @@ export const updateOrderStatus = async (req, res, next) => {
 
     // If Order is Cancelled, restore items to stock
     if (status === 'Cancelled') {
-      updateQuery.$set.paymentStatus = 'Refunded';
       
       for (const item of order.items) {
         await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true });

@@ -81,20 +81,26 @@ function ComboListingContent() {
 
   return (
     <>
+      <div className="marquee-wrapper">
+        <marquee behavior="scroll" direction="left" scrollamount="5">
+          || 🥜 Sweettree Anmol Jumbo Nuts - Extra 10% OFF! 🥜 || 🎁 Nuts For Savings 🎁 || 🔥 PayDay Sale Is LIVE - Extra 15% OFF Sitewide! 🔥 ||
+        </marquee>
+      </div>
+
       {/* Combo Box Banner */}
-      <section className="shop-banner mt-3">
-        <div className="container-fluid px-4 px-lg-5">
+      <section className="shop-banner">
+        <div className="container-fluid px-1 px-md-4 px-lg-5">
           <div className="shop_banner_image">
             {comboBanners.length > 0 ? (
               comboBanners.map(banner => (
                 <a href={banner.targetLink || '#'} key={banner._id}>
                   <Image 
-                    src={banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5000'}${banner.image}`} 
+                    src={banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : ''}${banner.image}`} 
                     alt={banner.title || "Combo Box Banner"} 
                     width={1920} 
                     height={300} 
                     priority={true} 
-                    style={{ width: '100%', height: 'auto', display: 'block', marginBottom: '15px' }} 
+                    style={{ width: '100%', height: '100%', maxHeight: '350px', objectFit: 'cover', display: 'block', marginBottom: '15px', borderRadius: '15px' }} 
                   />
                 </a>
               ))

@@ -18,7 +18,7 @@ export default function CheckoutPage() {
   const router = useRouter();
 
   const { user } = useSelector((state) => state.auth);
-  const { items, couponCode, subtotal, discount, tax, shippingFee, total, isCombo, applicableProducts, discountPercentage, minPurchaseAmount } = useSelector((state) => state.cart);
+  const { items, couponCode, subtotal, discount, tax, shippingFee, total, isCombo, applicableProducts, discountPercentage, minPurchaseAmount, discountType, flatDiscountAmount } = useSelector((state) => state.cart);
   const { loading, error } = useSelector((state) => state.orders);
   const { showAlert } = useNotification();
 
@@ -66,7 +66,7 @@ export default function CheckoutPage() {
           setHasCodPermission(res.data.settings.cod !== false);
         }
       } catch (err) {
-        console.error('Failed to fetch system settings', err);
+        console.warn('Failed to fetch system settings:', err.message || err);
       }
     };
     fetchGlobalSettings();
@@ -87,10 +87,12 @@ export default function CheckoutPage() {
           setAvailableCoupons(res.data.coupons.filter(c => c.isActive && new Date(c.expiryDate) > new Date()));
         }
       } catch (err) {
-        console.error('Failed to load coupons', err);
+        console.warn('Failed to load coupons:', err.message || err);
       }
     };
-    fetchCoupons();
+    if (user) {
+      fetchCoupons();
+    }
 
     // Fetch recommended products
     const fetchRecommended = async () => {
@@ -105,13 +107,13 @@ export default function CheckoutPage() {
           setRecommendedProducts(availableRecs);
         }
       } catch (err) {
-        console.error('Failed to load recommendations', err);
+        console.warn('Failed to load recommendations:', err.message || err);
       }
     };
     if (items.length > 0) {
       fetchRecommended();
     }
-  }, [items]);
+  }, [items, user]);
 
   // Restore Checkout State after login/registration
   useEffect(() => {
@@ -141,11 +143,23 @@ export default function CheckoutPage() {
             })).unwrap().then((addresses) => {
               setSelectedAddressIndex(addresses.length - 1);
               setShowNewAddressForm(false);
-            }).catch(err => console.error("Failed to restore checkout address", err));
+            }).catch(err => console.warn("Failed to restore checkout address:", err.message || err));
+            // Restore coupon if it was active
+            if (state.couponCode) {
+              dispatch(applyCouponCode({
+                code: state.couponCode,
+                discountType: state.discountType,
+                discountPercentage: state.discountPercentage,
+                flatDiscountAmount: state.flatDiscountAmount,
+                applicableProducts: state.applicableProducts,
+                isCombo: state.isCombo,
+                minPurchaseAmount: state.minPurchaseAmount
+              }));
+            }
           }
           localStorage.removeItem('pendingCheckout');
         } catch (e) {
-          console.error(e);
+          console.warn('State restore error:', e.message || e);
         }
       }
     }
@@ -204,7 +218,8 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     if (!user) {
       const checkoutState = {
-        addrName, addrPhone, pincode, locality, address, city, stateName, landmark, altPhone, addressType, paymentMode
+        addrName, addrPhone, pincode, locality, address, city, stateName, landmark, altPhone, addressType, paymentMode,
+        couponCode, discountType, discountPercentage, flatDiscountAmount, applicableProducts, isCombo, minPurchaseAmount
       };
       localStorage.setItem('pendingCheckout', JSON.stringify(checkoutState));
       router.push('/login?redirect=checkout');
@@ -667,6 +682,33 @@ export default function CheckoutPage() {
                   }}>Remove</button>
                 </div>
               )}
+              {/* Eligible Coupons */}
+              {availableCoupons && availableCoupons.filter(c => !c.minPurchaseAmount || subtotal >= c.minPurchaseAmount).length > 0 && !couponCode && (
+                <div className="mt-3">
+                  <h6 className="fs-8 fw-bold text-muted mb-2">Available for you:</h6>
+                  <div className="d-flex flex-column gap-2">
+                    {availableCoupons.filter(c => !c.minPurchaseAmount || subtotal >= c.minPurchaseAmount).slice(0, 1).map(c => (
+                      <div key={c._id} className="d-flex justify-content-between align-items-center border rounded p-2" style={{ borderStyle: 'dashed !important', borderColor: 'var(--primary-color) !important', backgroundColor: 'rgba(74, 222, 128, 0.05)' }}>
+                        <div>
+                          <span className="fw-bold d-block" style={{ fontSize: '0.85rem', color: 'var(--primary-color)' }}>{c.code}</span>
+                          <small className="text-muted" style={{ fontSize: '0.7rem' }}>
+                            {c.discountType === 'percentage' || c.discountType === 'Percent' ? `${c.discountPercentage}% OFF` : `₹${c.flatDiscountAmount} OFF`}
+                            {c.minPurchaseAmount > 0 ? ` on orders above ₹${c.minPurchaseAmount}` : ''}
+                          </small>
+                        </div>
+                        <button 
+                          type="button" 
+                          className="btn btn-sm fs-8 py-1 px-2"
+                          style={{ backgroundColor: 'var(--primary-color)', color: '#fff', borderRadius: '6px' }}
+                          onClick={() => handleApplyCoupon(null, c.code)}
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {isCombo && discount === 0 && couponCode && (!minPurchaseAmount || subtotal >= minPurchaseAmount) && (
                 <div className="alert alert-warning py-2 px-3 mt-3 fs-8 mb-0">
                   <i className="fas fa-exclamation-circle me-1"></i>
@@ -713,9 +755,20 @@ export default function CheckoutPage() {
             <button
               onClick={handlePlaceOrder}
               disabled={loading}
-              className="btn btn-brand w-100 py-3 mt-4 fw-bold fs-6 d-none d-md-flex align-items-center justify-content-center gap-2"
+              className="btn w-100 py-3 mt-4 fw-bold fs-6 d-none d-md-flex align-items-center justify-content-center gap-2 text-white border-0 shadow-sm"
+              style={{
+                background: loading ? 'rgba(14, 165, 233, 0.5)' : 'linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%)',
+                borderRadius: '12px',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 6px 16px rgba(14, 165, 233, 0.25)',
+              }}
+              onMouseEnter={e => { if (!loading) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(14, 165, 233, 0.4)'; }}}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(14, 165, 233, 0.25)'; }}
             >
-              {loading ? 'Processing Order...' : 'Pay Now'}
+              {loading 
+                ? <><span className="spinner-border spinner-border-sm" style={{ width: '1rem', height: '1rem' }} /> Processing...</>
+                : 'Pay Now'
+              }
             </button>
           </div>
 
@@ -784,10 +837,18 @@ export default function CheckoutPage() {
              <button
                 onClick={handlePlaceOrder}
                 disabled={loading}
-                className="btn btn-brand flex-fill py-2 fw-bold"
-                style={{ backgroundColor: '#005B6E', color: 'white', border: '1px solid #005B6E', fontSize: '13px' }}
+                className="btn flex-fill py-2 fw-bold text-white border-0 d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                style={{ 
+                  background: loading ? 'rgba(14, 165, 233, 0.5)' : 'linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%)',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  transition: 'all 0.2s ease'
+                }}
              >
-                {loading ? 'Processing...' : 'PAY NOW'}
+                {loading 
+                  ? <><span className="spinner-border spinner-border-sm" style={{ width: '14px', height: '14px' }} /> Processing...</>
+                  : 'Pay Now'
+                }
              </button>
            </div>
         </div>,

@@ -19,7 +19,6 @@ const Footer = () => {
             </p>
             <div className="d-flex align-items-center gap-3 mb-4">
               <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+91 9748724689</span>
-              <Image src="/fssai_logo.png" alt="FSSAI" width={80} height={30} style={{ height: '30px', width: 'auto', backgroundColor: '#fff', padding: '2px', borderRadius: '4px' }} />
             </div>
 
             {/* Social Icons */}
@@ -68,22 +67,27 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Categories */}
-          <div className="col-lg-2 col-md-3 col-6 mb-4 mb-md-0">
+          {/* Categories & FSSAI */}
+          <div className="col-lg-2 col-md-3 col-6 mb-4 mb-md-0 d-flex flex-column">
             <h6 className="mb-4" style={{ fontSize: '16px', fontWeight: 'bold' }}>Categories</h6>
-            <ul className="list-unstyled d-flex flex-column gap-3">
+            <ul className="list-unstyled d-flex flex-column gap-3 mb-4">
               <li><Link href="/shop?category=Dry%20Fruits" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>Dry Fruits</Link></li>
               <li><Link href="/shop?category=Top%20Selling%20Products" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>Top Selling Products</Link></li>
               <li><Link href="/shop?category=Whole%20Spices" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>Whole Spices</Link></li>
               <li><Link href="/shop?category=Healthy%20Snacking" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>Healthy Snacking</Link></li>
             </ul>
+
+            <div className="mt-auto pt-2">
+              <Image src="/fssai_logo.png" alt="FSSAI" width={80} height={30} style={{ height: '34px', width: 'auto', backgroundColor: '#fff', padding: '3px', borderRadius: '4px', marginBottom: '6px' }} />
+              <div style={{ fontSize: '12px', color: '#bbb', fontWeight: '500', letterSpacing: '0.5px' }}>Lic No. 12819019002064</div>
+            </div>
           </div>
         </div>
 
         {/* Bottom Section */}
         <div className="pt-4 d-flex flex-column flex-md-row justify-content-between align-items-center" style={{ borderTop: '1px solid #333' }}>
           <div className="mb-3 mb-md-0" style={{ color: '#888', fontSize: '12px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
-            Sweettree © 2026 All Rights Reserved | v1.1.0 
+            Sweettree © 2026 All Rights Reserved 
             and developed by 
             <a href="https://wealll.com/" target="_blank" rel="noopener noreferrer" className="d-inline-flex align-items-center">
               <Image src="/Wealll_new.webp" alt="We All" width={60} height={20} style={{ objectFit: 'contain' }} />
