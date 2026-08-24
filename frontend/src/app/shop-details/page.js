@@ -323,22 +323,35 @@ function ShopDetailsContent() {
             <span className="text-muted" style={{ fontSize: '13px' }}>{reviews.length} reviews</span>
           </div>
 
-          <div className="d-flex align-items-center gap-3 mb-1">
-            <span className="fw-bold" style={{ fontSize: '32px', color: '#005B6E' }}>₹{finalPrice}</span>
-            {realProduct.discount > 0 && (
-              <>
-                <span className="badge bg-danger">
-                  {realProduct.discountType === 'Flat' 
-                    ? `₹${realProduct.discount} OFF` 
-                    : `${realProduct.discount}% OFF`}
-                </span>
-              </>
-            )}
+          <div className="d-flex justify-content-between align-items-end mb-4">
+            <div>
+              <div className="d-flex align-items-center gap-3 mb-1">
+                <span className="fw-bold" style={{ fontSize: '32px', color: '#005B6E' }}>₹{finalPrice}</span>
+                {realProduct.discount > 0 && (
+                  <>
+                    <span className="badge bg-danger">
+                      {realProduct.discountType === 'Flat' 
+                        ? `₹${realProduct.discount} OFF` 
+                        : `${realProduct.discount}% OFF`}
+                    </span>
+                  </>
+                )}
+              </div>
+              <p className="text-muted mb-0" style={{ fontSize: '14px' }}>MRP: <del>₹{realProduct.price}</del> <span style={{ fontSize: '12px' }} className="d-none d-sm-inline">(MRP inclusive of all taxes)</span><span style={{ fontSize: '12px' }} className="d-inline d-sm-none">(Inc. taxes)</span></p>
+            </div>
+            
+            <div className="d-block d-md-none text-end pb-1">
+                 <p className="fw-bold mb-1" style={{ fontSize: '12px', color: '#666' }}>Quantity</p>
+                 <div className="d-flex align-items-center border rounded justify-content-between p-0" style={{ width: '90px' }}>
+                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="btn btn-sm border-0 px-2"><Minus size={12} /></button>
+                    <span className="fw-bold" style={{ fontSize: '14px' }}>{quantity}</span>
+                    <button onClick={() => setQuantity(Math.min(realProduct.stock || 100, quantity + 1))} className="btn btn-sm border-0 px-2" disabled={quantity >= (realProduct.stock || 100)}><Plus size={12} /></button>
+                 </div>
+            </div>
           </div>
-          <p className="text-muted mb-4" style={{ fontSize: '14px' }}>MRP: <del>₹{realProduct.price}</del> <span style={{ fontSize: '12px' }}>(MRP inclusive of all taxes)</span></p>
 
           <div className="row mb-4">
-             <div className="col-md-3">
+             <div className="col-md-3 d-none d-md-block">
                  <p className="fw-bold mb-2" style={{ fontSize: '14px' }}>Quantity</p>
                  <div className="d-flex align-items-center border rounded justify-content-between p-1" style={{ width: '100px' }}>
                     <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="btn btn-sm border-0"><Minus size={12} /></button>

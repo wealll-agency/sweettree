@@ -122,8 +122,8 @@ const calculateOrderTotals = async (items, couponCode) => {
   const taxableAmount = subtotal - discount;
   const tax = Math.round(taxableAmount * 0.05);
   
-  // Shipping: Free above 500, else 40 INR
-  const shippingFee = taxableAmount > 500 ? 0 : 40;
+  // Shipping: Free above 1999, else 80 INR
+  const shippingFee = taxableAmount >= 1999 ? 0 : 80;
   
   const totalAmount = taxableAmount + tax + shippingFee;
 
@@ -317,21 +317,28 @@ export const createOrder = async (req, res, next) => {
 
       console.log("ICICI S2S Response:", iciciResponse.data);
 
-      if (iciciResponse.data && iciciResponse.data.responseCode === '0000' && iciciResponse.data.paymentUrl) {
-        return res.status(201).json({
-          success: true,
-          order: savedOrder,
-          iciciActionUrl: iciciResponse.data.paymentUrl
-        });
-      } else {
-        // Return the error code so frontend can display it
-        return res.status(201).json({
-          success: true,
-          order: savedOrder,
-          iciciActionUrl: null,
-          gatewayError: iciciResponse.data.responseDescription || 'Payment Gateway Error'
-        });
+      if (iciciResponse.data && (iciciResponse.data.responseCode === '0000' || iciciResponse.data.responseCode === 'R1000')) {
+        let paymentUrl = iciciResponse.data.paymentUrl || iciciResponse.data.redirectURI;
+        if (paymentUrl && iciciResponse.data.tranCtx && !paymentUrl.includes('tranCtx')) {
+          paymentUrl += (paymentUrl.includes('?') ? '&' : '?') + 'tranCtx=' + iciciResponse.data.tranCtx;
+        }
+        
+        if (paymentUrl) {
+          return res.status(201).json({
+            success: true,
+            order: savedOrder,
+            iciciActionUrl: paymentUrl
+          });
+        }
       }
+      
+      // Fallback/Error
+      return res.status(201).json({
+        success: true,
+        order: savedOrder,
+        iciciActionUrl: null,
+        gatewayError: iciciResponse.data.responseDescription || 'Payment Gateway Error'
+      });
 
     } catch (apiError) {
       console.error("ICICI S2S API Error:", apiError.response?.data || apiError.message);
@@ -360,7 +367,7 @@ export const iciciCallback = async (req, res, next) => {
     const responseParams = req.body;
     
     // Safely extract the primary frontend URL early for error redirects
-    let frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    let frontendUrl = process.env.FRONTEND_URL || 'http://localhost:7051';
     if (frontendUrl.includes(',')) {
       frontendUrl = frontendUrl.split(',')[0].trim();
     }
@@ -376,7 +383,17 @@ export const iciciCallback = async (req, res, next) => {
       return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent('Payment verification failed (Hash Mismatch)')}`);
     }
 
-    const { merchantTranId, amount, ResponseCode, txnId, bankRefNo, message } = responseParams;
+    const amount = responseParams.amount || responseParams.Amount;
+    const responseCode = responseParams.responseCode || responseParams.ResponseCode;
+    const txnId = responseParams.txnID || responseParams.txnId || responseParams.TxnId;
+    const bankRefNo = responseParams.bankRefNo || responseParams.BankRefNo;
+    const message = responseParams.respDescription || responseParams.message || responseParams.Message;
+    const merchantTranId = responseParams.merchantTxnNo || responseParams.MerchantTxnNo || responseParams.merchantTranId;
+
+    if (!merchantTranId) {
+      console.error('Missing Transaction ID in callback:', responseParams);
+      return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent('Missing transaction ID from payment gateway')}`);
+    }
 
     // Find the payment ledger entry first
     const payment = await Payment.findOne({ merchantTranId });
@@ -405,7 +422,7 @@ export const iciciCallback = async (req, res, next) => {
     const lockedOrder = await Order.findById(order._id).session(session);
 
     // ICICI Success ResponseCode is typically '0000' (or '0' depending on exact spec). Assuming '0000'.
-    if (ResponseCode === '0000' || ResponseCode === '0') {
+    if (responseCode === '0000' || responseCode === '0') {
       // Validate amount
       if (Number(amount) !== Number(lockedOrder.totalAmount)) {
         lockedOrder.paymentStatus = 'Failed';
@@ -517,7 +534,7 @@ export const iciciCallback = async (req, res, next) => {
     }
     console.error('ICICI Callback Error:', error);
     
-    let fUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    let fUrl = process.env.FRONTEND_URL || 'http://localhost:7051';
     if (fUrl.includes(',')) fUrl = fUrl.split(',')[0].trim();
       return res.redirect(`${fUrl}/checkout?error=${encodeURIComponent('Payment processing failed due to an internal server error.')}`);
   }
@@ -540,7 +557,16 @@ export const iciciAdvice = async (req, res, next) => {
       return res.status(400).send('Hash Mismatch');
     }
 
-    const { merchantTranId, amount, ResponseCode, txnId, bankRefNo, message } = responseParams;
+    const amount = responseParams.amount || responseParams.Amount;
+    const responseCode = responseParams.responseCode || responseParams.ResponseCode;
+    const txnId = responseParams.txnID || responseParams.txnId || responseParams.TxnId;
+    const bankRefNo = responseParams.bankRefNo || responseParams.BankRefNo;
+    const message = responseParams.respDescription || responseParams.message || responseParams.Message;
+    const merchantTranId = responseParams.merchantTxnNo || responseParams.MerchantTxnNo || responseParams.merchantTranId;
+
+    if (!merchantTranId) {
+      return res.status(400).send('Missing transaction ID');
+    }
 
     const payment = await Payment.findOne({ merchantTranId });
     if (!payment) {
@@ -565,7 +591,7 @@ export const iciciAdvice = async (req, res, next) => {
     const lockedPayment = await Payment.findById(payment._id).session(session);
     const lockedOrder = await Order.findById(order._id).session(session);
 
-    if (ResponseCode === '0000' || ResponseCode === '0') {
+    if (responseCode === '0000' || responseCode === '0') {
       if (Number(amount) !== Number(lockedOrder.totalAmount)) {
         lockedOrder.paymentStatus = 'Failed';
         lockedOrder.gatewayTxnId = txnId;
@@ -762,9 +788,9 @@ export const updateOrderStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    // Restrict cancellation if already shipped/delivered
-    if (status === 'Cancelled' && ['Shipped', 'Delivered'].includes(order.orderStatus)) {
-      return res.status(400).json({ success: false, message: 'Cannot cancel order that has already been shipped or delivered' });
+    // Restrict cancellation if already packed/shipped/delivered
+    if (status === 'Cancelled' && ['Packed', 'Shipped', 'Delivered'].includes(order.orderStatus)) {
+      return res.status(400).json({ success: false, message: 'Cannot cancel order that has already been packed, shipped or delivered' });
     }
 
     const updateQuery = { $set: {} };

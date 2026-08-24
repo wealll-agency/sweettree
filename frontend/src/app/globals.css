@@ -1054,6 +1054,10 @@ article.product-card a {
   margin-top: 6px !important;
 }
 
+.product-card__content{
+  
+}
+
 .product-card__rating {
   color: #172033;
   display: flex;

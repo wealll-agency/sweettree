@@ -300,7 +300,7 @@ export default function OrderTrackingPage() {
           {(!['Cancelled', 'Refunded'].includes(order.orderStatus)) && hasRefundPermission && (
             <div className="bg-white p-4 rounded-4 shadow-sm border mb-4 text-center mt-4">
               <h6 className="fw-bold mb-3">Need help with your order?</h6>
-              {(['Placed', 'Confirmed', 'Packed'].includes(order.orderStatus)) ? (
+              {(['Placed', 'Confirmed'].includes(order.orderStatus)) ? (
                 <button 
                   className="btn btn-outline-danger px-5"
                   onClick={() => setShowRefundModal('cancel')}

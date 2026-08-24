@@ -23,10 +23,10 @@ export const generateICICISecureHash = (params) => {
   // 3: Build the canonical concatenated string (only values)
   const canonicalString = sortedKeys.map((key) => params[key]).join('');
 
-  // 4 & 5: Hash with SHA-256 (HashText + SecretKey)
-  const hash = crypto.createHash('sha256');
-  hash.update(canonicalString + secretKey);
-  return hash.digest('hex').toLowerCase();
+  // 4 & 5: Hash with HMAC-SHA256
+  const hmac = crypto.createHmac('sha256', secretKey);
+  hmac.update(canonicalString);
+  return hmac.digest('hex').toLowerCase();
 };
 
 /**

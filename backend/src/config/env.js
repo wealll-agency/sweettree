@@ -43,6 +43,7 @@ const config = {
   
   ICICI: {
     MERCHANT_ID: process.env.ICICI_MERCHANT_ID,
+    AGG_ID: process.env.ICICI_AGG_ID,
     SECURE_HASH_KEY: process.env.ICICI_SECURE_HASH_KEY,
   },
 };
