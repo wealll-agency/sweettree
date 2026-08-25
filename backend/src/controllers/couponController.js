@@ -1,4 +1,5 @@
 import Coupon from '../models/Coupon.js';
+import Order from '../models/Order.js';
 import { logActivity } from '../middleware/logger.js';
 
 // @desc    Create a coupon code
@@ -103,6 +104,73 @@ export const deleteCoupon = async (req, res, next) => {
     } else {
       res.status(404).json({ success: false, message: 'Coupon not found' });
     }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get coupon usage analytics
+// @route   GET /api/coupons/:code/usage
+// @access  Private/Admin/Manager
+export const getCouponUsage = async (req, res, next) => {
+  try {
+    const { code } = req.params;
+    const couponUpper = code.toUpperCase().trim();
+
+    // Verify coupon exists
+    const coupon = await Coupon.findOne({ code: couponUpper });
+    if (!coupon) {
+      return res.status(404).json({ success: false, message: 'Coupon not found' });
+    }
+
+    // Aggregate orders that used this coupon
+    const usageStats = await Order.aggregate([
+      { $match: { couponCode: couponUpper, paymentStatus: 'Paid' } },
+      { 
+        $facet: {
+          totals: [
+            {
+              $group: {
+                _id: null,
+                totalUsage: { $sum: 1 },
+                totalSales: { $sum: "$totalAmount" }
+              }
+            }
+          ],
+          dates: [
+            {
+              $group: {
+                _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                count: { $sum: 1 },
+                sales: { $sum: "$totalAmount" }
+              }
+            },
+            { $sort: { count: -1 } }
+          ],
+          locations: [
+            {
+              $group: {
+                _id: "$deliveryAddress.city",
+                count: { $sum: 1 },
+                sales: { $sum: "$totalAmount" }
+              }
+            },
+            { $sort: { count: -1 } }
+          ]
+        }
+      }
+    ]);
+
+    const result = usageStats[0];
+    
+    const stats = {
+      totalUsage: result.totals[0]?.totalUsage || 0,
+      totalSales: result.totals[0]?.totalSales || 0,
+      dates: result.dates || [],
+      locations: result.locations || []
+    };
+
+    res.json({ success: true, stats });
   } catch (error) {
     next(error);
   }

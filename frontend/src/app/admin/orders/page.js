@@ -2,8 +2,9 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAdminOrders, updateOrderStatus, refundOrder, createDelhiveryShipment, cancelDelhiveryShipment, getDelhiveryLabel, fetchWarehouses } from '../../../store/adminSlice.js';
+import { fetchAdminOrders, updateOrderStatus, refundOrder, createDelhiveryShipment, cancelDelhiveryShipment, getDelhiveryLabel, fetchWarehouses, markOrderAsRead } from '../../../store/adminSlice.js';
 import { ShoppingBag, Eye, MapPin, Check, Filter, Clock, Search, X, Printer, Package, Truck, CheckCircle, CreditCard, RotateCcw, AlertTriangle } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -415,7 +416,7 @@ function AdminOrdersContent() {
                   </tr>
                 ) : (
                   currentOrders.map((ord) => (
-                    <tr key={ord._id} className="border-bottom">
+                    <tr key={ord._id} className={`border-bottom ${ord.adminRead === false ? 'bg-warning bg-opacity-10' : ''}`}>
                     <td className="py-3 fw-bold font-monospace">#{ord._id.substring(0, 10).toUpperCase()}</td>
                     <td>
                       <div>
@@ -437,7 +438,12 @@ function AdminOrdersContent() {
                     </td>
                     <td className="text-center">
                       <button 
-                        onClick={() => setSelectedOrder(ord)} 
+                        onClick={() => {
+                          setSelectedOrder(ord);
+                          if (ord.adminRead === false) {
+                            dispatch(markOrderAsRead(ord._id));
+                          }
+                        }} 
                         className="btn btn-brand-secondary btn-sm py-1 px-3 d-inline-flex align-items-center gap-1"
                       >
                         <Eye size={14} /> Process
@@ -479,174 +485,171 @@ function AdminOrdersContent() {
       </div>
 
       {/* Details modal overlay */}
-      {selectedOrder && (
-        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }} onClick={closeDetailsModal}>
-          <div className="modal-dialog modal-lg modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-content border-0 rounded-4 shadow-lg">
-              <div className="modal-header border-bottom py-3">
-                <h5 className="modal-title fw-bold">Order Details (#{selectedOrder._id.substring(0, 12).toUpperCase()})</h5>
-                <div className="d-flex gap-2 align-items-center">
-                  {(selectedOrder.orderStatus === 'Confirmed' || selectedOrder.orderStatus === 'Packed' || selectedOrder.orderStatus === 'Shipped' || selectedOrder.orderStatus === 'Delivered') && (
-                    <button onClick={handlePrint} className="btn btn-sm btn-outline-dark d-flex align-items-center gap-1">
-                      <Printer size={14} /> Print
-                    </button>
-                  )}
-                  <button type="button" onClick={closeDetailsModal} className="btn-close"></button>
+      {selectedOrder && typeof document !== 'undefined' && createPortal(
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050, backdropFilter: 'blur(4px)' }} onClick={closeDetailsModal}>
+          <div className="card shadow-lg border-0 rounded-4" style={{ width: '800px', maxWidth: '95vw', maxHeight: '90vh', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="card-header bg-white d-flex justify-content-between align-items-center border-bottom-0 pt-4 px-4">
+              <h5 className="fw-bold m-0 text-dark">Order Details <span className="text-muted font-monospace fs-6">(#{selectedOrder._id.substring(0, 12).toUpperCase()})</span></h5>
+              <div className="d-flex gap-2 align-items-center">
+                {(selectedOrder.orderStatus === 'Confirmed' || selectedOrder.orderStatus === 'Packed' || selectedOrder.orderStatus === 'Shipped' || selectedOrder.orderStatus === 'Delivered') && (
+                  <button onClick={handlePrint} className="btn btn-sm btn-outline-dark d-flex align-items-center gap-1">
+                    <Printer size={14} /> Print
+                  </button>
+                )}
+                <button className="btn btn-sm btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" onClick={closeDetailsModal}>
+                  <X size={18} className="text-muted" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="card-body px-4 pb-4" style={{ overflowY: 'auto' }}>
+              {actionSuccess && <div className="alert alert-success p-2 fs-8 mb-3">{actionSuccess}</div>}
+
+              <div className="row g-4 mb-4">
+                {/* Summary */}
+                <div className="col-md-6">
+                  <h6 className="fw-bold text-muted uppercase fs-8 mb-2">Customer Profile</h6>
+                  <p className="m-0 fw-semibold text-dark">{selectedOrder.user?.name || 'Guest'}</p>
+                  <p className="m-0 text-muted fs-7">Email: {selectedOrder.user?.email || 'N/A'}</p>
+                  <p className="m-0 text-muted fs-7">Phone: {selectedOrder.deliveryAddress?.phone || selectedOrder.user?.phone || 'N/A'}</p>
+                </div>
+                {/* Address */}
+                <div className="col-md-6">
+                  <h6 className="fw-bold text-muted uppercase fs-8 mb-2">Shipping Destination</h6>
+                  <div className="d-flex align-items-start gap-1">
+                    <MapPin size={16} className="text-muted mt-1" />
+                    <div>
+                      <p className="m-0 text-dark fs-7">{selectedOrder.deliveryAddress.street || selectedOrder.deliveryAddress.address || selectedOrder.deliveryAddress.locality}, {selectedOrder.deliveryAddress.city}</p>
+                      <p className="m-0 text-muted fs-7">{selectedOrder.deliveryAddress.state} - {selectedOrder.deliveryAddress.zipCode || selectedOrder.deliveryAddress.pincode}, {selectedOrder.deliveryAddress.country || 'India'}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-              
-              <div className="modal-body p-4" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                {actionSuccess && <div className="alert alert-success p-2 fs-8 mb-3">{actionSuccess}</div>}
 
-                <div className="row g-4 mb-4">
-                  {/* Summary */}
-                  <div className="col-md-6">
-                    <h6 className="fw-bold text-muted uppercase fs-8 mb-2">Customer Profile</h6>
-                    <p className="m-0 fw-semibold text-dark">{selectedOrder.user?.name || 'Guest'}</p>
-                    <p className="m-0 text-muted fs-7">Email: {selectedOrder.user?.email || 'N/A'}</p>
-                    <p className="m-0 text-muted fs-7">Phone: {selectedOrder.deliveryAddress?.phone || selectedOrder.user?.phone || 'N/A'}</p>
-                  </div>
-                  {/* Address */}
-                  <div className="col-md-6">
-                    <h6 className="fw-bold text-muted uppercase fs-8 mb-2">Shipping Destination</h6>
-                    <div className="d-flex align-items-start gap-1">
-                      <MapPin size={16} className="text-muted mt-1" />
-                      <div>
-                        <p className="m-0 text-dark fs-7">{selectedOrder.deliveryAddress.street || selectedOrder.deliveryAddress.address || selectedOrder.deliveryAddress.locality}, {selectedOrder.deliveryAddress.city}</p>
-                        <p className="m-0 text-muted fs-7">{selectedOrder.deliveryAddress.state} - {selectedOrder.deliveryAddress.zipCode || selectedOrder.deliveryAddress.pincode}, {selectedOrder.deliveryAddress.country || 'India'}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Items */}
-                <h6 className="fw-bold text-muted uppercase fs-8 mb-2">Ordered Items</h6>
-                <div className="d-flex flex-column gap-2 mb-4 bg-light p-3 rounded border">
-                  {selectedOrder.items.map(item => (
-                    <div key={item._id} className="d-flex justify-content-between align-items-center fs-7 border-bottom pb-2">
-                      <div>
-                        <span className="fw-bold text-dark">{item.name}</span>
-                        <small className="text-muted d-block">₹{item.price} x {item.quantity}</small>
-                      </div>
-                      <span className="fw-bold">₹{item.price * item.quantity}</span>
-                    </div>
-                  ))}
-                  <div className="d-flex justify-content-between fs-6 fw-bold text-dark pt-2">
-                    <span>Order Total</span>
-                    <span>₹{selectedOrder.totalAmount}</span>
-                  </div>
-                </div>
-
-                {/* Logistics Integration (Multi-Shipment) */}
-                <h6 className="fw-bold text-muted uppercase fs-8 mb-2">Shipments (Delhivery)</h6>
-                <div className="bg-light p-3 rounded border mb-4 d-flex flex-column gap-3">
-                  {(!selectedOrder.shipments || selectedOrder.shipments.length === 0) ? (
+              {/* Items */}
+              <h6 className="fw-bold text-muted uppercase fs-8 mb-2">Ordered Items</h6>
+              <div className="d-flex flex-column gap-2 mb-4 bg-light p-3 rounded border">
+                {selectedOrder.items.map(item => (
+                  <div key={item._id} className="d-flex justify-content-between align-items-center fs-7 border-bottom pb-2">
                     <div>
-                      <p className="fs-7 text-muted m-0 mb-2">No active shipments for this order.</p>
-                      {(selectedOrder.orderStatus === 'Packed' || selectedOrder.orderStatus === 'Confirmed' || selectedOrder.orderStatus === 'Placed') && (
-                        <button onClick={() => handleCreateDelhiveryShipment(selectedOrder._id)} className="btn btn-sm btn-dark d-flex align-items-center gap-2">
-                          <Truck size={14} /> {warehouses && warehouses.length > 1 ? 'Generate Split Shipments' : 'Generate Shipment'}
-                        </button>
+                      <span className="fw-bold text-dark">{item.name}</span>
+                      <small className="text-muted d-block">₹{item.price} x {item.quantity}</small>
+                    </div>
+                    <span className="fw-bold">₹{item.price * item.quantity}</span>
+                  </div>
+                ))}
+                <div className="d-flex justify-content-between fs-6 fw-bold text-dark pt-2">
+                  <span>Order Total</span>
+                  <span>₹{selectedOrder.totalAmount}</span>
+                </div>
+              </div>
+
+              {/* Logistics Integration (Multi-Shipment) */}
+              <h6 className="fw-bold text-muted uppercase fs-8 mb-2">Shipments (Delhivery)</h6>
+              <div className="bg-light p-3 rounded border mb-4 d-flex flex-column gap-3">
+                {(!selectedOrder.shipments || selectedOrder.shipments.length === 0) ? (
+                  <div>
+                    <p className="fs-7 text-muted m-0 mb-2">No active shipments for this order.</p>
+                    {(selectedOrder.orderStatus === 'Packed' || selectedOrder.orderStatus === 'Confirmed' || selectedOrder.orderStatus === 'Placed') && (
+                      <button onClick={() => handleCreateDelhiveryShipment(selectedOrder._id)} className="btn btn-sm btn-dark d-flex align-items-center gap-2">
+                        <Truck size={14} /> {warehouses && warehouses.length > 1 ? 'Generate Split Shipments' : 'Generate Shipment'}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="d-flex flex-column gap-3">
+                    {selectedOrder.shipments.map((shipment, index) => (
+                      <div key={shipment._id || index} className="p-2 border rounded bg-white">
+                        <div className="d-flex justify-content-between align-items-center mb-2">
+                          <span className="fs-7">
+                            Waybill: <strong className="font-monospace">{shipment.waybill}</strong>
+                          </span>
+                          <span className="badge bg-primary bg-opacity-10 text-primary">
+                            {shipment.status || 'Manifested'}
+                          </span>
+                        </div>
+                        <div className="fs-8 text-muted mb-2">
+                          Courier: {shipment.courierName} | Shipped: {new Date(shipment.shippedAt).toLocaleDateString()}
+                        </div>
+                        <div className="d-flex gap-2">
+                          <button onClick={() => handleGetLabel(shipment.waybill)} className="btn btn-sm btn-outline-dark d-flex align-items-center gap-1">
+                            <Printer size={14} /> Shipping Label
+                          </button>
+                          {shipment.status !== 'Cancelled' && shipment.status !== 'Delivered' && (
+                             <button onClick={() => handleCancelDelhiveryShipment(shipment.waybill)} className="btn btn-sm btn-outline-danger">
+                               Cancel
+                             </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Status flow advances */}
+              <h6 className="fw-bold text-muted uppercase fs-8 mb-2">Administrative Status Control</h6>
+              <div className="d-flex flex-wrap gap-2 mb-3">
+                {selectedOrder.orderStatus === 'Placed' && (
+                  <button onClick={() => handleStatusChange(selectedOrder._id, 'Confirmed')} className="btn btn-sm btn-success">Confirm Order</button>
+                )}
+                {selectedOrder.orderStatus === 'Confirmed' && (
+                  <button onClick={() => handleStatusChange(selectedOrder._id, 'Packed')} className="btn btn-sm btn-primary">Pack Order</button>
+                )}
+
+                {selectedOrder.orderStatus === 'Shipped' && (
+                  <button onClick={() => handleStatusChange(selectedOrder._id, 'Delivered')} className="btn btn-sm btn-success">Mark Delivered</button>
+                )}
+                
+                {/* Cancel / Refund */}
+                {selectedOrder.orderStatus !== 'Delivered' && selectedOrder.orderStatus !== 'Cancelled' && user.role === 'Super Admin' && (
+                  <button onClick={() => handleStatusChange(selectedOrder._id, 'Cancelled')} className="btn btn-sm btn-danger">Cancel Order</button>
+                )}
+                {selectedOrder.orderStatus === 'Cancelled' && selectedOrder.paymentStatus === 'Paid' && user.role === 'Super Admin' && (
+                  <button onClick={() => handleRefund(selectedOrder._id)} className="btn btn-sm btn-warning">Initiate Refund</button>
+                )}
+              </div>
+
+              <div className="fs-8 text-muted border-top pt-3 mt-3">
+                <div className="mb-2">
+                  Current Status: <strong className="text-dark">{selectedOrder.orderStatus}</strong> | Payment Status: <strong className="text-dark">{selectedOrder.paymentStatus}</strong>
+                </div>
+                {(selectedOrder.gatewayTxnId || selectedOrder.bankRefNo) && (
+                  <div className="bg-light p-3 rounded border">
+                    <h6 className="fw-bold text-dark fs-8 mb-2 text-uppercase">Transaction Details</h6>
+                    <div className="d-flex flex-column gap-1">
+                      {(selectedOrder.gatewayTxnId) && (
+                        <div className="d-flex justify-content-between">
+                          <span>Gateway Tracking ID:</span>
+                          <span className="text-dark fw-medium font-monospace">{selectedOrder.gatewayTxnId}</span>
+                        </div>
+                      )}
+                      {(selectedOrder.bankRefNo) && (
+                        <div className="d-flex justify-content-between">
+                          <span>Bank Reference Number:</span>
+                          <span className="text-dark fw-medium font-monospace">{selectedOrder.bankRefNo}</span>
+                        </div>
+                      )}
+                      {selectedOrder.paymentMode && (
+                        <div className="d-flex justify-content-between">
+                          <span>Payment Mode:</span>
+                          <span className="text-dark fw-medium font-monospace">{selectedOrder.paymentMode}</span>
+                        </div>
+                      )}
+                      {selectedOrder.paymentStatus === 'Paid' && (
+                        <div className="d-flex justify-content-between">
+                          <span>Payment Processed (Approx):</span>
+                          <span className="text-dark fw-medium">{new Date(selectedOrder.createdAt).toLocaleString()}</span>
+                        </div>
                       )}
                     </div>
-                  ) : (
-                    <div className="d-flex flex-column gap-3">
-                      {selectedOrder.shipments.map((shipment, index) => (
-                        <div key={shipment._id || index} className="p-2 border rounded bg-white">
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <span className="fs-7">
-                              Waybill: <strong className="font-monospace">{shipment.waybill}</strong>
-                            </span>
-                            <span className="badge bg-primary bg-opacity-10 text-primary">
-                              {shipment.status || 'Manifested'}
-                            </span>
-                          </div>
-                          <div className="fs-8 text-muted mb-2">
-                            Courier: {shipment.courierName} | Shipped: {new Date(shipment.shippedAt).toLocaleDateString()}
-                          </div>
-                          <div className="d-flex gap-2">
-                            <button onClick={() => handleGetLabel(shipment.waybill)} className="btn btn-sm btn-outline-dark d-flex align-items-center gap-1">
-                              <Printer size={14} /> Shipping Label
-                            </button>
-                            {shipment.status !== 'Cancelled' && shipment.status !== 'Delivered' && (
-                               <button onClick={() => handleCancelDelhiveryShipment(shipment.waybill)} className="btn btn-sm btn-outline-danger">
-                                 Cancel
-                               </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Status flow advances */}
-                <h6 className="fw-bold text-muted uppercase fs-8 mb-2">Administrative Status Control</h6>
-                <div className="d-flex flex-wrap gap-2 mb-3">
-                  {selectedOrder.orderStatus === 'Placed' && (
-                    <button onClick={() => handleStatusChange(selectedOrder._id, 'Confirmed')} className="btn btn-sm btn-success">Confirm Order</button>
-                  )}
-                  {selectedOrder.orderStatus === 'Confirmed' && (
-                    <button onClick={() => handleStatusChange(selectedOrder._id, 'Packed')} className="btn btn-sm btn-primary">Pack Order</button>
-                  )}
-
-                  {selectedOrder.orderStatus === 'Shipped' && (
-                    <button onClick={() => handleStatusChange(selectedOrder._id, 'Delivered')} className="btn btn-sm btn-success">Mark Delivered</button>
-                  )}
-                  
-                  {/* Cancel / Refund */}
-                  {selectedOrder.orderStatus !== 'Delivered' && selectedOrder.orderStatus !== 'Cancelled' && user.role === 'Super Admin' && (
-                    <button onClick={() => handleStatusChange(selectedOrder._id, 'Cancelled')} className="btn btn-sm btn-danger">Cancel Order</button>
-                  )}
-                  {selectedOrder.orderStatus === 'Cancelled' && selectedOrder.paymentStatus === 'Paid' && user.role === 'Super Admin' && (
-                    <button onClick={() => handleRefund(selectedOrder._id)} className="btn btn-sm btn-warning">Initiate Refund</button>
-                  )}
-                </div>
-
-                <div className="fs-8 text-muted border-top pt-3 mt-3">
-                  <div className="mb-2">
-                    Current Status: <strong className="text-dark">{selectedOrder.orderStatus}</strong> | Payment Status: <strong className="text-dark">{selectedOrder.paymentStatus}</strong>
                   </div>
-                  {(selectedOrder.gatewayTxnId || selectedOrder.bankRefNo) && (
-                    <div className="bg-light p-3 rounded border">
-                      <h6 className="fw-bold text-dark fs-8 mb-2 text-uppercase">Transaction Details</h6>
-                      <div className="d-flex flex-column gap-1">
-                        {(selectedOrder.gatewayTxnId) && (
-                          <div className="d-flex justify-content-between">
-                            <span>Gateway Tracking ID:</span>
-                            <span className="text-dark fw-medium font-monospace">{selectedOrder.gatewayTxnId}</span>
-                          </div>
-                        )}
-                        {(selectedOrder.bankRefNo) && (
-                          <div className="d-flex justify-content-between">
-                            <span>Bank Reference Number:</span>
-                            <span className="text-dark fw-medium font-monospace">{selectedOrder.bankRefNo}</span>
-                          </div>
-                        )}
-                        {selectedOrder.paymentMode && (
-                          <div className="d-flex justify-content-between">
-                            <span>Payment Mode:</span>
-                            <span className="text-dark fw-medium font-monospace">{selectedOrder.paymentMode}</span>
-                          </div>
-                        )}
-                        {selectedOrder.paymentStatus === 'Paid' && (
-                          <div className="d-flex justify-content-between">
-                            <span>Payment Processed (Approx):</span>
-                            <span className="text-dark fw-medium">{new Date(selectedOrder.createdAt).toLocaleString()}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="modal-footer border-top py-2">
-                <button type="button" onClick={closeDetailsModal} className="btn btn-sm btn-brand-secondary">Close</button>
+                )}
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Hidden Printable Invoice - Flipkart Style */}

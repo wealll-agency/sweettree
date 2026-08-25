@@ -141,3 +141,20 @@ export const createCustomerRefundRequest = async (req, res, next) => {
   }
 };
 
+// @desc    Mark refund request as read by admin
+// @route   PATCH /api/refunds/:id/read
+// @access  Private/Admin/Manager/Staff
+export const markRefundRead = async (req, res, next) => {
+  try {
+    const refund = await RefundRequest.findByIdAndUpdate(
+      req.params.id,
+      { adminRead: true },
+      { new: true }
+    );
+    if (!refund) return res.status(404).json({ success: false, message: 'Refund request not found' });
+    res.json({ success: true, refund });
+  } catch (error) {
+    next(error);
+  }
+};
+

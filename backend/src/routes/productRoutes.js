@@ -6,7 +6,8 @@ import {
   updateProduct,
   deleteProduct,
   toggleProductStatus,
-  bulkUpdateHomepageFlags
+  bulkUpdateHomepageFlags,
+  markInventoryRead
 } from '../controllers/productController.js';
 import { protect, authorizeRoles } from '../middleware/auth.js';
 import { auditRoute } from '../middleware/logger.js';
@@ -31,5 +32,8 @@ router.route('/:id')
 
 router.route('/:id/toggle')
   .patch(protect, authorizeRoles('Super Admin', 'Manager'), auditRoute('UPDATE_PRODUCT'), toggleProductStatus);
+
+router.route('/inventory/:id/read')
+  .patch(protect, authorizeRoles('Super Admin', 'Manager', 'Staff'), markInventoryRead);
 
 export default router;

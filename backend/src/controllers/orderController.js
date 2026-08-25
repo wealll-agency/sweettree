@@ -195,7 +195,7 @@ export const createOrder = async (req, res, next) => {
         for (const comp of item.comboComponentsSnapshot) {
           const deductQty = comp.quantity * item.quantity;
           await Product.findByIdAndUpdate(comp.product, { $inc: { stock: -deductQty, totalSold: deductQty } }, { runValidators: true, session });
-          await Inventory.findOneAndUpdate(
+          const updatedInv = await Inventory.findOneAndUpdate(
             { product: comp.product },
             { 
               $inc: { stockQuantity: -deductQty },
@@ -208,12 +208,16 @@ export const createOrder = async (req, res, next) => {
                 }
               }
             },
-            { runValidators: true, session }
+            { new: true, runValidators: true, session }
           );
+          if (updatedInv && updatedInv.stockQuantity <= updatedInv.lowStockThreshold) {
+            updatedInv.adminRead = false;
+            await updatedInv.save({ session });
+          }
         }
       } else {
         await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity, totalSold: item.quantity } }, { runValidators: true, session });
-        await Inventory.findOneAndUpdate(
+        const updatedInv = await Inventory.findOneAndUpdate(
           { product: item.product },
           { 
             $inc: { stockQuantity: -item.quantity },
@@ -226,8 +230,12 @@ export const createOrder = async (req, res, next) => {
               }
             }
           },
-          { runValidators: true, session }
+          { new: true, runValidators: true, session }
         );
+        if (updatedInv && updatedInv.stockQuantity <= updatedInv.lowStockThreshold) {
+          updatedInv.adminRead = false;
+          await updatedInv.save({ session });
+        }
       }
     }
 
@@ -828,6 +836,23 @@ export const updateOrderStatus = async (req, res, next) => {
     await logActivity(req.user._id, 'UPDATE_ORDER_STATUS', `Updated order ID ${order._id} status to: ${status}`, req);
 
     res.json({ success: true, order: updatedOrder });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Mark order as read by admin
+// @route   PATCH /api/orders/:id/read
+// @access  Private/Admin/Manager/Staff
+export const markOrderRead = async (req, res, next) => {
+  try {
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { adminRead: true },
+      { new: true }
+    );
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    res.json({ success: true, order });
   } catch (error) {
     next(error);
   }

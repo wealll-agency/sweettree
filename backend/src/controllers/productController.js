@@ -436,3 +436,20 @@ export const bulkUpdateHomepageFlags = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Mark inventory low stock alert as read
+// @route   PATCH /api/products/inventory/:id/read
+// @access  Private/Admin/Manager/Staff
+export const markInventoryRead = async (req, res, next) => {
+  try {
+    const inventory = await Inventory.findOneAndUpdate(
+      { product: req.params.id },
+      { adminRead: true },
+      { new: true }
+    );
+    if (!inventory) return res.status(404).json({ success: false, message: 'Inventory record not found' });
+    res.json({ success: true, inventory });
+  } catch (error) {
+    next(error);
+  }
+};

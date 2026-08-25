@@ -4,7 +4,8 @@ import {
   getRefundRequests, 
   updateRefundStatus, 
   createMockRefundRequest,
-  createCustomerRefundRequest
+  createCustomerRefundRequest,
+  markRefundRead
 } from '../controllers/refundController.js';
 
 const router = express.Router();
@@ -14,6 +15,9 @@ router.route('/')
 
 router.route('/:id/status')
   .put(protect, authorizeRoles('Super Admin', 'Manager', 'Staff'), updateRefundStatus);
+
+router.route('/:id/read')
+  .patch(protect, authorizeRoles('Super Admin', 'Manager', 'Staff'), markRefundRead);
 
 // Mock route for testing
 router.route('/mock')

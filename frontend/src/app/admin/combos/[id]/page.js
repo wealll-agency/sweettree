@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Save, Plus, Trash2, Search, UploadCloud } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Search, UploadCloud, X } from 'lucide-react';
 import api from '../../../../utils/axiosConfig';
 import { useNotification } from '../../../../context/NotificationContext';
+import { createPortal } from 'react-dom';
 
 export default function AdminComboEditPage() {
   const router = useRouter();
@@ -421,71 +422,69 @@ export default function AdminComboEditPage() {
       </div>
 
       {/* Product Search Modal */}
-      {isModalOpen && (
-        <>
-          <div className="modal-backdrop fade show" style={{ zIndex: 1040 }}></div>
-          <div className="modal fade show d-block" tabIndex="-1" style={{ zIndex: 1050 }}>
-            <div className="modal-dialog modal-lg modal-dialog-scrollable">
-              <div className="modal-content">
-                <div className="modal-header bg-light">
-                  <h5 className="modal-title fw-bold">Add Product to Combo</h5>
-                  <button type="button" className="btn-close" onClick={() => setIsModalOpen(false)}></button>
-                </div>
-                <div className="modal-body p-0">
-                  <div className="p-3 border-bottom position-sticky top-0 bg-white" style={{ zIndex: 10 }}>
-                    <div className="input-group">
-                      <span className="input-group-text bg-white"><Search size={18} /></span>
-                      <div className="position-relative flex-grow-1">
-                        <input 
-                          type="text" 
-                          className="form-control" 
-                          value={searchQuery}
-                          onChange={e => setSearchQuery(e.target.value)}
-                          onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                        />
-                        {!searchQuery && (
-                          <span className="position-absolute text-muted" style={{ top: '8px', left: '12px', pointerEvents: 'none' }}>
-                            Search products by name or SKU...
-                          </span>
-                        )}
-                      </div>
-                      <button className="btn btn-primary" onClick={handleSearch} disabled={searching}>
-                        {searching ? 'Searching...' : 'Search'}
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="list-group list-group-flush rounded-0">
-                    {products.length === 0 && !searching && (
-                      <div className="p-5 text-center text-muted">No products found.</div>
+      {isModalOpen && typeof document !== 'undefined' && createPortal(
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050, backdropFilter: 'blur(4px)' }} onClick={() => setIsModalOpen(false)}>
+          <div className="card shadow-lg border-0 rounded-4" style={{ width: '800px', maxWidth: '95vw', maxHeight: '90vh', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="card-header bg-white d-flex justify-content-between align-items-center border-bottom-0 pt-4 px-4">
+              <h5 className="fw-bold m-0 text-dark">Add Product to Combo</h5>
+              <button className="btn btn-sm btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" onClick={() => setIsModalOpen(false)}>
+                <X size={18} className="text-muted" />
+              </button>
+            </div>
+            <div className="card-body px-0 pb-0" style={{ overflowY: 'auto' }}>
+              <div className="p-3 border-bottom position-sticky top-0 bg-white px-4" style={{ zIndex: 10 }}>
+                <div className="input-group">
+                  <span className="input-group-text bg-white"><Search size={18} /></span>
+                  <div className="position-relative flex-grow-1">
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                    />
+                    {!searchQuery && (
+                      <span className="position-absolute text-muted" style={{ top: '8px', left: '12px', pointerEvents: 'none' }}>
+                        Search products by name or SKU...
+                      </span>
                     )}
-                    {products.map(product => (
-                      <div key={product._id} className="list-group-item list-group-item-action p-3 d-flex justify-content-between align-items-center">
-                        <div className="d-flex align-items-center gap-3">
-                          <div style={{ width: '40px', height: '40px', position: 'relative', overflow: 'hidden', borderRadius: '4px', backgroundColor: '#f8f9fa' }}>
-                            {product.images?.[0] || product.image ? (
-                              <Image src={(product.images?.[0] || product.image).replace('/assets/images/', '/')} alt={product.name} fill style={{ objectFit: 'contain' }} sizes="40px" />
-                            ) : null}
-                          </div>
-                          <div>
-                            <h6 className="m-0 fw-bold">{product.name}</h6>
-                            <div className="text-muted fs-8">Stock: {product.stock} | Price: ₹{product.price}</div>
-                          </div>
-                        </div>
-                        <button 
-                          className="btn btn-sm btn-outline-success" 
-                          onClick={() => { addComponent(product); setIsModalOpen(false); }}
-                        >
-                          <Plus size={16} /> Add
-                        </button>
-                      </div>
-                    ))}
                   </div>
+                  <button className="btn btn-primary" onClick={handleSearch} disabled={searching}>
+                    {searching ? 'Searching...' : 'Search'}
+                  </button>
                 </div>
+              </div>
+              
+              <div className="list-group list-group-flush rounded-0 px-2 pb-2">
+                {products.length === 0 && !searching && (
+                  <div className="p-5 text-center text-muted">No products found.</div>
+                )}
+                {products.map(product => (
+                  <div key={product._id} className="list-group-item border-0 border-bottom list-group-item-action p-3 d-flex justify-content-between align-items-center">
+                    <div className="d-flex align-items-center gap-3">
+                      <div style={{ width: '40px', height: '40px', position: 'relative', overflow: 'hidden', borderRadius: '4px', backgroundColor: '#f8f9fa' }}>
+                        {product.images?.[0] || product.image ? (
+                          <Image src={(product.images?.[0] || product.image).replace('/assets/images/', '/')} alt={product.name} fill style={{ objectFit: 'contain' }} sizes="40px" />
+                        ) : null}
+                      </div>
+                      <div>
+                        <h6 className="m-0 fw-bold">{product.name}</h6>
+                        <div className="text-muted fs-8">Stock: {product.stock} | Price: ₹{product.price}</div>
+                      </div>
+                    </div>
+                    <button 
+                      className="btn btn-sm btn-outline-success" 
+                      onClick={() => { addComponent(product); setIsModalOpen(false); }}
+                    >
+                      <Plus size={16} /> Add
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        </>
+        </div>,
+        document.body
       )}
     </div>
   );

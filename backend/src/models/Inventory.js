@@ -18,6 +18,7 @@ const inventorySchema = new mongoose.Schema({
   expiryDate: { type: Date, required: true },
   stockQuantity: { type: Number, required: true, default: 0, min: 0 },
   lowStockThreshold: { type: Number, default: 10, min: 0 },
+  adminRead: { type: Boolean, default: false },
   adjustments: [adjustmentSchema]
 }, {
   timestamps: true

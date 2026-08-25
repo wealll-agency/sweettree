@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAdminProducts, editProduct } from '../../../store/adminSlice.js';
+import { fetchAdminProducts, editProduct, markInventoryAsRead, fetchDashboardStats } from '../../../store/adminSlice.js';
 import { AlertTriangle, Clock, ArrowDownUp, RefreshCw } from 'lucide-react';
 import { useNotification } from '../../../context/NotificationContext';
 
 export default function AdminInventoryPage() {
   const dispatch = useDispatch();
-  const { products, productsLoading } = useSelector((state) => state.admin);
+  const { products, productsLoading, lowStockDetails } = useSelector((state) => state.admin);
   const { showAlert } = useNotification();
 
   // Adjustment states
@@ -19,6 +19,7 @@ export default function AdminInventoryPage() {
 
   useEffect(() => {
     dispatch(fetchAdminProducts());
+    dispatch(fetchDashboardStats());
   }, [dispatch]);
 
   const handleAdjustSubmit = (e) => {
@@ -82,9 +83,11 @@ export default function AdminInventoryPage() {
                     {products.map((prod) => {
                       const expired = isExpired(prod.expiryDate);
                       const isLowStock = prod.stock <= 10;
+                      const invAlert = lowStockDetails?.find(i => i.product?._id === prod._id || i.product === prod._id);
+                      const isUnread = isLowStock && invAlert && invAlert.adminRead === false;
                       
                       return (
-                        <tr key={prod._id} className="border-bottom">
+                        <tr key={prod._id} className={`border-bottom ${isUnread ? 'bg-warning bg-opacity-10' : ''}`}>
                           <td className="fw-bold py-3">{prod.name}</td>
                           <td className="font-monospace text-muted">{prod.batchNumber}</td>
                           <td>
@@ -108,7 +111,12 @@ export default function AdminInventoryPage() {
                           </td>
                           <td className="text-center">
                             <button 
-                              onClick={() => setSelectedProduct(prod)}
+                              onClick={() => {
+                                setSelectedProduct(prod);
+                                if (isUnread) {
+                                  dispatch(markInventoryAsRead(prod._id));
+                                }
+                              }}
                               className="btn btn-sm btn-brand-secondary py-1 px-3"
                             >
                               Adjust

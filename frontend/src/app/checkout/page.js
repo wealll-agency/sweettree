@@ -47,14 +47,17 @@ export default function CheckoutPage() {
   const [landmark, setLandmark] = useState('');
   const [altPhone, setAltPhone] = useState('');
   const [addressType, setAddressType] = useState('Home');
-    const [paymentMode, setPaymentMode] = useState('ICICI');
+  const [paymentMode, setPaymentMode] = useState('ICICI');
   const [hasCodPermission, setHasCodPermission] = useState(true);
+  const [hasOnlinePaymentPermission, setHasOnlinePaymentPermission] = useState(true);
 
   useEffect(() => {
     if (!hasCodPermission && paymentMode === 'COD') {
       setPaymentMode('ICICI');
+    } else if (!hasOnlinePaymentPermission && paymentMode === 'ICICI') {
+      setPaymentMode('COD');
     }
-  }, [hasCodPermission, paymentMode]);
+  }, [hasCodPermission, hasOnlinePaymentPermission, paymentMode]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -64,6 +67,7 @@ export default function CheckoutPage() {
         const res = await api.get(`/auth/settings?t=${Date.now()}`);
         if (res.data.success) {
           setHasCodPermission(res.data.settings.cod !== false);
+          setHasOnlinePaymentPermission(res.data.settings.onlinePayment !== false);
         }
       } catch (err) {
         console.warn('Failed to fetch system settings:', err.message || err);
@@ -596,17 +600,19 @@ export default function CheckoutPage() {
               <CreditCard size={20} color="var(--primary-color)" /> Payment Method
             </h5>
             <div className="d-flex flex-column gap-3">
-              <div 
-                className={`p-3 rounded border cursor-pointer d-flex align-items-center gap-3 ${paymentMode === 'ICICI' ? 'border-success bg-light' : ''}`}
-                onClick={() => setPaymentMode('ICICI')}
-                style={{ cursor: 'pointer' }}
-              >
-                <input type="radio" checked={paymentMode === 'ICICI'} readOnly className="form-check-input mt-0" />
-                <div>
-                  <h6 className="fw-bold m-0 text-dark">ICICI Secure Payment</h6>
-                  <small className="text-muted">Pay securely using Cards, Net Banking, UPI, or Wallets.</small>
+              {hasOnlinePaymentPermission && (
+                <div 
+                  className={`p-3 rounded border cursor-pointer d-flex align-items-center gap-3 ${paymentMode === 'ICICI' ? 'border-success bg-light' : ''}`}
+                  onClick={() => setPaymentMode('ICICI')}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <input type="radio" checked={paymentMode === 'ICICI'} readOnly className="form-check-input mt-0" />
+                  <div>
+                    <h6 className="fw-bold m-0 text-dark">ICICI Secure Payment</h6>
+                    <small className="text-muted">Pay securely using Cards, Net Banking, UPI, or Wallets.</small>
+                  </div>
                 </div>
-              </div>
+              )}
               {hasCodPermission && (
                 <div 
                   className={`p-3 rounded border cursor-pointer d-flex align-items-center gap-3 ${paymentMode === 'COD' ? 'border-success bg-light' : ''}`}

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, Save, Check, RefreshCw, AlertCircle, ShoppingBag, RotateCcw } from 'lucide-react';
+import { Shield, Save, Check, RefreshCw, AlertCircle, ShoppingBag, RotateCcw, CreditCard } from 'lucide-react';
 import api from '../../../utils/axiosConfig.js';
 
 export default function CustomerAccessPage() {
-  const [settings, setSettings] = useState({ cod: true, refund: true });
+  const [settings, setSettings] = useState({ cod: true, refund: true, onlinePayment: true });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null); // { type: 'success' | 'danger', text: '' }
@@ -162,6 +162,43 @@ export default function CustomerAccessPage() {
                   checked={settings.refund}
                   disabled={loading}
                   onChange={() => handleToggle('refund')}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Online Payment Control Card */}
+        <div className="col-md-6">
+          <div className="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div className="d-flex align-items-center gap-3 mb-3">
+                <div className="rounded-4 p-3 bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center">
+                  <CreditCard size={24} />
+                </div>
+                <div>
+                  <h5 className="fw-bold text-dark m-0">Online Transactions</h5>
+                  <small className="text-muted">Global Storefront Payment Option</small>
+                </div>
+              </div>
+              <p className="text-muted fs-7 mb-4">
+                Controls the availability of Online Payment options at storefront checkout. Disabling this restricts users from paying via CCAvenue globally.
+              </p>
+            </div>
+
+            <div className="d-flex align-items-center justify-content-between pt-3 border-top">
+              <span className={`fw-bold fs-7 ${settings.onlinePayment ? 'text-success' : 'text-danger'}`}>
+                {settings.onlinePayment ? 'Currently Enabled' : 'Currently Disabled'}
+              </span>
+              <div className="form-check form-switch m-0">
+                <input 
+                  className="form-check-input" 
+                  type="checkbox" 
+                  role="switch" 
+                  style={{ width: '2.5em', height: '1.25em', cursor: 'pointer' }}
+                  checked={settings.onlinePayment}
+                  disabled={loading}
+                  onChange={() => handleToggle('onlinePayment')}
                 />
               </div>
             </div>

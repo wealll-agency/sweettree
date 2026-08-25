@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchRefundRequests } from '../../../store/adminSlice.js';
+import { fetchRefundRequests, markRefundAsRead } from '../../../store/adminSlice.js';
 import RefundDetailsModal from '../../../components/RefundDetailsModal.js';
 import { Search, Eye, Download, ChevronDown, FolderOpen } from 'lucide-react';
 
@@ -116,7 +116,7 @@ export default function RefundsPageClient({ status }) {
                 </tr>
               ) : (
                 filteredRefunds.map((ref, index) => (
-                  <tr key={ref._id} className="border-bottom">
+                  <tr key={ref._id} className={`border-bottom ${ref.adminRead === false ? 'bg-warning bg-opacity-10' : ''}`}>
                     <td className="py-3 text-dark">{index + 1}</td>
                     <td className="py-3">
                       <span className="text-primary fw-medium">{ref.order?._id}</span>
@@ -158,7 +158,13 @@ export default function RefundsPageClient({ status }) {
                       <button 
                         className="btn btn-sm btn-light rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center"
                         style={{ width: '32px', height: '32px', padding: 0 }}
-                        onClick={(e) => { e.stopPropagation(); setSelectedRefund(ref); }}
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setSelectedRefund(ref);
+                          if (ref.adminRead === false) {
+                            dispatch(markRefundAsRead(ref._id));
+                          }
+                        }}
                         title="View Details"
                       >
                         <Eye size={16} className="text-success" />

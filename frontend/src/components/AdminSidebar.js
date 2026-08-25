@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../store/authSlice.js';
 import { clearCart } from '../store/cartSlice.js';
+import { fetchSidebarStatsAction } from '../store/adminSlice.js';
 import { LayoutDashboard, ShoppingBag, ClipboardList, ShoppingCart, Users, Receipt, LogOut, Tag, ChevronLeft, ChevronRight, RotateCcw, ChevronDown, ChevronUp, MessageSquare, MapPin, Package, Shield, Bell, Image, Gift } from 'lucide-react';
 import api from '../utils/axiosConfig.js';
 
@@ -19,6 +20,7 @@ export default function AdminSidebar() {
   const dispatch = useDispatch();
 
   const { user } = useSelector((state) => state.auth);
+  const { sidebarStats } = useSelector((state) => state.admin);
 
   // Poll for new enquiries and refund requests every 30 seconds
   useEffect(() => {
@@ -36,11 +38,17 @@ export default function AdminSidebar() {
       } catch {}
     };
 
+    const fetchSidebarStats = () => {
+      dispatch(fetchSidebarStatsAction());
+    };
+
     fetchUnread();
     fetchPendingRefunds();
+    fetchSidebarStats();
     const interval = setInterval(() => {
       fetchUnread();
       fetchPendingRefunds();
+      fetchSidebarStats();
     }, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -59,8 +67,8 @@ export default function AdminSidebar() {
     { label: 'Enquiries', path: '/admin/enquiries', icon: <MessageSquare size={20} />, badge: unreadEnquiries },
     { label: 'Product Manager', path: '/admin/products', icon: <ShoppingBag size={20} /> },
     { label: 'Combos', path: '/admin/combos', icon: <Gift size={20} /> },
-    { label: 'Orders Queue', path: '/admin/orders', icon: <ShoppingCart size={20} /> },
-    { label: 'Inventory Manager', path: '/admin/inventory', icon: <ClipboardList size={20} /> },
+    { label: 'Orders Queue', path: '/admin/orders', icon: <ShoppingCart size={20} />, badge: sidebarStats?.pendingOrders || 0 },
+    { label: 'Inventory Manager', path: '/admin/inventory', icon: <ClipboardList size={20} />, badge: sidebarStats?.lowStockItems || 0 },
     { label: 'Media Manager', path: '/admin/media-manager', icon: <Image size={20} /> },
     { label: 'Coupon Manager', path: '/admin/coupons', icon: <Tag size={20} /> },
     { label: 'Homepage Products', path: '/admin/homepage-products', icon: <LayoutDashboard size={20} /> },

@@ -12,7 +12,8 @@ const refundRequestSchema = new mongoose.Schema({
   customerComment: { type: String },
   adminComment: { type: String },
   images: [{ type: String }],
-  amount: { type: Number, required: true }
+  amount: { type: Number, required: true },
+  adminRead: { type: Boolean, default: false }
 }, {
   timestamps: true
 });

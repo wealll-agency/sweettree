@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchWarehouses, createWarehouse, updateWarehouse, deleteWarehouse } from '../../../store/adminSlice.js';
-import { Plus, Edit2, Trash2, MapPin, Phone } from 'lucide-react';
+import { Plus, Edit2, Trash2, MapPin, Phone, X } from 'lucide-react';
 import { useNotification } from '../../../context/NotificationContext';
+import { createPortal } from 'react-dom';
 
 export default function AdminWarehouses() {
   const dispatch = useDispatch();
@@ -162,137 +163,135 @@ export default function AdminWarehouses() {
           ))}
         </div>
 
-      {showModal && (
-        <>
-          <div className="modal show d-block" tabIndex="-1">
-            <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
-              <div className="modal-content border-0 shadow-lg">
-                <div className="modal-header border-0 pb-0">
-                  <h5 className="modal-title fw-bold">{editingId ? 'Edit Warehouse' : 'Add Warehouse'}</h5>
-                  <button type="button" className="btn-close" onClick={handleCloseModal}></button>
+      {showModal && typeof document !== 'undefined' && createPortal(
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050, backdropFilter: 'blur(4px)' }} onClick={handleCloseModal}>
+          <div className="card shadow-lg border-0 rounded-4" style={{ width: '800px', maxWidth: '95vw', maxHeight: '90vh', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="card-header bg-white d-flex justify-content-between align-items-center border-bottom-0 pt-4 px-4">
+              <h5 className="fw-bold m-0 text-dark">{editingId ? 'Edit Warehouse' : 'Add Warehouse'}</h5>
+              <button className="btn btn-sm btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" onClick={handleCloseModal}>
+                <X size={18} className="text-muted" />
+              </button>
+            </div>
+            <div className="card-body px-4 pb-4" style={{ overflowY: 'auto' }}>
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label className="form-label fw-bold fs-7">Warehouse Name</label>
+                  <input type="text" className="form-control" required 
+                    value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 </div>
-                <div className="modal-body">
-                  <form onSubmit={handleSubmit}>
-                    <div className="mb-3">
-                      <label className="form-label fw-bold fs-7">Warehouse Name</label>
-                      <input type="text" className="form-control" required 
-                        value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label fw-bold fs-7">Delhivery Pickup Location Name</label>
-                      <input type="text" className="form-control font-monospace" required 
-                        value={formData.delhiveryPickupLocationName} onChange={e => setFormData({...formData, delhiveryPickupLocationName: e.target.value})} />
-                      <div className="form-text">Must exactly match the registered pickup location name in your Delhivery Dashboard.</div>
-                    </div>
-                    <div className="row mb-3">
-                      <div className="col-12 mb-3">
-                        <label className="form-label fw-bold fs-7">Address</label>
-                        <input type="text" className="form-control" required 
-                          value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
+                <div className="mb-3">
+                  <label className="form-label fw-bold fs-7">Delhivery Pickup Location Name</label>
+                  <input type="text" className="form-control font-monospace" required 
+                    value={formData.delhiveryPickupLocationName} onChange={e => setFormData({...formData, delhiveryPickupLocationName: e.target.value})} />
+                  <div className="form-text">Must exactly match the registered pickup location name in your Delhivery Dashboard.</div>
+                </div>
+                <div className="row mb-3">
+                  <div className="col-12 mb-3">
+                    <label className="form-label fw-bold fs-7">Address</label>
+                    <input type="text" className="form-control" required 
+                      value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-bold fs-7">City</label>
+                    <input type="text" className="form-control" required 
+                      value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-bold fs-7">State</label>
+                    <input type="text" className="form-control" required 
+                      value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-bold fs-7">Pincode</label>
+                    <input type="text" className="form-control" required 
+                      value={formData.pincode} onChange={e => setFormData({...formData, pincode: e.target.value})} />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-bold fs-7">Contact Phone</label>
+                    <input type="text" className="form-control" required 
+                      value={formData.contactPhone} onChange={e => setFormData({...formData, contactPhone: e.target.value})} />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-bold fs-7">Contact Person Name</label>
+                    <input type="text" className="form-control" 
+                      value={formData.contactPersonName || ''} onChange={e => setFormData({...formData, contactPersonName: e.target.value})} />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label fw-bold fs-7">Email</label>
+                    <input type="email" className="form-control" 
+                      value={formData.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} />
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <label className="form-label fw-bold fs-7">Working Days</label>
+                  <div className="d-flex flex-wrap gap-2">
+                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                      <div key={day} className="form-check form-check-inline m-0">
+                        <input 
+                          className="form-check-input cursor-pointer" 
+                          type="checkbox" 
+                          id={`day-${day}`}
+                          checked={formData.workingDays.includes(day)}
+                          onChange={(e) => {
+                            const newDays = e.target.checked 
+                              ? [...formData.workingDays, day]
+                              : formData.workingDays.filter(d => d !== day);
+                            setFormData({...formData, workingDays: newDays});
+                          }}
+                        />
+                        <label className="form-check-label fs-7 cursor-pointer" htmlFor={`day-${day}`}>{day}</label>
                       </div>
-                      <div className="col-md-6 mb-3">
-                        <label className="form-label fw-bold fs-7">City</label>
-                        <input type="text" className="form-control" required 
-                          value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} />
-                      </div>
-                      <div className="col-md-6 mb-3">
-                        <label className="form-label fw-bold fs-7">State</label>
-                        <input type="text" className="form-control" required 
-                          value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} />
-                      </div>
-                      <div className="col-md-6 mb-3">
-                        <label className="form-label fw-bold fs-7">Pincode</label>
-                        <input type="text" className="form-control" required 
-                          value={formData.pincode} onChange={e => setFormData({...formData, pincode: e.target.value})} />
-                      </div>
-                      <div className="col-md-6 mb-3">
-                        <label className="form-label fw-bold fs-7">Contact Phone</label>
-                        <input type="text" className="form-control" required 
-                          value={formData.contactPhone} onChange={e => setFormData({...formData, contactPhone: e.target.value})} />
-                      </div>
-                      <div className="col-md-6 mb-3">
-                        <label className="form-label fw-bold fs-7">Contact Person Name</label>
-                        <input type="text" className="form-control" 
-                          value={formData.contactPersonName || ''} onChange={e => setFormData({...formData, contactPersonName: e.target.value})} />
-                      </div>
-                      <div className="col-md-6 mb-3">
-                        <label className="form-label fw-bold fs-7">Email</label>
-                        <input type="email" className="form-control" 
-                          value={formData.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} />
-                      </div>
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label fw-bold fs-7">Working Days</label>
-                      <div className="d-flex flex-wrap gap-2">
-                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
-                          <div key={day} className="form-check form-check-inline m-0">
-                            <input 
-                              className="form-check-input cursor-pointer" 
-                              type="checkbox" 
-                              id={`day-${day}`}
-                              checked={formData.workingDays.includes(day)}
-                              onChange={(e) => {
-                                const newDays = e.target.checked 
-                                  ? [...formData.workingDays, day]
-                                  : formData.workingDays.filter(d => d !== day);
-                                setFormData({...formData, workingDays: newDays});
-                              }}
-                            />
-                            <label className="form-check-label fs-7 cursor-pointer" htmlFor={`day-${day}`}>{day}</label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="form-check mb-3">
-                      <input className="form-check-input shadow-none cursor-pointer" type="checkbox" id="returnSameAsPickup"
-                        checked={formData.returnSameAsPickup} onChange={e => setFormData({...formData, returnSameAsPickup: e.target.checked})} />
-                      <label className="form-check-label fw-bold fs-7 cursor-pointer text-muted" htmlFor="returnSameAsPickup">Return address is the same as the pickup address</label>
-                    </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="form-check mb-3">
+                  <input className="form-check-input shadow-none cursor-pointer" type="checkbox" id="returnSameAsPickup"
+                    checked={formData.returnSameAsPickup} onChange={e => setFormData({...formData, returnSameAsPickup: e.target.checked})} />
+                  <label className="form-check-label fw-bold fs-7 cursor-pointer text-muted" htmlFor="returnSameAsPickup">Return address is the same as the pickup address</label>
+                </div>
 
-                    {!formData.returnSameAsPickup && (
-                      <div className="row mb-3 p-3 bg-light rounded border mx-0">
-                        <div className="col-12 mb-2"><h6 className="fw-bold mb-0">Return Details</h6></div>
-                        <div className="col-12 mb-3">
-                          <label className="form-label fw-bold fs-7">Address Line</label>
-                          <input type="text" className="form-control" required={!formData.returnSameAsPickup}
-                            value={formData.returnAddressLine} onChange={e => setFormData({...formData, returnAddressLine: e.target.value})} />
-                        </div>
-                        <div className="col-md-4 mb-3">
-                          <label className="form-label fw-bold fs-7">Pincode</label>
-                          <input type="text" className="form-control" required={!formData.returnSameAsPickup}
-                            value={formData.returnPincode} onChange={e => setFormData({...formData, returnPincode: e.target.value})} />
-                        </div>
-                        <div className="col-md-4 mb-3">
-                          <label className="form-label fw-bold fs-7">City</label>
-                          <input type="text" className="form-control" required={!formData.returnSameAsPickup}
-                            value={formData.returnCity} onChange={e => setFormData({...formData, returnCity: e.target.value})} />
-                        </div>
-                        <div className="col-md-4 mb-3">
-                          <label className="form-label fw-bold fs-7">State</label>
-                          <input type="text" className="form-control" required={!formData.returnSameAsPickup}
-                            value={formData.returnState} onChange={e => setFormData({...formData, returnState: e.target.value})} />
-                        </div>
-                      </div>
-                    )}
-                    <div className="form-check form-switch mb-4">
-                      <input className="form-check-input" type="checkbox" role="switch" id="isActiveSwitch"
-                        checked={formData.isActive} onChange={e => setFormData({...formData, isActive: e.target.checked})} />
-                      <label className="form-check-label fw-bold fs-7" htmlFor="isActiveSwitch">Active</label>
+                {!formData.returnSameAsPickup && (
+                  <div className="row mb-3 p-3 bg-light rounded border mx-0">
+                    <div className="col-12 mb-2"><h6 className="fw-bold mb-0">Return Details</h6></div>
+                    <div className="col-12 mb-3">
+                      <label className="form-label fw-bold fs-7">Address Line</label>
+                      <input type="text" className="form-control" required={!formData.returnSameAsPickup}
+                        value={formData.returnAddressLine} onChange={e => setFormData({...formData, returnAddressLine: e.target.value})} />
                     </div>
-                    <button type="submit" className="btn btn-primary w-100 fw-bold py-2">
-                      {editingId ? 'Update Warehouse' : 'Save Warehouse'}
-                    </button>
-                  </form>
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label fw-bold fs-7">Pincode</label>
+                      <input type="text" className="form-control" required={!formData.returnSameAsPickup}
+                        value={formData.returnPincode} onChange={e => setFormData({...formData, returnPincode: e.target.value})} />
+                    </div>
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label fw-bold fs-7">City</label>
+                      <input type="text" className="form-control" required={!formData.returnSameAsPickup}
+                        value={formData.returnCity} onChange={e => setFormData({...formData, returnCity: e.target.value})} />
+                    </div>
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label fw-bold fs-7">State</label>
+                      <input type="text" className="form-control" required={!formData.returnSameAsPickup}
+                        value={formData.returnState} onChange={e => setFormData({...formData, returnState: e.target.value})} />
+                    </div>
+                  </div>
+                )}
+                <div className="form-check form-switch mb-4">
+                  <input className="form-check-input" type="checkbox" role="switch" id="isActiveSwitch"
+                    checked={formData.isActive} onChange={e => setFormData({...formData, isActive: e.target.checked})} />
+                  <label className="form-check-label fw-bold fs-7" htmlFor="isActiveSwitch">Active</label>
                 </div>
-              </div>
+                <div className="pt-3 border-top mt-4">
+                  <button type="submit" className="btn btn-primary w-100 fw-bold py-2 rounded-pill">
+                    {editingId ? 'Update Warehouse' : 'Save Warehouse'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-          <div className="modal-backdrop show"></div>
-        </>
+        </div>,
+        document.body
       )}
       </div>
     </>
   );
-}
-
 // Trigger refresh

@@ -346,13 +346,15 @@ export const getSystemSettings = async (req, res, next) => {
     const codSetting = await SystemSetting.findOne({ key: 'cod' });
     const refundSetting = await SystemSetting.findOne({ key: 'refund' });
     const topSellingSetting = await SystemSetting.findOne({ key: 'topSellingSource' });
+    const onlinePaymentSetting = await SystemSetting.findOne({ key: 'onlinePayment' });
 
     res.json({
       success: true,
       settings: {
         cod: codSetting ? codSetting.value : true,
         refund: refundSetting ? refundSetting.value : true,
-        topSellingSource: topSellingSetting ? topSellingSetting.value : 'automatic'
+        topSellingSource: topSellingSetting ? topSellingSetting.value : 'automatic',
+        onlinePayment: onlinePaymentSetting ? onlinePaymentSetting.value : true
       }
     });
   } catch (error) {
@@ -383,6 +385,13 @@ export const updateSystemSettings = async (req, res, next) => {
           { upsert: true, new: true }
         );
       }
+      if (settings.onlinePayment !== undefined) {
+        await SystemSetting.findOneAndUpdate(
+          { key: 'onlinePayment' },
+          { value: Boolean(settings.onlinePayment) },
+          { upsert: true, new: true }
+        );
+      }
       if (settings.topSellingSource !== undefined) {
         await SystemSetting.findOneAndUpdate(
           { key: 'topSellingSource' },
@@ -397,6 +406,7 @@ export const updateSystemSettings = async (req, res, next) => {
     const codSetting = await SystemSetting.findOne({ key: 'cod' });
     const refundSetting = await SystemSetting.findOne({ key: 'refund' });
     const topSellingSetting = await SystemSetting.findOne({ key: 'topSellingSource' });
+    const onlinePaymentSetting = await SystemSetting.findOne({ key: 'onlinePayment' });
 
     res.json({
       success: true,
@@ -404,7 +414,8 @@ export const updateSystemSettings = async (req, res, next) => {
       settings: {
         cod: codSetting ? codSetting.value : true,
         refund: refundSetting ? refundSetting.value : true,
-        topSellingSource: topSellingSetting ? topSellingSetting.value : 'automatic'
+        topSellingSource: topSellingSetting ? topSellingSetting.value : 'automatic',
+        onlinePayment: onlinePaymentSetting ? onlinePaymentSetting.value : true
       }
     });
   } catch (error) {

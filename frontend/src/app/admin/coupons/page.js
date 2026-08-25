@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import api from '../../../utils/axiosConfig.js';
-import { Tag, Trash2, PlusCircle, AlertCircle } from 'lucide-react';
+import { Tag, Trash2, PlusCircle, AlertCircle, BarChart2, X } from 'lucide-react';
 import { useNotification } from '../../../context/NotificationContext';
+import { useDispatch } from 'react-redux';
+import { fetchCouponUsage } from '../../../store/adminSlice.js';
+import { createPortal } from 'react-dom';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.sweettreeon.com/api';
 
@@ -12,6 +15,7 @@ export default function CouponManagerPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const { showConfirm, showAlert } = useNotification();
+  const dispatch = useDispatch();
   
   const [formData, setFormData] = useState({
     code: '',
@@ -29,13 +33,16 @@ export default function CouponManagerPage() {
   const [success, setSuccess] = useState(null);
   const [viewingProducts, setViewingProducts] = useState(null);
   const [couponMode, setCouponMode] = useState('purchase'); // 'purchase' or 'product'
+  const [viewingUsage, setViewingUsage] = useState(null);
+  const [usageStats, setUsageStats] = useState(null);
+  const [loadingUsage, setLoadingUsage] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
 
   useEffect(() => {
-    if (viewingProducts) {
+    if (viewingProducts || viewingUsage) {
       document.body.classList.add('modal-open');
       document.body.style.overflow = 'hidden';
     } else {
@@ -46,7 +53,7 @@ export default function CouponManagerPage() {
       document.body.classList.remove('modal-open');
       document.body.style.overflow = 'auto';
     };
-  }, [viewingProducts]);
+  }, [viewingProducts, viewingUsage]);
 
   const fetchData = async () => {
     try {
@@ -133,6 +140,25 @@ export default function CouponManagerPage() {
       fetchData();
     } catch (err) {
       setError('Failed to delete coupon');
+    }
+  };
+
+  const handleViewUsage = async (coupon) => {
+    setViewingUsage(coupon);
+    setLoadingUsage(true);
+    try {
+      const resultAction = await dispatch(fetchCouponUsage(coupon.code));
+      if (fetchCouponUsage.fulfilled.match(resultAction)) {
+        setUsageStats(resultAction.payload);
+      } else {
+        showAlert('Failed to load usage statistics', 'danger');
+        setViewingUsage(null);
+      }
+    } catch (error) {
+      showAlert('Failed to load usage statistics', 'danger');
+      setViewingUsage(null);
+    } finally {
+      setLoadingUsage(false);
     }
   };
 
@@ -444,10 +470,18 @@ export default function CouponManagerPage() {
                           )}
                         </td>
                         <td>{new Date(coupon.expiryDate).toLocaleDateString()}</td>
-                        <td className="text-end">
+                        <td className="text-end text-nowrap">
+                          <button 
+                            className="btn btn-sm btn-light text-primary hover-light-primary me-2"
+                            onClick={() => handleViewUsage(coupon)}
+                            title="View Usage"
+                          >
+                            <BarChart2 size={16} />
+                          </button>
                           <button 
                             className="btn btn-sm btn-light text-danger hover-light-red"
                             onClick={() => handleDelete(coupon._id)}
+                            title="Delete Coupon"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -463,32 +497,125 @@ export default function CouponManagerPage() {
       </div>
 
       {/* Applicable Products Modal */}
-      {viewingProducts && (
-        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-          <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-            <div className="modal-content border-0 rounded-4 shadow">
-              <div className="modal-header border-bottom-0 pb-0">
-                <h5 className="modal-title fw-bold">
-                  Applicable Products for <span className="font-monospace fs-6">{viewingProducts.code}</span>
-                </h5>
-                <button type="button" className="btn-close shadow-none" onClick={() => setViewingProducts(null)}></button>
+      {viewingProducts && typeof document !== 'undefined' && createPortal(
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050, backdropFilter: 'blur(4px)' }}>
+          <div className="card shadow-lg border-0 rounded-4" style={{ width: '420px', maxHeight: '90vh', overflow: 'hidden' }}>
+            <div className="card-header bg-white d-flex justify-content-between align-items-center border-bottom-0 pt-4 px-4">
+              <h5 className="fw-bold m-0 text-dark">
+                Applicable Products
+              </h5>
+              <button className="btn btn-sm btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" onClick={() => setViewingProducts(null)}>
+                <X size={18} className="text-muted" />
+              </button>
+            </div>
+            <div className="card-body px-4 pb-4" style={{ overflowY: 'auto' }}>
+              <div className="text-center mb-3">
+                <span className="badge bg-light text-dark border fs-7 font-monospace">{viewingProducts.code}</span>
               </div>
-              <div className="modal-body">
-                <div className="d-flex flex-column gap-2">
-                  {viewingProducts.applicableProducts.map(p => (
-                    <div key={p._id} className="p-2 border rounded bg-light fs-7 d-flex justify-content-between align-items-center">
-                      <span className="fw-medium text-dark">{p.name}</span>
-                      <span className="text-muted fw-bold">₹{p.price}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="modal-footer border-top-0 pt-0">
-                <button type="button" className="btn btn-light rounded px-4" onClick={() => setViewingProducts(null)}>Close</button>
+              <div className="d-flex flex-column gap-2">
+                {viewingProducts.applicableProducts.map(p => (
+                  <div key={p._id} className="p-2 border rounded bg-light fs-7 d-flex justify-content-between align-items-center">
+                    <span className="fw-medium text-dark">{p.name}</span>
+                    <span className="text-muted fw-bold">₹{p.price}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Coupon Usage Modal */}
+      {viewingUsage && typeof document !== 'undefined' && createPortal(
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050, backdropFilter: 'blur(4px)' }}>
+          <div className="card shadow-lg border-0 rounded-4" style={{ width: '700px', maxWidth: '95vw', maxHeight: '90vh', overflow: 'hidden' }}>
+            <div className="card-header bg-white d-flex justify-content-between align-items-center border-bottom-0 pt-4 px-4">
+              <h5 className="fw-bold m-0 text-dark d-flex align-items-center gap-2">
+                <BarChart2 size={20} className="text-brand" /> Usage Analytics
+              </h5>
+              <button className="btn btn-sm btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" onClick={() => { setViewingUsage(null); setUsageStats(null); }}>
+                <X size={18} className="text-muted" />
+              </button>
+            </div>
+            <div className="card-body px-4 pb-4" style={{ overflowY: 'auto' }}>
+              <div className="mb-4">
+                <span className="text-muted fs-7">Coupon Code</span>
+                <div className="fw-bold font-monospace fs-4">{viewingUsage.code}</div>
+              </div>
+
+              {loadingUsage ? (
+                <div className="text-center py-4 text-muted">
+                  <div className="spinner-border spinner-border-sm text-brand mb-2" role="status"></div>
+                  <p className="fs-7 m-0">Calculating usage statistics...</p>
+                </div>
+              ) : usageStats ? (
+                <>
+                  <div className="row g-3 mb-4">
+                    <div className="col-md-6">
+                      <div className="p-3 bg-light rounded-3 border h-100">
+                        <small className="text-muted d-block fw-semibold mb-1" style={{ fontSize: '11px', textTransform: 'uppercase' }}>Total Usage</small>
+                        <h4 className="fw-bold text-dark m-0">{usageStats.totalUsage} <span className="fs-7 text-muted fw-normal">times</span></h4>
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="p-3 bg-light rounded-3 border h-100">
+                        <small className="text-muted d-block fw-semibold mb-1" style={{ fontSize: '11px', textTransform: 'uppercase' }}>Sales Generated</small>
+                        <h4 className="fw-bold text-success m-0">₹{usageStats.totalSales?.toLocaleString()}</h4>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="row g-4">
+                    <div className="col-md-6">
+                      <h6 className="fw-bold mb-3">Usage by Date</h6>
+                      <div className="bg-white rounded border p-2" style={{ height: '220px', overflowY: 'auto' }}>
+                        {usageStats.dates && usageStats.dates.length > 0 ? (
+                          <div className="d-flex flex-column gap-2">
+                            {usageStats.dates.map((d, i) => (
+                              <div key={i} className="p-2 border rounded bg-light fs-7 d-flex justify-content-between align-items-center">
+                                <div>
+                                  <span className="fw-medium text-dark d-block">{d._id}</span>
+                                  <span className="text-muted" style={{ fontSize: '11px' }}>{d.count} times</span>
+                                </div>
+                                <span className="text-success fw-bold">₹{d.sales?.toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-muted fs-8 text-center mt-4">No usage data found.</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <h6 className="fw-bold mb-3">Usage by Location</h6>
+                      <div className="bg-white rounded border p-2" style={{ height: '220px', overflowY: 'auto' }}>
+                        {usageStats.locations && usageStats.locations.length > 0 ? (
+                          <div className="d-flex flex-column gap-2">
+                            {usageStats.locations.map((loc, i) => (
+                              <div key={i} className="p-2 border rounded bg-light fs-7 d-flex justify-content-between align-items-center">
+                                <div>
+                                  <span className="fw-medium text-dark d-block">{loc._id || 'Unknown'}</span>
+                                  <span className="text-muted" style={{ fontSize: '11px' }}>{loc.count} times</span>
+                                </div>
+                                <span className="text-success fw-bold">₹{loc.sales?.toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-muted fs-8 text-center mt-4">No location data found.</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="alert alert-warning fs-7 m-0">Could not retrieve statistics at this time.</div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

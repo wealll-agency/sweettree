@@ -11,7 +11,8 @@ import {
   getAdminShipments,
   getShipmentByWaybill,
   mockICICIGateway,
-  mockICICIProcess
+  mockICICIProcess,
+  markOrderRead
 } from '../controllers/orderController.js';
 import { protect, authorizeRoles } from '../middleware/auth.js';
 import { auditRoute } from '../middleware/logger.js';
@@ -41,6 +42,7 @@ router.route('/:id')
   .get(protect, getOrderById);
 
 router.put('/:id/status', protect, authorizeRoles('Super Admin', 'Manager', 'Staff'), auditRoute('UPDATE_ORDER_STATUS'), updateOrderStatus);
+router.patch('/:id/read', protect, authorizeRoles('Super Admin', 'Manager', 'Staff'), markOrderRead);
 router.post('/:id/refund', protect, authorizeRoles('Super Admin'), auditRoute('PROCESS_REFUND'), processRefund);
 
 export default router;

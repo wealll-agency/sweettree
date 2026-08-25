@@ -7,6 +7,7 @@ const REPORTS_URL = '/reports';
 const REFUNDS_URL = '/refunds';
 const DELHIVERY_URL = '/delhivery';
 const WAREHOUSES_URL = '/warehouses';
+const COUPONS_URL = '/coupons';
 
 export const fetchDashboardStats = createAsyncThunk(
   'admin/fetchDashboardStats',
@@ -16,6 +17,30 @@ export const fetchDashboardStats = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch dashboard statistics');
+    }
+  }
+);
+
+export const fetchSidebarStatsAction = createAsyncThunk(
+  'admin/fetchSidebarStats',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${REPORTS_URL}/sidebar-stats`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch sidebar stats');
+    }
+  }
+);
+
+export const fetchCouponUsage = createAsyncThunk(
+  'admin/fetchCouponUsage',
+  async (code, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${COUPONS_URL}/${code}/usage`);
+      return response.data.stats;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch coupon usage stats');
     }
   }
 );
@@ -281,10 +306,50 @@ export const getDelhiveryLabel = createAsyncThunk(
   }
 );
 
+export const markOrderAsRead = createAsyncThunk(
+  'admin/markOrderAsRead',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await axios.patch(`${ORDERS_URL}/${id}/read`);
+      return response.data.order;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to mark order as read');
+    }
+  }
+);
+
+export const markRefundAsRead = createAsyncThunk(
+  'admin/markRefundAsRead',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await axios.patch(`${REFUNDS_URL}/${id}/read`);
+      return response.data.refund;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to mark refund as read');
+    }
+  }
+);
+
+export const markInventoryAsRead = createAsyncThunk(
+  'admin/markInventoryAsRead',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await axios.patch(`${PRODUCTS_URL}/inventory/${id}/read`);
+      return response.data.inventory;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to mark inventory as read');
+    }
+  }
+);
+
 const adminSlice = createSlice({
   name: 'admin',
   initialState: {
     stats: null,
+    sidebarStats: {
+      pendingOrders: 0,
+      lowStockItems: 0
+    },
     salesOverview: [],
     topProducts: [],
     lowStockDetails: [],
@@ -328,6 +393,13 @@ const adminSlice = createSlice({
       .addCase(fetchDashboardStats.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      // Sidebar stats
+      .addCase(fetchSidebarStatsAction.fulfilled, (state, action) => {
+        state.sidebarStats = {
+          pendingOrders: action.payload.pendingOrders,
+          lowStockItems: action.payload.lowStockItems
+        };
       })
       // Admin products list
       .addCase(fetchAdminProducts.pending, (state) => {
@@ -446,6 +518,32 @@ const adminSlice = createSlice({
       })
       .addCase(deleteWarehouse.fulfilled, (state, action) => {
         state.warehouses = state.warehouses.filter(w => w._id !== action.payload);
+      })
+      
+      // Mark as Read Reducers
+      .addCase(markOrderAsRead.fulfilled, (state, action) => {
+        const index = state.orders.findIndex(o => o._id === action.payload._id);
+        if (index > -1) {
+          state.orders[index] = action.payload;
+        }
+        if (state.sidebarStats.pendingOrders > 0) {
+          state.sidebarStats.pendingOrders -= 1;
+        }
+      })
+      .addCase(markRefundAsRead.fulfilled, (state, action) => {
+        const index = state.refunds.findIndex(r => r._id === action.payload._id);
+        if (index > -1) {
+          state.refunds[index] = action.payload;
+        }
+      })
+      .addCase(markInventoryAsRead.fulfilled, (state, action) => {
+        const index = state.lowStockDetails.findIndex(i => i._id === action.payload._id);
+        if (index > -1) {
+          state.lowStockDetails[index] = action.payload;
+        }
+        if (state.sidebarStats.lowStockItems > 0) {
+          state.sidebarStats.lowStockItems -= 1;
+        }
       });
   }
 });

@@ -3,7 +3,8 @@ import {
   createCoupon,
   applyCoupon,
   getCoupons,
-  deleteCoupon
+  deleteCoupon,
+  getCouponUsage
 } from '../controllers/couponController.js';
 import { protect, authorizeRoles } from '../middleware/auth.js';
 import { auditRoute } from '../middleware/logger.js';
@@ -18,5 +19,7 @@ router.post('/apply', protect, applyCoupon);
 
 router.route('/:id')
   .delete(protect, authorizeRoles('Super Admin'), auditRoute('DELETE_COUPON'), deleteCoupon);
+
+router.get('/:code/usage', protect, authorizeRoles('Super Admin', 'Manager'), getCouponUsage);
 
 export default router;

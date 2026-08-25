@@ -360,3 +360,24 @@ export const exportSalesReportExcel = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Get lightweight stats for admin sidebar badges
+// @route   GET /api/reports/sidebar-stats
+// @access  Private/Admin/Manager/Staff
+export const getSidebarStats = async (req, res, next) => {
+  try {
+    const pendingOrders = await Order.countDocuments({ adminRead: false });
+    const lowStockItems = await Inventory.countDocuments({
+      adminRead: false,
+      $expr: { $lte: ['$stockQuantity', '$lowStockThreshold'] }
+    });
+
+    res.json({
+      success: true,
+      pendingOrders,
+      lowStockItems
+    });
+  } catch (error) {
+    next(error);
+  }
+};
