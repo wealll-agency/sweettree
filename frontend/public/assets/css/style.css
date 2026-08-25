@@ -4404,9 +4404,9 @@ a {
     border-radius: 20px 20px 0 0 !important;
   }
 
-  /* Global Mobile Padding for bottom nav */
+  /* Global Mobile Padding for bottom nav removed as there is no bottom nav */
   body {
-    padding-bottom: 59px !important;
+    padding-bottom: 0 !important;
   }
 
   /* Mobile View Toggles */

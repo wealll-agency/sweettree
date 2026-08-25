@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAdminProducts, addProduct, editProduct, removeProduct, toggleProductState, fetchWarehouses } from '../../../store/adminSlice.js';
 import { Plus, Edit, Trash2, X, Eye, Download, Search, LayoutGrid } from 'lucide-react';
@@ -96,6 +97,17 @@ export default function AdminProductsPage() {
       keyword: searchKeyword
     }));
   };
+
+  useEffect(() => {
+    if (viewingProduct || viewingBarcode) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [viewingProduct, viewingBarcode]);
 
   useEffect(() => {
     dispatch(fetchAdminProducts({ limit: 1000 }));
@@ -353,53 +365,87 @@ export default function AdminProductsPage() {
   return (
     <div className="animate-fade-in position-relative">
       {/* View Product Modal */}
-      {viewingProduct && (
-        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-          <div className="card shadow border-0 rounded-4" style={{ width: '400px' }}>
-            <div className="card-header bg-white d-flex justify-content-between align-items-center border-bottom-0 pt-3">
-              <h5 className="fw-bold m-0">Product Details</h5>
-              <button className="btn border-0 text-muted" onClick={() => setViewingProduct(null)}><X size={20} /></button>
+      {viewingProduct && typeof document !== 'undefined' && createPortal(
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050, backdropFilter: 'blur(4px)' }}>
+          <div className="card shadow-lg border-0 rounded-4" style={{ width: '420px', overflow: 'hidden' }}>
+            <div className="card-header bg-white d-flex justify-content-between align-items-center border-bottom-0 pt-4 px-4">
+              <h5 className="fw-bold m-0 text-dark">Product Details</h5>
+              <button className="btn btn-sm btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" onClick={() => setViewingProduct(null)}>
+                <X size={18} className="text-muted" />
+              </button>
             </div>
-            <div className="card-body text-center">
-              <Image src={viewingProduct.images[0] || 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=200'} alt="product" className="img-fluid rounded mb-3" width={200} height={200} style={{ maxHeight: '200px', objectFit: 'cover' }} />
-              <h5 className="fw-bold">{viewingProduct.name}</h5>
-              <p className="text-muted mb-1">Category: {viewingProduct.category}</p>
-              <p className="fw-semibold text-brand fs-5 mb-1">
-                ₹{viewingProduct.discount > 0 ? (
-                  viewingProduct.discountType === 'Percent' 
-                    ? Math.round(viewingProduct.price * (1 - viewingProduct.discount / 100))
-                    : Math.max(0, viewingProduct.price - viewingProduct.discount)
-                ) : viewingProduct.price}
+            <div className="card-body px-4 pb-4">
+              <div className="text-center mb-4">
+                <div className="position-relative d-inline-block bg-light rounded-4 p-2 border">
+                  <Image src={viewingProduct.images[0] || 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=200'} alt="product" className="img-fluid rounded-3" width={180} height={180} style={{ height: '180px', objectFit: 'cover' }} />
+                </div>
+              </div>
+              
+              <h5 className="fw-bold text-dark text-center mb-1">{viewingProduct.name}</h5>
+              <p className="text-muted text-center fs-7 mb-3"><span className="badge bg-light text-dark border">Category: {viewingProduct.category}</span></p>
+              
+              <div className="d-flex justify-content-center align-items-center gap-3 mb-3">
+                <div className="text-center">
+                  <span className="fs-7 text-muted d-block">Selling Price</span>
+                  <p className="fw-bold text-brand fs-4 mb-0">
+                    ₹{viewingProduct.discount > 0 ? (
+                      viewingProduct.discountType === 'Percent' 
+                        ? Math.round(viewingProduct.price * (1 - viewingProduct.discount / 100))
+                        : Math.max(0, viewingProduct.price - viewingProduct.discount)
+                    ) : viewingProduct.price}
+                  </p>
+                </div>
                 {viewingProduct.discount > 0 && (
-                  <span className="text-muted text-decoration-line-through fs-7 ms-2">₹{viewingProduct.price}</span>
+                  <div className="text-center">
+                    <span className="fs-7 text-muted d-block">MRP</span>
+                    <p className="text-muted text-decoration-line-through fs-5 mb-0">₹{viewingProduct.price}</p>
+                  </div>
                 )}
-              </p>
-              <span className={`badge ${viewingProduct.stock > 0 ? 'bg-success' : 'bg-danger'}`}>{viewingProduct.stock} in stock</span>
-              <p className="mt-3 fs-7 text-start text-muted">{viewingProduct.description}</p>
+              </div>
+              
+              <div className="text-center mb-3">
+                <span className={`badge px-3 py-2 ${viewingProduct.stock > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'}`}>
+                  {viewingProduct.stock > 0 ? `${viewingProduct.stock} Units in Stock` : 'Out of Stock'}
+                </span>
+              </div>
+              
+              <div className="bg-light rounded-3 p-3 text-center">
+                <p className="m-0 fs-7 text-muted" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {viewingProduct.description || 'No description provided.'}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* View Barcode Modal */}
-      {viewingBarcode && (
-        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-          <div className="card shadow border-0 rounded-4" style={{ width: '350px' }}>
-            <div className="card-header bg-white d-flex justify-content-between align-items-center border-bottom-0 pt-3">
-              <h5 className="fw-bold m-0">Product Barcode</h5>
-              <button className="btn border-0 text-muted" onClick={() => setViewingBarcode(null)}><X size={20} /></button>
+      {viewingBarcode && typeof document !== 'undefined' && createPortal(
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050, backdropFilter: 'blur(4px)' }}>
+          <div className="card shadow-lg border-0 rounded-4" style={{ width: '380px', overflow: 'hidden' }}>
+            <div className="card-header bg-white d-flex justify-content-between align-items-center border-bottom-0 pt-4 px-4">
+              <h5 className="fw-bold m-0 text-dark">Product Barcode</h5>
+              <button className="btn btn-sm btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" onClick={() => setViewingBarcode(null)}>
+                <X size={18} className="text-muted" />
+              </button>
             </div>
-            <div className="card-body text-center py-5">
-              <div className="border p-3 d-inline-block rounded bg-light mb-3">
-                <h1 className="display-4 fw-bold m-0 text-dark" style={{ letterSpacing: '8px', fontFamily: 'monospace' }}>
-                  |||||||||
-                </h1>
+            <div className="card-body text-center pb-4 px-4">
+              <div className="bg-light p-4 rounded-3 mb-4 d-inline-block border">
+                <div className="d-flex justify-content-center align-items-stretch" style={{ height: '70px', gap: '3px' }}>
+                  {[2, 4, 1, 3, 2, 5, 1, 2, 4, 1, 3, 2, 1, 4, 2, 3, 1, 2, 5].map((w, i) => (
+                    <div key={i} style={{ width: `${w * 1.5}px`, backgroundColor: '#212529', borderRadius: '1px' }}></div>
+                  ))}
+                </div>
               </div>
-              <h5 className="font-monospace fw-bold">{viewingBarcode.sku || viewingBarcode.batchNumber || 'NO-SKU'}</h5>
-              <p className="text-muted">{viewingBarcode.name}</p>
+              <h4 className="font-monospace fw-bold text-dark mb-1" style={{ letterSpacing: '2px' }}>
+                {viewingBarcode.sku || viewingBarcode.batchNumber || 'NO-SKU'}
+              </h4>
+              <p className="text-muted small mb-0">{viewingBarcode.name}</p>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       {/* Filter Products Section */}
       {!showForm && (

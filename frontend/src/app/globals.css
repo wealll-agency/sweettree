@@ -35,13 +35,14 @@ body {
   flex-direction: column;
 }
 
-/* Transparent Autofill Inputs (for dark auth pages) */
+/* Transparent/Dark Autofill Inputs (for dark auth pages) */
 .glass-input:-webkit-autofill,
 .glass-input:-webkit-autofill:hover, 
 .glass-input:-webkit-autofill:focus, 
 .glass-input:-webkit-autofill:active {
-    transition: background-color 5000s ease-in-out 0s;
+    -webkit-box-shadow: 0 0 0 50px #1c3821 inset !important;
     -webkit-text-fill-color: #ffffff !important;
+    transition: background-color 5000s ease-in-out 0s;
 }
 
 h1,
