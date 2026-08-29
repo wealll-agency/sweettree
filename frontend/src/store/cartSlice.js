@@ -44,8 +44,8 @@ const calculateTotals = (items, discountType = 'percentage', discountPercentage 
 
   const taxableAmount = subtotal - discount;
   const tax = Math.round(taxableAmount * 0.05); // 5% GST
-  const shippingFee = taxableAmount >= 1999 || items.length === 0 ? 0 : 80;
-  const total = taxableAmount + tax + shippingFee;
+  const shippingFee = taxableAmount >= 1999 || items.length === 0 ? 0 : 'TBC';
+  const total = taxableAmount + tax + (typeof shippingFee === 'number' ? shippingFee : 0);
 
   return { subtotal, discount, tax, shippingFee, total };
 };

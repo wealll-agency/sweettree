@@ -88,7 +88,12 @@ export default function CheckoutPage() {
       try {
         const res = await api.get('/coupons');
         if (res.data.success) {
-          setAvailableCoupons(res.data.coupons.filter(c => c.isActive && new Date(c.expiryDate) > new Date()));
+          setAvailableCoupons(res.data.coupons.filter(c => {
+            if (!c.isActive) return false;
+            const expiryDateEOD = new Date(c.expiryDate);
+            expiryDateEOD.setHours(23, 59, 59, 999);
+            return expiryDateEOD >= new Date();
+          }));
         }
       } catch (err) {
         console.warn('Failed to load coupons:', err.message || err);
@@ -742,7 +747,7 @@ export default function CheckoutPage() {
               )}
               <div className="d-flex justify-content-between">
                 <span>Shipping Fee</span>
-                <span>{shippingFee === 0 ? 'Free' : `₹${shippingFee}`}</span>
+                <span>{shippingFee === 0 ? 'Free' : 'To be calculated'}</span>
               </div>
               <div className="d-flex justify-content-between">
                 <span>GST Tax (5%)</span>

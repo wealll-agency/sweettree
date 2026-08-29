@@ -174,7 +174,7 @@ const CartOffcanvas = () => {
                 </div>
                 <div className="d-flex justify-content-between mb-2 fs-7 text-muted">
                   <span>Shipping:</span>
-                  <span>{shippingFee === 0 ? <span className="text-success fw-bold">FREE</span> : `+ ₹${shippingFee.toFixed(2)}`}</span>
+                  <span>{shippingFee === 0 ? <span className="text-success fw-bold">FREE</span> : 'To be calculated'}</span>
                 </div>
                 {mrpDiscount > 0 && (
                   <div className="d-flex justify-content-between mb-2 fs-7 text-success">

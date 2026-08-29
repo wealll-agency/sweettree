@@ -13,6 +13,9 @@ const nextConfig = {
   compress: true,
   images: {
     unoptimized: true,
+    minimumCacheTTL: 86400,
+    deviceSizes: [640, 750, 1080, 1200],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     remotePatterns: [
       {
         protocol: 'https',

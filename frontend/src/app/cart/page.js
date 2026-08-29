@@ -230,7 +230,7 @@ export default function CartPage() {
               
               <div className="d-flex justify-content-between text-muted">
                 <span>Shipping Fee</span>
-                <span>{shippingFee === 0 ? 'Free' : `₹${shippingFee}`}</span>
+                <span>{shippingFee === 0 ? 'Free' : 'To be calculated'}</span>
               </div>
               
               <div className="d-flex justify-content-between text-muted">

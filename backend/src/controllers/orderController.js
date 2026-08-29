@@ -122,8 +122,8 @@ const calculateOrderTotals = async (items, couponCode) => {
   const taxableAmount = subtotal - discount;
   const tax = Math.round(taxableAmount * 0.05);
   
-  // Shipping: Free above 1999, else 80 INR
-  const shippingFee = taxableAmount >= 1999 ? 0 : 80;
+  // Shipping: Free above 1999, else To be calculated (Set to 0 for now)
+  const shippingFee = 0; // taxableAmount >= 1999 ? 0 : 80;
   
   const totalAmount = taxableAmount + tax + shippingFee;
 

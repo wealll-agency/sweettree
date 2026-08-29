@@ -277,6 +277,9 @@ export default function AdminSidebar() {
           <LogOut size={20} />
           {!isCollapsed && <span>Sign Out</span>}
         </button>
+        <div className={`mt-2 ${isCollapsed ? 'text-center' : 'px-3 text-start'}`}>
+          <small className="text-white text-opacity-50" style={{ fontSize: '0.65rem' }}>3.0.2</small>
+        </div>
       </div>
       </div>
     </aside>

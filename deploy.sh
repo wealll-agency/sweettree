@@ -68,25 +68,55 @@ if [ -d "$CURRENT_LINK/frontend/.next/static" ]; then
     echo "--> ✅ Old static chunks successfully merged into new release."
 fi
 
-# 6. Build Validation
+# 6. Build Validation & Isolated Health Check
 echo "--> Validating Build Output..."
 if [ ! -d "$RELEASE_DIR/frontend/.next/static" ]; then
     echo "--> ❌ Validation Failed: .next/static directory is missing! Aborting."
     exit 1
 fi
 
-# 7. Atomic Swap
+echo "--> Running Isolated Pre-Activation Health Check..."
+# Start Backend on Temp Port
+cd "$RELEASE_DIR/backend"
+PORT=9999 node src/server.js > /dev/null 2>&1 &
+BACKEND_PID=$!
+
+# Start Frontend on Temp Port
+cd "$RELEASE_DIR/frontend"
+PORT=9998 npm run start -- -p 9998 > /dev/null 2>&1 &
+FRONTEND_PID=$!
+
+echo "--> Waiting 10 seconds for isolated services to boot..."
+sleep 10
+
+if ! curl -s --head --fail http://localhost:9999/health > /dev/null; then
+    echo "--> ❌ Isolated Backend Health Check Failed! Aborting deployment."
+    echo "--> The live production site remains untouched and active."
+    kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+    exit 1
+fi
+
+if ! curl -s --head --fail http://localhost:9998 > /dev/null; then
+    echo "--> ❌ Isolated Frontend Health Check Failed! Aborting deployment."
+    echo "--> The live production site remains untouched and active."
+    kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+    exit 1
+fi
+
+echo "--> ✅ Isolated Health Checks Passed! Killing temp processes..."
+kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+
+# 7. Atomic Swap & Zero-Downtime Activation
 echo "--> Performing atomic symlink swap..."
 cd "$DEPLOY_ROOT"
 ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
 
-echo "--> Reloading PM2 processes from new release..."
-# PM2 often caches the resolved realpath of symlinks during 'reload'.
-# By using 'restart', we force it to resolve the new 'current' symlink.
-pm2 restart ecosystem.config.cjs --update-env || pm2 start current/ecosystem.config.cjs
+echo "--> Reloading PM2 processes with Zero-Downtime Cluster Mode..."
+# In cluster mode, PM2 reload provides zero downtime by spawning new workers before killing old ones.
+pm2 reload ecosystem.config.cjs --update-env || pm2 start current/ecosystem.config.cjs
 
 # 8. Post-Deploy Health Check
-echo "--> Running Health Checks (Waiting 5 seconds for startup)..."
+echo "--> Running Post-Deploy Health Checks (Waiting 5 seconds for graceful transition)..."
 sleep 5
 
 FRONTEND_STATUS=$(pm2 jlist | grep -o '"name":"sweettree-frontend","pm2_env":{"status":"[^"]*"' | grep -o 'status":"[^"]*' | cut -d'"' -f3 | head -n 1)
