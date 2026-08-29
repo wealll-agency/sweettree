@@ -94,7 +94,7 @@ app.use('/api/combos', comboRoutes);
 app.use('/api/custom-sections', customSectionRoutes);
 app.use('/api/blogs', blogRoutes);
 
-// Health Endpoint
+// Legacy Health Endpoint (keep for backwards compatibility)
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'up',
@@ -102,6 +102,20 @@ app.get('/health', (req, res) => {
     uptime: process.uptime(),
     dbState: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   });
+});
+
+// Liveness Probe (Is the process running?)
+app.get('/health/live', (req, res) => {
+  res.status(200).send('OK');
+});
+
+// Readiness Probe (Is the app fully ready to accept traffic?)
+app.get('/health/ready', (req, res) => {
+  if (mongoose.connection.readyState === 1) {
+    res.status(200).send('Ready');
+  } else {
+    res.status(503).send('Service Unavailable');
+  }
 });
 
 // Root route

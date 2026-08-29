@@ -86,17 +86,38 @@ cd "$RELEASE_DIR/frontend"
 PORT=9998 npm run start -- -p 9998 > /dev/null 2>&1 &
 FRONTEND_PID=$!
 
-echo "--> Waiting 10 seconds for isolated services to boot..."
-sleep 10
+echo "--> Waiting for isolated services to become ready (Timeout: 15s)..."
 
-if ! curl -s --head --fail http://localhost:9999/health > /dev/null; then
+MAX_RETRIES=15
+RETRY_COUNT=0
+BACKEND_READY=0
+FRONTEND_READY=0
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if [ $BACKEND_READY -eq 0 ] && curl -s --head --fail http://127.0.0.1:9999/health/ready > /dev/null; then
+        BACKEND_READY=1
+    fi
+    
+    if [ $FRONTEND_READY -eq 0 ] && curl -s --head --fail http://127.0.0.1:9998 > /dev/null; then
+        FRONTEND_READY=1
+    fi
+
+    if [ $BACKEND_READY -eq 1 ] && [ $FRONTEND_READY -eq 1 ]; then
+        break
+    fi
+
+    sleep 1
+    RETRY_COUNT=$((RETRY_COUNT+1))
+done
+
+if [ $BACKEND_READY -eq 0 ]; then
     echo "--> ❌ Isolated Backend Health Check Failed! Aborting deployment."
     echo "--> The live production site remains untouched and active."
     kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
     exit 1
 fi
 
-if ! curl -s --head --fail http://localhost:9998 > /dev/null; then
+if [ $FRONTEND_READY -eq 0 ]; then
     echo "--> ❌ Isolated Frontend Health Check Failed! Aborting deployment."
     echo "--> The live production site remains untouched and active."
     kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
