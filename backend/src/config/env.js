@@ -7,12 +7,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Try standard backend-level .env first (production standard), fallback to monorepo root for local dev
-const localEnvPath = path.resolve(process.cwd(), '.env');
+const backendEnvPath = path.resolve(__dirname, '../../.env');
 const rootEnvPath = path.join(__dirname, '../../../.env');
 
-if (fs.existsSync(localEnvPath)) {
-  dotenv.config({ path: localEnvPath });
-} else {
+if (fs.existsSync(backendEnvPath)) {
+  dotenv.config({ path: backendEnvPath });
+} else if (fs.existsSync(rootEnvPath)) {
   dotenv.config({ path: rootEnvPath });
 }
 
