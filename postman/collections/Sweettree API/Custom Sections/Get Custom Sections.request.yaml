@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get Custom Sections
+method: GET
+url: '{{baseUrl}}/api/custom-sections'
+order: 1000

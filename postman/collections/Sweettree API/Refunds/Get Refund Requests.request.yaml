@@ -1,0 +1,10 @@
+$kind: http-request
+name: Get Refund Requests
+method: GET
+url: '{{baseUrl}}/api/refunds'
+order: 1000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'

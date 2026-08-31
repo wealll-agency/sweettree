@@ -1,0 +1,10 @@
+$kind: http-request
+name: Get Warehouses
+method: GET
+url: '{{baseUrl}}/api/warehouses'
+order: 1000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'

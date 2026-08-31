@@ -1,0 +1,13 @@
+$kind: http-request
+name: Create Shipment
+method: POST
+url: '{{baseUrl}}/api/delhivery/create/:orderId'
+order: 1000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+pathVariables:
+  - key: orderId
+    value: ORDER_ID

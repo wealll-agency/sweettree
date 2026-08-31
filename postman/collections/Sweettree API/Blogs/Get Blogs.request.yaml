@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get Blogs
+method: GET
+url: '{{baseUrl}}/api/blogs'
+order: 1000

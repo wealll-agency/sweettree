@@ -1,0 +1,22 @@
+$kind: http-request
+name: Customer Refund Request
+method: POST
+url: '{{baseUrl}}/api/refunds/request/:orderId'
+order: 5000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+pathVariables:
+  - key: orderId
+    value: ORDER_ID
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "reason": "Wrong item received"
+    }

@@ -1,0 +1,13 @@
+$kind: http-request
+name: Get Order By ID
+method: GET
+url: '{{baseUrl}}/api/orders/:id'
+order: 10000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+pathVariables:
+  - key: id
+    value: ORDER_ID

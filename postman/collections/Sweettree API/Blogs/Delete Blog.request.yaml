@@ -1,0 +1,13 @@
+$kind: http-request
+name: Delete Blog
+method: DELETE
+url: '{{baseUrl}}/api/blogs/:id'
+order: 4000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+pathVariables:
+  - key: id
+    value: BLOG_ID

@@ -1,0 +1,13 @@
+$kind: http-request
+name: Get Shipment By Waybill
+method: GET
+url: '{{baseUrl}}/api/orders/shipments/:waybill'
+order: 4000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+pathVariables:
+  - key: waybill
+    value: WAYBILL_NUMBER

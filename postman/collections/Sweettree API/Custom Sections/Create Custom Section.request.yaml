@@ -1,0 +1,20 @@
+$kind: http-request
+name: Create Custom Section
+method: POST
+url: '{{baseUrl}}/api/custom-sections'
+order: 2000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Featured Products",
+      "type": "products"
+    }

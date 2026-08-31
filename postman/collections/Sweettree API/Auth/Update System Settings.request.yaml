@@ -1,0 +1,19 @@
+$kind: http-request
+name: Update System Settings
+method: PUT
+url: '{{baseUrl}}/api/auth/settings'
+order: 11000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "siteName": "Sweettree"
+    }

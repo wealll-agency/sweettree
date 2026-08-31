@@ -1,0 +1,19 @@
+$kind: http-request
+name: Create Mock Refund Request
+method: POST
+url: '{{baseUrl}}/api/refunds/mock'
+order: 4000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "orderId": "ORDER_ID"
+    }

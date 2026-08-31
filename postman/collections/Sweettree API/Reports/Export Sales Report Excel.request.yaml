@@ -1,0 +1,10 @@
+$kind: http-request
+name: Export Sales Report Excel
+method: GET
+url: '{{baseUrl}}/api/reports/export/excel'
+order: 4000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'

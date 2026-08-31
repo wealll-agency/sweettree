@@ -1,0 +1,21 @@
+$kind: http-request
+name: Create Banner
+method: POST
+url: '{{baseUrl}}/api/banners'
+order: 2000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Summer Sale",
+      "imageUrl": "https://example.com/banner.jpg",
+      "link": "/"
+    }

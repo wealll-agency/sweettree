@@ -1,0 +1,12 @@
+$kind: http-request
+name: ICICI Callback
+method: POST
+url: '{{baseUrl}}/api/orders/icici-callback'
+order: 5000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {}

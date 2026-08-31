@@ -1,0 +1,12 @@
+$kind: http-request
+name: Mock ICICI Gateway
+method: POST
+url: '{{baseUrl}}/api/orders/mock-icici'
+order: 7000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {}

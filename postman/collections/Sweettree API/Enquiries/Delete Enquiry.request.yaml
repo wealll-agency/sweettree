@@ -1,0 +1,13 @@
+$kind: http-request
+name: Delete Enquiry
+method: DELETE
+url: '{{baseUrl}}/api/enquiries/:id'
+order: 4000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+pathVariables:
+  - key: id
+    value: ENQUIRY_ID

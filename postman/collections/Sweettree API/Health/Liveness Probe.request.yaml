@@ -1,0 +1,5 @@
+$kind: http-request
+name: Liveness Probe
+method: GET
+url: '{{baseUrl}}/health/live'
+order: 2000

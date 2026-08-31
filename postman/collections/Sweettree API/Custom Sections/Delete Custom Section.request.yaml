@@ -1,0 +1,13 @@
+$kind: http-request
+name: Delete Custom Section
+method: DELETE
+url: '{{baseUrl}}/api/custom-sections/:id'
+order: 4000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+pathVariables:
+  - key: id
+    value: SECTION_ID

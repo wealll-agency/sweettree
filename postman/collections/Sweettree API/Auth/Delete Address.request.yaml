@@ -1,0 +1,13 @@
+$kind: http-request
+name: Delete Address
+method: DELETE
+url: '{{baseUrl}}/api/auth/addresses/:id'
+order: 9000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+pathVariables:
+  - key: id
+    value: ADDRESS_ID

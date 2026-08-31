@@ -1,0 +1,8 @@
+name: Sweettree Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:7050'
+    enabled: true
+  - key: token
+    value: ''
+    enabled: true

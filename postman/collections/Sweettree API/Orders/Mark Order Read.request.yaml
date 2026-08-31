@@ -1,0 +1,13 @@
+$kind: http-request
+name: Mark Order Read
+method: PATCH
+url: '{{baseUrl}}/api/orders/:id/read'
+order: 12000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+pathVariables:
+  - key: id
+    value: ORDER_ID

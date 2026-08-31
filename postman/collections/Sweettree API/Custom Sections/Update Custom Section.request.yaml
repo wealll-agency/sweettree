@@ -1,0 +1,22 @@
+$kind: http-request
+name: Update Custom Section
+method: PUT
+url: '{{baseUrl}}/api/custom-sections/:id'
+order: 3000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+pathVariables:
+  - key: id
+    value: SECTION_ID
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Updated Section"
+    }

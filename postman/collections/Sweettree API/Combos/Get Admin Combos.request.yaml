@@ -1,0 +1,10 @@
+$kind: http-request
+name: Get Admin Combos
+method: GET
+url: '{{baseUrl}}/api/combos/admin/all'
+order: 1000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'

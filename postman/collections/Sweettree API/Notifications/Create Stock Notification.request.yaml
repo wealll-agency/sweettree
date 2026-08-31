@@ -1,0 +1,19 @@
+$kind: http-request
+name: Create Stock Notification
+method: POST
+url: '{{baseUrl}}/api/notifications/stock'
+order: 2000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "productId": "PRODUCT_ID"
+    }

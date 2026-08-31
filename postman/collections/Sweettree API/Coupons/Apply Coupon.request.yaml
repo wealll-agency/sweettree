@@ -1,0 +1,20 @@
+$kind: http-request
+name: Apply Coupon
+method: POST
+url: '{{baseUrl}}/api/coupons/apply'
+order: 3000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "code": "SAVE10",
+      "orderAmount": 1000
+    }

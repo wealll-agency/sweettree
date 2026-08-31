@@ -1,0 +1,23 @@
+$kind: http-request
+name: Add Address
+method: POST
+url: '{{baseUrl}}/api/auth/addresses'
+order: 7000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "street": "123 Main St",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "pincode": "400001",
+      "country": "India"
+    }

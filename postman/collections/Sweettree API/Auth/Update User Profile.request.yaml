@@ -1,0 +1,19 @@
+$kind: http-request
+name: Update User Profile
+method: PUT
+url: '{{baseUrl}}/api/auth/profile'
+order: 6000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Updated Name"
+    }

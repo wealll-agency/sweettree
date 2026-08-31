@@ -1,0 +1,13 @@
+$kind: http-request
+name: Generate Manifest
+method: GET
+url: '{{baseUrl}}/api/delhivery/manifest/:waybill'
+order: 4000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+pathVariables:
+  - key: waybill
+    value: WAYBILL_NUMBER

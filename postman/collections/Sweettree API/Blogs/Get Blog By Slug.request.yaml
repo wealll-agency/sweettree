@@ -1,0 +1,8 @@
+$kind: http-request
+name: Get Blog By Slug
+method: GET
+url: '{{baseUrl}}/api/blogs/slug/:slug'
+order: 5000
+pathVariables:
+  - key: slug
+    value: my-blog

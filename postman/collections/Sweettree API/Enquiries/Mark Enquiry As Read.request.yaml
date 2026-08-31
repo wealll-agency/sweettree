@@ -1,0 +1,13 @@
+$kind: http-request
+name: Mark Enquiry As Read
+method: PATCH
+url: '{{baseUrl}}/api/enquiries/:id/read'
+order: 3000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+pathVariables:
+  - key: id
+    value: ENQUIRY_ID

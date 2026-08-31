@@ -1,0 +1,22 @@
+$kind: http-request
+name: Create Coupon
+method: POST
+url: '{{baseUrl}}/api/coupons'
+order: 1000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "code": "SAVE10",
+      "discountType": "percentage",
+      "discountValue": 10,
+      "minOrderAmount": 500
+    }

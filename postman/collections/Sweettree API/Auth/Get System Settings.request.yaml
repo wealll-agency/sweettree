@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get System Settings
+method: GET
+url: '{{baseUrl}}/api/auth/settings'
+order: 10000

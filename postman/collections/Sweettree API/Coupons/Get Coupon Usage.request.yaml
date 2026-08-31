@@ -1,0 +1,13 @@
+$kind: http-request
+name: Get Coupon Usage
+method: GET
+url: '{{baseUrl}}/api/coupons/:code/usage'
+order: 5000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+pathVariables:
+  - key: code
+    value: SAVE10

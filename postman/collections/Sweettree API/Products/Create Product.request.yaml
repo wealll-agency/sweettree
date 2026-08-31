@@ -1,0 +1,22 @@
+$kind: http-request
+name: Create Product
+method: POST
+url: '{{baseUrl}}/api/products'
+order: 2000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+body:
+  type: formdata
+  content:
+    - key: name
+      type: text
+      value: Sample Product
+    - key: price
+      type: text
+      value: '499'
+    - key: description
+      type: text
+      value: A sample product description

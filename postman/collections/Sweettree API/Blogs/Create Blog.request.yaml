@@ -1,0 +1,21 @@
+$kind: http-request
+name: Create Blog
+method: POST
+url: '{{baseUrl}}/api/blogs'
+order: 2000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "My Blog",
+      "content": "Blog content here",
+      "slug": "my-blog"
+    }

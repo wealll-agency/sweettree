@@ -1,0 +1,10 @@
+$kind: http-request
+name: Get Sales Chart Data
+method: GET
+url: '{{baseUrl}}/api/reports/sales-chart'
+order: 2000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'

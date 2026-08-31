@@ -1,0 +1,22 @@
+$kind: http-request
+name: Update Address
+method: PUT
+url: '{{baseUrl}}/api/auth/addresses/:id'
+order: 8000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+pathVariables:
+  - key: id
+    value: ADDRESS_ID
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "street": "456 New St"
+    }
