@@ -260,7 +260,7 @@ function ShopDetailsContent() {
       <div className="row g-5 mb-5">
         {/* Left Side: Images */}
         <div className="col-lg-5">
-          <div className="mb-3 position-relative text-center border rounded-2 p-4">
+          <div className="mb-3 position-relative text-center border rounded-2 p-4 d-flex align-items-center justify-content-center" style={{ height: '400px' }}>
              {realProduct.isFeatured && <span className="badge bg-primary position-absolute top-0 start-0 m-3">PREMIUM</span>}
             <Image
               src={getImageUrl(images[activeImageIndex])}
@@ -268,7 +268,7 @@ function ShopDetailsContent() {
               width={500}
               height={400}
               className="img-fluid object-fit-contain"
-              style={{ maxHeight: '400px', width: '100%' }}
+              style={{ maxHeight: '100%', width: '100%' }}
             />
           </div>
           

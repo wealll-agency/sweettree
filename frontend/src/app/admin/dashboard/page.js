@@ -52,7 +52,7 @@ export default function DashboardPage() {
         <Activity size={18} className="text-brand" /> Business Analytics
       </h5>
       <div className="row g-3 mb-4">
-        <div className="col-md-4 col-lg-4">
+        <div className="col-md-3 col-lg-3">
           <div className="metric-card d-flex align-items-center justify-content-between p-4 bg-white rounded-4 shadow-sm border-0 h-100">
             <div>
               <span className="text-muted fs-7 d-block mb-1">Total Sale</span>
@@ -65,7 +65,7 @@ export default function DashboardPage() {
         </div>
 
 
-        <div className="col-md-4 col-lg-4">
+        <div className="col-md-3 col-lg-3">
           <div className="metric-card d-flex align-items-center justify-content-between p-4 bg-white rounded-4 shadow-sm border-0 h-100">
             <div>
               <span className="text-muted fs-7 d-block mb-1">Total Products</span>
@@ -77,7 +77,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="col-md-4 col-lg-4">
+        <div className="col-md-3 col-lg-3">
           <div className="metric-card d-flex align-items-center justify-content-between p-4 bg-white rounded-4 shadow-sm border-0 h-100">
             <div>
               <span className="text-muted fs-7 d-block mb-1">Total Customers</span>
@@ -85,6 +85,22 @@ export default function DashboardPage() {
             </div>
             <div className="rounded-circle p-3 bg-info bg-opacity-10 text-info">
               <Users size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-3 col-lg-3">
+          <div className="metric-card d-flex align-items-center justify-content-between p-4 bg-white rounded-4 shadow-sm border-0 h-100">
+            <div>
+              <span className="text-muted fs-7 d-block mb-1">Customer Percentage</span>
+              <h4 className="fw-bold m-0 text-dark">{stats.customerRetention?.month || 'Month'}</h4>
+              <div className="d-flex align-items-center gap-2 mt-2">
+                <span className="badge bg-success bg-opacity-10 text-success fs-8 px-2 py-1">New: {stats.customerRetention?.newPercentage || 0}%</span>
+                <span className="badge bg-info bg-opacity-10 text-info fs-8 px-2 py-1">Old: {stats.customerRetention?.returningPercentage || 0}%</span>
+              </div>
+            </div>
+            <div className="rounded-circle p-3 bg-primary bg-opacity-10 text-primary">
+              <RefreshCw size={24} />
             </div>
           </div>
         </div>

@@ -283,8 +283,14 @@ export const createOrder = async (req, res, next) => {
     // 4. Prepare ICICI Payload for S2S
     const merchantId = process.env.ICICI_MERCHANT_ID || '100000000007164';
     const aggregatorID = 'A' + merchantId; // Typical convention or hardcoded to what we found
-    const hostUrl = process.env.API_BASE_URL || `https://www.sweettreeon.com`;
-    const returnURL = process.env.ICICI_RETURN_URL || `${hostUrl}/api/orders/icici-callback`;
+    let hostUrl = 'https://www.sweettreeon.com';
+    const reqHost = req.get('host') || '';
+    if (reqHost.includes('localhost') || reqHost.includes('127.0.0.1')) {
+      hostUrl = `http://${reqHost}`;
+    } else if (reqHost) {
+      hostUrl = `https://${reqHost}`;
+    }
+    const returnURL = `${hostUrl}/api/orders/icici-callback`;
     const actionUrl = process.env.ICICI_INITIATE_SALE_URL || 'https://pgpayuat.icici.bank.in/tsp/pg/api/v2/initiateSale';
     
     const iciciPayload = {
@@ -320,7 +326,8 @@ export const createOrder = async (req, res, next) => {
     // 5. Make S2S Call to ICICI Gateway
     try {
       const iciciResponse = await axios.post(actionUrl, iciciPayload, {
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 10000 // 10 second timeout for external API
       });
 
       console.log("ICICI S2S Response:", iciciResponse.data);
@@ -374,9 +381,14 @@ export const iciciCallback = async (req, res, next) => {
   try {
     const responseParams = req.body;
     
-    // Safely extract the primary frontend URL early for error redirects
+    // Safely determine the frontend URL based on the request host (localhost vs live)
     let frontendUrl = process.env.FRONTEND_URL || 'http://localhost:7051';
-    if (frontendUrl.includes(',')) {
+    const reqHost = req.get('host') || '';
+    if (reqHost.includes('localhost') || reqHost.includes('127.0.0.1')) {
+      frontendUrl = 'http://localhost:7051';
+    } else if (reqHost) {
+      frontendUrl = `https://${reqHost}`;
+    } else if (frontendUrl.includes(',')) {
       frontendUrl = frontendUrl.split(',')[0].trim();
     }
 
@@ -414,20 +426,24 @@ export const iciciCallback = async (req, res, next) => {
       return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent('Order not found.')}`);
     }
 
-    // Idempotency: Prevent duplicate processing
-    if (order.paymentStatus === 'Paid') {
-      return res.redirect(`${frontendUrl}/user/orders/${order._id}?success=true`);
-    }
-    if (order.paymentStatus === 'Failed' && ResponseCode !== '0000') {
-      return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent(message || 'Payment Failed')}`);
-    }
-
     session = await mongoose.startSession();
     session.startTransaction();
 
-    // Re-fetch with session
+    // Re-fetch with session immediately to lock the documents
     const lockedPayment = await Payment.findById(payment._id).session(session);
     const lockedOrder = await Order.findById(order._id).session(session);
+
+    // Idempotency: Prevent duplicate processing inside the transaction lock
+    if (lockedOrder.paymentStatus === 'Paid') {
+      await session.commitTransaction();
+      session.endSession();
+      return res.redirect(`${frontendUrl}/user/orders/${lockedOrder._id}?success=true`);
+    }
+    if (lockedOrder.paymentStatus === 'Failed' && responseCode !== '0000' && responseCode !== '0') {
+      await session.commitTransaction();
+      session.endSession();
+      return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent(message || 'Payment Failed')}`);
+    }
 
     // ICICI Success ResponseCode is typically '0000' (or '0' depending on exact spec). Assuming '0000'.
     if (responseCode === '0000' || responseCode === '0') {
@@ -586,18 +602,23 @@ export const iciciAdvice = async (req, res, next) => {
       return res.status(404).send('Order not found');
     }
 
-    if (order.paymentStatus === 'Paid') {
-      return res.status(200).send('OK');
-    }
-    if (order.paymentStatus === 'Failed' && ResponseCode !== '0000') {
-      return res.status(200).send('OK');
-    }
-
     session = await mongoose.startSession();
     session.startTransaction();
 
     const lockedPayment = await Payment.findById(payment._id).session(session);
     const lockedOrder = await Order.findById(order._id).session(session);
+
+    // Idempotency: Prevent duplicate processing inside the transaction lock
+    if (lockedOrder.paymentStatus === 'Paid') {
+      await session.commitTransaction();
+      session.endSession();
+      return res.status(200).send('OK');
+    }
+    if (lockedOrder.paymentStatus === 'Failed' && responseCode !== '0000' && responseCode !== '0') {
+      await session.commitTransaction();
+      session.endSession();
+      return res.status(200).send('OK');
+    }
 
     if (responseCode === '0000' || responseCode === '0') {
       if (Number(amount) !== Number(lockedOrder.totalAmount)) {

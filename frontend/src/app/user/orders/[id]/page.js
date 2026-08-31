@@ -134,7 +134,7 @@ export default function OrderTrackingPage() {
   };
 
   return (
-    <div className="container py-5">
+    <div className="container pt-4 pb-2 py-lg-5">
       
       {/* Success banner */}
       {isNewSuccess && (
@@ -181,124 +181,132 @@ export default function OrderTrackingPage() {
           </div>
         </div>
       ) : (
-        <div className="row g-5">
+        <div className="row g-4 g-lg-5">
         
         {/* Left Side */}
         <div className="col-lg-8">
           
-          <div className="bg-white p-4 rounded-4 shadow-sm border mb-4">
-            <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 border-bottom pb-3 mb-3">
-              <div>
-                <h5 className="fw-bold m-0 text-dark">Order ID: #{order._id.substring(0, 12).toUpperCase()}</h5>
-                <small className="text-muted">Placed on: {new Date(order.createdAt).toLocaleDateString()} {new Date(order.createdAt).toLocaleTimeString()}</small>
-              </div>
-              <div className="d-flex flex-column align-items-sm-end">
-                <span className="fs-5 fw-bold text-dark">₹{order.totalAmount}</span>
-                <small className="badge bg-success-subtle text-success mt-1">{order.paymentStatus}</small>
-              </div>
-            </div>
-
-            {/* Address */}
-            <div className="d-flex align-items-start gap-2 mb-3">
-              <MapPin size={20} className="text-muted mt-1" />
-              <div>
-                <h6 className="fw-bold m-0">Shipping Destination:</h6>
-                <p className="m-0 text-muted fs-7 mt-1">{order.deliveryAddress.street || order.deliveryAddress.address || order.deliveryAddress.locality}, {order.deliveryAddress.city}</p>
-                <p className="m-0 text-muted fs-7">{order.deliveryAddress.state} - {order.deliveryAddress.zipCode || order.deliveryAddress.pincode}, {order.deliveryAddress.country || 'India'}</p>
-              </div>
-            </div>
-
-            {order.trackingNumber && (
-              <div className="d-flex align-items-start gap-2 pt-2 border-top">
-                <Truck size={20} className="text-muted mt-1" />
-                <div>
-                  <h6 className="fw-bold m-0">Tracking Reference:</h6>
-                  <p className="m-0 text-success fw-bold font-monospace fs-7 mt-1">{order.trackingNumber}</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Items Recap */}
-          <div className="bg-white p-4 rounded-4 shadow-sm border mb-4">
-            <h5 className="fw-bold mb-3">Purchased Items</h5>
-            
-            <div className="d-flex flex-column gap-3">
-              {order.items.map((item, index) => (
-                <div key={item._id || index} className="d-flex align-items-center justify-content-between border-bottom pb-3">
-                  <div className="d-flex align-items-center gap-3">
-                    <div 
-                      className="product-img-box m-0 p-0" 
-                      style={{ width: '80px', height: '80px', flexShrink: 0, overflow: 'hidden', border: '1px solid #eee', borderRadius: '4px' }}
-                    >
-                      {item.product && item.product.images && item.product.images.length > 0 ? (
-                        <Image 
-                          src={item.product.images[0].replace('/assets/images/', '/')} 
-                          alt={item.name} 
-                          width={80}
-                          height={80}
-                          style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} 
-                        />
-                      ) : (
-                        <div className="w-100 h-100 d-flex align-items-center justify-content-center text-muted bg-light">
-                          <ShoppingBag size={24} />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-grow-1">
-                      <span className="brand-text d-block mb-1 text-uppercase">SWEETTREE</span>
-                      <h3 className="product-name m-0" style={{ fontSize: '14px', lineHeight: '1.4' }}>{item.name}</h3>
-                      <div className="product-pricing mt-1">
-                        <span className="current-price fs-6">₹{item.price}</span> <span className="text-muted fs-7">x {item.quantity}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <span className="current-price fs-5">₹{item.price * item.quantity}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Payment Details */}
           <div className="bg-white p-4 rounded-4 shadow-sm border">
-            <h5 className="fw-bold mb-3">Payment Details</h5>
-            <div className="d-flex flex-column gap-2">
-              <div className="d-flex justify-content-between">
-                <span className="text-muted">Subtotal</span>
-                <span className="fw-medium">₹{order.subtotal}</span>
+            
+            {/* Top Section */}
+            <div>
+              <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 border-bottom pb-3 mb-3">
+                <div>
+                  <h5 className="fw-bold m-0 text-dark">Order ID: #{order._id.substring(0, 12).toUpperCase()}</h5>
+                  <small className="text-muted">Placed on: {new Date(order.createdAt).toLocaleDateString()} {new Date(order.createdAt).toLocaleTimeString()}</small>
+                </div>
+                <div className="d-flex flex-column align-items-sm-end">
+                  <span className="fs-5 fw-bold text-dark">₹{order.totalAmount}</span>
+                  <small className="badge bg-success-subtle text-success mt-1">{order.paymentStatus}</small>
+                </div>
               </div>
-              {order.couponDiscount > 0 && (
-                <div className="d-flex justify-content-between text-success">
-                  <span>Discount</span>
-                  <span className="fw-medium">-₹{order.couponDiscount}</span>
+
+              {/* Address */}
+              <div className="d-flex align-items-start gap-2 mb-3">
+                <MapPin size={20} className="text-muted mt-1" />
+                <div>
+                  <h6 className="fw-bold m-0">Shipping Destination:</h6>
+                  <p className="m-0 text-muted fs-7 mt-1">{order.deliveryAddress.street || order.deliveryAddress.address || order.deliveryAddress.locality}, {order.deliveryAddress.city}</p>
+                  <p className="m-0 text-muted fs-7">{order.deliveryAddress.state} - {order.deliveryAddress.zipCode || order.deliveryAddress.pincode}, {order.deliveryAddress.country || 'India'}</p>
+                </div>
+              </div>
+
+              {order.trackingNumber && (
+                <div className="d-flex align-items-start gap-2 pt-2 border-top">
+                  <Truck size={20} className="text-muted mt-1" />
+                  <div>
+                    <h6 className="fw-bold m-0">Tracking Reference:</h6>
+                    <p className="m-0 text-success fw-bold font-monospace fs-7 mt-1">{order.trackingNumber}</p>
+                  </div>
                 </div>
               )}
-              <div className="d-flex justify-content-between">
-                <span className="text-muted">Tax</span>
-                <span className="fw-medium">₹{order.tax}</span>
+            </div>
+
+            <hr className="my-4" />
+
+            {/* Items Recap */}
+            <div>
+              <h5 className="fw-bold mb-3">Purchased Items</h5>
+              
+              <div className="d-flex flex-column gap-3">
+                {order.items.map((item, index) => (
+                  <div key={item._id || index} className="d-flex align-items-center justify-content-between border-bottom pb-3">
+                    <div className="d-flex align-items-center gap-3">
+                      <div 
+                        className="product-img-box m-0 p-0" 
+                        style={{ width: '80px', height: '80px', flexShrink: 0, overflow: 'hidden', border: '1px solid #eee', borderRadius: '4px' }}
+                      >
+                        {item.product && item.product.images && item.product.images.length > 0 ? (
+                          <Image 
+                            src={item.product.images[0].replace('/assets/images/', '/')} 
+                            alt={item.name} 
+                            width={80}
+                            height={80}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} 
+                          />
+                        ) : (
+                          <div className="w-100 h-100 d-flex align-items-center justify-content-center text-muted bg-light">
+                            <ShoppingBag size={24} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-grow-1">
+                        <span className="brand-text d-block mb-1 text-uppercase">SWEETTREE</span>
+                        <h3 className="product-name m-0" style={{ fontSize: '14px', lineHeight: '1.4' }}>{item.name}</h3>
+                        <div className="product-pricing mt-1">
+                          <span className="current-price fs-6">₹{item.price}</span> <span className="text-muted fs-7">x {item.quantity}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <span className="current-price fs-5">₹{item.price * item.quantity}</span>
+                  </div>
+                ))}
               </div>
-              <div className="d-flex justify-content-between">
-                <span className="text-muted">Shipping Fee</span>
-                <span className="fw-medium">
-                  {order.shippingFee === 0 ? <span className="text-success">Free</span> : `₹${order.shippingFee}`}
-                </span>
-              </div>
-              <hr className="my-2" />
-              <div className="d-flex justify-content-between align-items-center">
-                <span className="fw-bold text-dark fs-5">Total Paid</span>
-                <span className="fw-bold text-dark fs-5">₹{order.totalAmount}</span>
-              </div>
-              <div className="mt-2 text-end">
-                <span className="badge bg-success-subtle text-success fs-7 px-3 py-2 rounded-pill">
-                  Payment Status: {order.paymentStatus}
-                </span>
+            </div>
+
+            <hr className="my-4" />
+
+            {/* Payment Details */}
+            <div>
+              <h5 className="fw-bold mb-3">Payment Details</h5>
+              <div className="d-flex flex-column gap-2">
+                <div className="d-flex justify-content-between">
+                  <span className="text-muted">Subtotal</span>
+                  <span className="fw-medium">₹{order.subtotal}</span>
+                </div>
+                {order.couponDiscount > 0 && (
+                  <div className="d-flex justify-content-between text-success">
+                    <span>Discount</span>
+                    <span className="fw-medium">-₹{order.couponDiscount}</span>
+                  </div>
+                )}
+                <div className="d-flex justify-content-between">
+                  <span className="text-muted">Tax</span>
+                  <span className="fw-medium">₹{order.tax}</span>
+                </div>
+                <div className="d-flex justify-content-between">
+                  <span className="text-muted">Shipping Fee</span>
+                  <span className="fw-medium">
+                    {order.shippingFee === 0 ? <span className="text-success">Free</span> : `₹${order.shippingFee}`}
+                  </span>
+                </div>
+                <hr className="my-2" />
+                <div className="d-flex justify-content-between align-items-center">
+                  <span className="fw-bold text-dark fs-5">Total Paid</span>
+                  <span className="fw-bold text-dark fs-5">₹{order.totalAmount}</span>
+                </div>
+                <div className="mt-2 text-end">
+                  <span className="badge bg-success-subtle text-success fs-7 px-3 py-2 rounded-pill">
+                    Payment Status: {order.paymentStatus}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Cancel / Refund Action */}
           {(!['Cancelled', 'Refunded'].includes(order.orderStatus)) && hasRefundPermission && (
-            <div className="bg-white p-4 rounded-4 shadow-sm border mb-4 text-center mt-4">
+            <div className="bg-white p-4 rounded-4 shadow-sm border mt-4 text-center">
               <h6 className="fw-bold mb-3">Need help with your order?</h6>
               {(['Placed', 'Confirmed'].includes(order.orderStatus)) ? (
                 <button 

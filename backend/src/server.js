@@ -14,11 +14,18 @@ if (config.NODE_ENV === 'production') {
     .filter(([_, value]) => !value)
     .map(([key]) => `ICICI_${key}`);
 
+  const requiredCoreKeys = ['JWT_SECRET', 'MONGODB_URI', 'FRONTEND_URL'];
+  for (const key of requiredCoreKeys) {
+    if (!process.env[key]) {
+      missingKeys.push(key);
+    }
+  }
+
   if (missingKeys.length > 0) {
     console.error(`\n\x1b[31m\x1b[1m❌ FATAL STARTUP ERROR\x1b[0m`);
     console.error(`\x1b[31m====================================================\x1b[0m`);
-    console.error(`\x1b[31m❌ Missing Keys:\x1b[0m ICICI Payment Keys in production: ${missingKeys.join(', ')}`);
-    console.error(`\x1b[31m❌ Action:\x1b[0m       Shutting down server to prevent silent checkout failures.`);
+    console.error(`\x1b[31m❌ Missing Keys:\x1b[0m Required variables missing in production: ${missingKeys.join(', ')}`);
+    console.error(`\x1b[31m❌ Action:\x1b[0m       Shutting down server to prevent silent checkout/auth failures.`);
     console.error(`\x1b[31m====================================================\x1b[0m\n`);
     process.exit(1);
   }

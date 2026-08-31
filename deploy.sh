@@ -50,6 +50,25 @@ echo "--> Setting up Frontend in new release..."
 cd "$RELEASE_DIR/frontend"
 npm ci --omit=dev || { echo "--> ❌ Frontend npm ci failed! Aborting."; exit 1; }
 
+echo "--> Verifying and securely injecting public environment variables..."
+ENV_FILE=""
+if [ -f "$DEPLOY_ROOT/.env" ]; then
+    ENV_FILE="$DEPLOY_ROOT/.env"
+elif [ -f "../../.env" ]; then
+    ENV_FILE="../../.env"
+fi
+
+if [ -z "$ENV_FILE" ]; then
+    echo "--> ❌ CRITICAL: .env file not found at project root. Aborting."
+    exit 1
+fi
+
+export NEXT_PUBLIC_API_URL=$(grep '^NEXT_PUBLIC_API_URL=' "$ENV_FILE" | cut -d '=' -f2-)
+if [ -z "$NEXT_PUBLIC_API_URL" ]; then
+    echo "--> ❌ CRITICAL: NEXT_PUBLIC_API_URL is missing from .env. Aborting."
+    exit 1
+fi
+
 echo "--> Building Next.js Frontend for production..."
 export NEXT_TELEMETRY_DISABLED=1
 if ! npm run build; then

@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import config from '../config/env.js';
+import axios from 'axios';
 
 /**
  * Generates an ICICI secureHash using SHA-256
@@ -59,15 +60,12 @@ export const processICICIRefund = async (merchantTranId, refundAmount, originalT
   refundPayload.secureHash = generateICICISecureHash(refundPayload);
 
   try {
-    const response = await fetch(refundUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(refundPayload)
+    const response = await axios.post(refundUrl, refundPayload, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000 // 10 second timeout for external API
     });
 
-    const data = await response.json();
+    const data = response.data;
     
     // Validate response hash
     if (!verifyICICISecureHash(data)) {

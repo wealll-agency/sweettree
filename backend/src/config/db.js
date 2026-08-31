@@ -12,11 +12,30 @@ const connectDB = async () => {
     connectTimeoutMS: 15000,
   };
 
+  let disconnectTimer = null;
+  const VERIFIED_FAILURE_THRESHOLD = 20000; // 20 seconds
+
   mongoose.connection.on('disconnected', () => {
-    console.error(`\x1b[31m❌ Database:\x1b[0m    Disconnected! PM2/Docker will attempt restart.\x1b[0m`);
+    console.error(`\x1b[31m❌ Database:\x1b[0m    Disconnected! Starting recovery timer.\x1b[0m`);
+    if (!disconnectTimer && process.env.NODE_ENV === 'production') {
+      disconnectTimer = setTimeout(() => {
+        if (mongoose.connection.readyState === 0) {
+          console.error(`\n\x1b[31m\x1b[1m❌ FATAL RUNTIME ERROR: DB UNRECOVERABLE\x1b[0m`);
+          console.error(`\x1b[31m====================================================\x1b[0m`);
+          console.error(`\x1b[31m❌ Database:\x1b[0m    Failed to recover after ${VERIFIED_FAILURE_THRESHOLD/1000}s.`);
+          console.error(`\x1b[31m❌ Action:\x1b[0m      Shutting down to allow PM2 restart.`);
+          console.error(`\x1b[31m====================================================\x1b[0m\n`);
+          process.exit(1);
+        }
+      }, VERIFIED_FAILURE_THRESHOLD);
+    }
   });
 
   mongoose.connection.on('reconnected', () => {
+    if (disconnectTimer) {
+      clearTimeout(disconnectTimer);
+      disconnectTimer = null;
+    }
     console.log(`\x1b[32m✅ Database:\x1b[0m    Reconnected successfully!\x1b[0m`);
   });
 

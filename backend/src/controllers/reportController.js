@@ -90,6 +90,63 @@ export const getDashboardSummary = async (req, res, next) => {
       return acc;
     }, { Placed: 0, Confirmed: 0, Packed: 0, Shipped: 0, Delivered: 0, Cancelled: 0 });
 
+    // New: Calculate Customer Retention (New vs Old) for current month
+    const now = new Date();
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const usersThisMonth = await Order.distinct('user', {
+      paymentStatus: 'Paid',
+      orderStatus: { $ne: 'Cancelled' },
+      createdAt: { $gte: startOfCurrentMonth }
+    });
+
+    let newCustomersThisMonth = 0;
+    let returningCustomersThisMonth = 0;
+
+    if (usersThisMonth.length > 0) {
+      const userFirstOrders = await Order.aggregate([
+        { 
+          $match: { 
+            user: { $in: usersThisMonth },
+            paymentStatus: 'Paid',
+            orderStatus: { $ne: 'Cancelled' }
+          } 
+        },
+        { 
+          $group: { 
+            _id: '$user', 
+            firstOrderDate: { $min: '$createdAt' } 
+          } 
+        }
+      ]);
+
+      userFirstOrders.forEach(u => {
+        if (u.firstOrderDate >= startOfCurrentMonth) {
+          newCustomersThisMonth++;
+        } else {
+          returningCustomersThisMonth++;
+        }
+      });
+    }
+
+    const totalActiveCustomersThisMonth = newCustomersThisMonth + returningCustomersThisMonth;
+    let newCustomerPercentage = 0;
+    let returningCustomerPercentage = 0;
+    
+    if (totalActiveCustomersThisMonth > 0) {
+      newCustomerPercentage = Math.round((newCustomersThisMonth / totalActiveCustomersThisMonth) * 100);
+      returningCustomerPercentage = 100 - newCustomerPercentage;
+    }
+
+    const currentMonthName = now.toLocaleString('default', { month: 'long' });
+
+    const customerRetention = {
+      month: currentMonthName,
+      newPercentage: newCustomerPercentage,
+      returningPercentage: returningCustomerPercentage,
+      totalActive: totalActiveCustomersThisMonth
+    };
+
     // New: Admin Wallet Stats
     const walletAggregation = await Order.aggregate([
       { $match: { paymentStatus: 'Paid', orderStatus: { $ne: 'Cancelled' } } },
@@ -199,7 +256,8 @@ export const getDashboardSummary = async (req, res, next) => {
         totalProducts,
         totalStores: 1, // Single vendor store
         orderStatuses,
-        adminWallet
+        adminWallet,
+        customerRetention
       },
       salesOverview: formattedSalesOverview,
       topProducts,
