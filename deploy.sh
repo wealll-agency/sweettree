@@ -43,9 +43,6 @@ rsync -a --exclude 'node_modules' --exclude '.git' --exclude 'releases' --exclud
 # 4. Setup Backend
 echo "--> Setting up Backend in new release..."
 cd "$RELEASE_DIR/backend"
-npm ci --omit=dev || { echo "--> ❌ Backend npm ci failed! Aborting."; exit 1; }
-
-echo "--> Verifying and injecting backend environment..."
 
 BACKEND_ENV_FILE="$DEPLOY_ROOT/backend/.env"
 RELEASE_BACKEND_ENV="$RELEASE_DIR/backend/.env"
@@ -58,6 +55,8 @@ fi
 cp "$BACKEND_ENV_FILE" "$RELEASE_BACKEND_ENV"
 
 echo "--> ✅ Backend environment configured."
+
+npm ci --omit=dev || { echo "--> ❌ Backend npm ci failed! Aborting."; exit 1; }
 
 # 5. Setup Frontend & Build
 echo "--> Setting up Frontend in new release..."
@@ -172,11 +171,40 @@ echo "--> Reloading PM2 processes with Zero-Downtime Cluster Mode..."
 pm2 reload ecosystem.config.cjs --update-env || pm2 start current/ecosystem.config.cjs
 
 # 8. Post-Deploy Health Check
-echo "--> Running Post-Deploy Health Checks (Waiting 5 seconds for graceful transition)..."
-sleep 5
+echo "--> Running Post-Deploy Health Checks..."
 
-FRONTEND_STATUS=$(pm2 jlist | grep -o '"name":"sweettree-frontend","pm2_env":{"status":"[^"]*"' | grep -o 'status":"[^"]*' | cut -d'"' -f3 | head -n 1)
-BACKEND_STATUS=$(pm2 jlist | grep -o '"name":"sweettree-backend","pm2_env":{"status":"[^"]*"' | grep -o 'status":"[^"]*' | cut -d'"' -f3 | head -n 1)
+POST_DEPLOY_READY=0
+
+for i in {1..20}; do
+    FRONTEND_STATUS=$(pm2 jlist | node -e '
+    let data="";
+    process.stdin.on("data", c => data += c);
+    process.stdin.on("end", () => {
+        const apps = JSON.parse(data);
+        const app = apps.find(x => x.name === "sweettree-frontend");
+        console.log(app?.pm2_env?.status || "");
+    });
+    ')
+
+    BACKEND_STATUS=$(pm2 jlist | node -e '
+    let data="";
+    process.stdin.on("data", c => data += c);
+    process.stdin.on("end", () => {
+        const apps = JSON.parse(data);
+        const app = apps.find(x => x.name === "sweettree-backend");
+        console.log(app?.pm2_env?.status || "");
+    });
+    ')
+
+    echo "--> PM2 status check $i/20: Frontend=$FRONTEND_STATUS Backend=$BACKEND_STATUS"
+
+    if [ "$FRONTEND_STATUS" = "online" ] && [ "$BACKEND_STATUS" = "online" ]; then
+        POST_DEPLOY_READY=1
+        break
+    fi
+
+    sleep 1
+done
 
 if [ "$FRONTEND_STATUS" != "online" ] || [ "$BACKEND_STATUS" != "online" ]; then
     echo "--> ❌ PM2 Health Check Failed! Processes are not online."
