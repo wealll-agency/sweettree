@@ -12,7 +12,7 @@ const Footer = () => {
           {/* Logo and About Section */}
           <div className="col-lg-4 col-md-12 mb-4 mb-lg-0">
             <Link href="/" className="d-inline-block mb-4">
-              <Image src="/footer_logo.png" alt="Sweettree" width={200} height={56} style={{ maxWidth: '200px', height: 'auto', width: 'auto' }} priority />
+              <Image src="/footer_logo.png" alt="Sweettree" width={200} height={56} style={{ width: '100%', maxWidth: '200px', height: 'auto' }} priority />
             </Link>
             <p className="mb-4" style={{ color: '#888', fontSize: '14px', lineHeight: '1.6', maxWidth: '300px' }}>
               Sweettree brings you a collection of carefully selected foods from India and across the world.
