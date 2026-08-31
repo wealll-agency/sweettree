@@ -134,7 +134,7 @@ export default function RefundAndCancellationPolicy() {
               <h2 className="h4 fw-bold mb-3" style={{ color: '#333' }}>Contact Information</h2>
               <div className="bg-light p-4 rounded-3 mt-3">
                 <p className="mb-1"><strong>Email:</strong> support@sweetree.com</p>
-                <p className="mb-1"><strong>Phone:</strong> +91 9748724689</p>
+                <p className="mb-1"><strong>Phone:</strong> +91 93301 74609</p>
                 <p className="mb-0"><strong>Address:</strong> 33, Maharshi Devendra Road, Kolkata-700006</p>
               </div>
             </section>

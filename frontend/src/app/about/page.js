@@ -192,7 +192,7 @@ export default function AboutPage() {
                   Looking to enchant your clients or source top-tier quality nuts for your business? We offer flexible bulk solutions, beautifully crafted gift boxes tailored for every occasion, and a seamless B2B sourcing experience.
                 </p>
                 <div className="d-flex flex-wrap gap-3 mt-2 justify-content-center justify-content-md-start">
-                  <a href="#" className="btn fw-bold px-4 py-2 rounded-pill shadow about-cta-btn-primary">Contact Us Today <i className="fas fa-arrow-right ms-2"></i></a>
+                  <Link href="/contact" className="btn fw-bold px-4 py-2 rounded-pill shadow about-cta-btn-primary">Contact Us Today <i className="fas fa-arrow-right ms-2"></i></Link>
                   <a href="#" className="btn btn-outline-light fw-bold px-4 py-2 rounded-pill about-cta-btn-outline">Download Catalog <i className="fas fa-file-pdf ms-2"></i></a>
                 </div>
               </div>

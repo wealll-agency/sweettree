@@ -17,8 +17,9 @@ const Footer = () => {
             <p className="mb-4" style={{ color: '#888', fontSize: '14px', lineHeight: '1.6', maxWidth: '300px' }}>
               Sweettree brings you a collection of carefully selected foods from India and across the world.
             </p>
-            <div className="d-flex align-items-center gap-3 mb-4">
-              <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+91 9748724689</span>
+            <div className="d-flex flex-column gap-1 mb-4">
+              <span style={{ fontSize: '14px', fontWeight: 'bold' }}>V J Enterprises</span>
+              <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+91 93301 74609</span>
             </div>
 
             {/* Social Icons */}

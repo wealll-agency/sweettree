@@ -73,11 +73,6 @@ export default function ContactPage() {
               <div className="contact-social-icons">
                 <a href="#"><i className="fab fa-facebook-f"></i></a>
                 <a href="#"><i className="fab fa-instagram"></i></a>
-                <a href="#"><i className="fab fa-linkedin-in"></i></a>
-                <a href="#"><i className="fab fa-pinterest-p"></i></a>
-                <a href="#"><i className="fab fa-telegram-plane"></i></a>
-                <a href="#"><i className="fab fa-twitter"></i></a>
-                <a href="#"><i className="fab fa-youtube"></i></a>
               </div>
             </div>
 
@@ -183,14 +178,14 @@ export default function ContactPage() {
               <div className="p-4 bg-white rounded shadow-sm h-100 border-top border-3 border-success">
                 <i className="fas fa-phone-alt fa-2x mb-3 text-success"></i>
                 <h5 className="fw-bold mb-2">Call Us</h5>
-                <p className="text-muted m-0">+91 9748724689</p>
+                <p className="text-muted m-0">+91 93301 74609</p>
               </div>
             </div>
             <div className="col-md-4">
               <div className="p-4 bg-white rounded shadow-sm h-100 border-top border-3 border-success">
                 <i className="fas fa-map-marker-alt fa-2x mb-3 text-success"></i>
                 <h5 className="fw-bold mb-2">Visit Us</h5>
-                <p className="text-muted m-0">33, Maharshi Devendra Road<br />Kolkata-700006</p>
+                <p className="text-muted m-0">V J Enterprises<br />33, Maharshi Devendra Road<br />Kolkata-700006</p>
               </div>
             </div>
           </div>
