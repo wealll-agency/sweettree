@@ -45,29 +45,45 @@ echo "--> Setting up Backend in new release..."
 cd "$RELEASE_DIR/backend"
 npm ci --omit=dev || { echo "--> ❌ Backend npm ci failed! Aborting."; exit 1; }
 
+echo "--> Verifying and injecting backend environment..."
+
+BACKEND_ENV_FILE="$DEPLOY_ROOT/backend/.env"
+RELEASE_BACKEND_ENV="$RELEASE_DIR/backend/.env"
+
+if [ ! -f "$BACKEND_ENV_FILE" ]; then
+    echo "--> ❌ CRITICAL: backend/.env not found. Aborting."
+    exit 1
+fi
+
+cp "$BACKEND_ENV_FILE" "$RELEASE_BACKEND_ENV"
+
+echo "--> ✅ Backend environment configured."
+
 # 5. Setup Frontend & Build
 echo "--> Setting up Frontend in new release..."
 cd "$RELEASE_DIR/frontend"
 npm ci --omit=dev || { echo "--> ❌ Frontend npm ci failed! Aborting."; exit 1; }
 
 echo "--> Verifying and securely injecting public environment variables..."
-ENV_FILE=""
-if [ -f "$DEPLOY_ROOT/.env" ]; then
-    ENV_FILE="$DEPLOY_ROOT/.env"
-elif [ -f "../../.env" ]; then
-    ENV_FILE="../../.env"
-fi
 
-if [ -z "$ENV_FILE" ]; then
-    echo "--> ❌ CRITICAL: .env file not found at project root. Aborting."
+ENV_FILE="$DEPLOY_ROOT/frontend/.env.production"
+RELEASE_ENV_FILE="$RELEASE_DIR/frontend/.env.production"
+
+if [ ! -f "$ENV_FILE" ]; then
+    echo "--> ❌ CRITICAL: frontend/.env.production not found. Aborting."
     exit 1
 fi
 
-export NEXT_PUBLIC_API_URL=$(grep '^NEXT_PUBLIC_API_URL=' "$ENV_FILE" | cut -d '=' -f2-)
+cp "$ENV_FILE" "$RELEASE_ENV_FILE"
+
+export NEXT_PUBLIC_API_URL=$(grep '^NEXT_PUBLIC_API_URL=' "$RELEASE_ENV_FILE" | cut -d '=' -f2-)
+
 if [ -z "$NEXT_PUBLIC_API_URL" ]; then
-    echo "--> ❌ CRITICAL: NEXT_PUBLIC_API_URL is missing from .env. Aborting."
+    echo "--> ❌ CRITICAL: NEXT_PUBLIC_API_URL is missing. Aborting."
     exit 1
 fi
+
+echo "--> ✅ Frontend environment configured."
 
 echo "--> Building Next.js Frontend for production..."
 export NEXT_TELEMETRY_DISABLED=1
