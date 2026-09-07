@@ -269,6 +269,7 @@ function ShopDetailsContent() {
               height={400}
               className="img-fluid object-fit-contain"
               style={{ maxHeight: '100%', width: '100%' }}
+              priority
             />
           </div>
           
@@ -586,6 +587,30 @@ function ShopDetailsContent() {
 
         </div>
       </div>
+
+      {realProduct && mounted && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org/",
+              "@type": "Product",
+              "name": realProduct.name,
+              "image": realProduct.images,
+              "description": realProduct.description,
+              "sku": realProduct.sku || realProduct._id,
+              "offers": {
+                "@type": "Offer",
+                "url": `https://www.sweettreeon.com/shop-details?id=${realProduct._id}`,
+                "priceCurrency": "INR",
+                "price": finalPrice,
+                "availability": realProduct.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+                "itemCondition": "https://schema.org/NewCondition"
+              }
+            })
+          }}
+        />
+      )}
 
       {/* Mobile Sticky Actions (Rendered via Portal to guarantee fixed positioning) */}
       {mounted && typeof document !== 'undefined' && createPortal(

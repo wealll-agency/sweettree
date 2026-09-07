@@ -9,7 +9,7 @@ import Image from 'next/image';
 export default function MediaManagerPage() {
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { showAlert } = useNotification();
+  const { showAlert, showConfirm } = useNotification();
 
   // Define the sections we want to display
   const sections = [
@@ -111,6 +111,17 @@ export default function MediaManagerPage() {
       previewClass: 'ratio-4x3',
       previewMaxWidth: '400px',
       allowMultiple: false 
+    },
+    { 
+      id: 'ShopBanner', 
+      title: 'Shop Page Banner', 
+      subtitle: 'Recommended: 1920 × 300 px | Aspect Ratio: 32:5 | Format: WebP / JPG / PNG', 
+      expectedRatio: 1920/300, 
+      recWidth: 1920, 
+      recHeight: 300,
+      previewClass: 'ratio-shop-banner',
+      previewMaxWidth: '100%',
+      allowMultiple: true 
     }
   ];
 
@@ -212,7 +223,8 @@ export default function MediaManagerPage() {
     if (banner.isNew) {
       setBanners(prev => prev.filter(b => b._id !== banner._id));
     } else {
-      if (window.confirm('Are you sure you want to remove this banner?')) {
+      const confirmed = await showConfirm('Are you sure you want to remove this banner?');
+      if (confirmed) {
         try {
           const res = await api.delete(`/banners/${banner._id}`);
           if (res.data.success) {

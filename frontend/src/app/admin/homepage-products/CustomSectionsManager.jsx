@@ -168,7 +168,6 @@ export default function CustomSectionsManager({ allProducts }) {
             <input 
               type="text" 
               className="form-control" 
-              placeholder="E.g. Festive Specials" 
               value={newTitle}
               onChange={e => setNewTitle(e.target.value)}
               required
@@ -218,7 +217,6 @@ export default function CustomSectionsManager({ allProducts }) {
               <input 
                 type="text" 
                 className="form-control bg-light border-0" 
-                placeholder="Search products by name..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />

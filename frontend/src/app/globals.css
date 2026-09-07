@@ -1456,3 +1456,7 @@ input::-ms-reveal,
 input::-ms-clear {
   display: none;
 }
+
+.ratio-shop-banner {
+  aspect-ratio: 1920 / 300;
+}

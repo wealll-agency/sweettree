@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 
-export default function ProductDetailsRedirectPage({ params }) {
-  redirect(`/shop-details?id=${params.id}`);
+export default async function ProductDetailsRedirectPage({ params }) {
+  const resolvedParams = await params;
+  redirect(`/shop-details?id=${resolvedParams.id}`);
 }

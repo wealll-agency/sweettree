@@ -86,7 +86,7 @@ export default function CheckoutPage() {
     // Fetch available coupons
     const fetchCoupons = async () => {
       try {
-        const res = await api.get('/coupons');
+        const res = await api.get('/coupons/public');
         if (res.data.success) {
           setAvailableCoupons(res.data.coupons.filter(c => {
             if (!c.isActive) return false;
@@ -99,9 +99,7 @@ export default function CheckoutPage() {
         console.warn('Failed to load coupons:', err.message || err);
       }
     };
-    if (user) {
-      fetchCoupons();
-    }
+    fetchCoupons();
 
     // Fetch recommended products
     const fetchRecommended = async () => {
@@ -293,10 +291,10 @@ export default function CheckoutPage() {
       }
 
       // Fallback form rendering if no paymentUrl but also no error (for non-S2S gateways)
-      if (orderResult.iciciPayload) {
+      if (orderResult.iciciPayload && orderResult.iciciActionUrl) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = 'https://pgpayuat.icici.bank.in/tsp/pg/api/v2/initiateSale';
+        form.action = orderResult.iciciActionUrl;
         
         Object.keys(orderResult.iciciPayload).forEach(key => {
           const input = document.createElement('input');
@@ -747,7 +745,7 @@ export default function CheckoutPage() {
               )}
               <div className="d-flex justify-content-between">
                 <span>Shipping Fee</span>
-                <span>{shippingFee === 0 ? 'Free' : 'To be calculated'}</span>
+                <span>{shippingFee === 0 ? 'Free' : `₹${shippingFee}`}</span>
               </div>
               <div className="d-flex justify-content-between">
                 <span>GST Tax (5%)</span>

@@ -10,8 +10,9 @@ import Payment from '../models/Payment.js';
 import Coupon from '../models/Coupon.js';
 import { logActivity } from '../middleware/logger.js';
 import { generateICICISecureHash, verifyICICISecureHash, processICICIRefund } from '../services/iciciService.js';
+import config from '../config/env.js';
+import { restoreOrderStock } from '../utils/stockRestoral.js';
 
-// ICICI configuration will be drawn directly from environment variables
 // Helper: Calculate order totals
 const calculateOrderTotals = async (items, couponCode) => {
   let subtotal = 0;
@@ -122,8 +123,17 @@ const calculateOrderTotals = async (items, couponCode) => {
   const taxableAmount = subtotal - discount;
   const tax = Math.round(taxableAmount * 0.05);
   
-  // Shipping: Free above 1999, else To be calculated (Set to 0 for now)
-  const shippingFee = 0; // taxableAmount >= 1999 ? 0 : 80;
+  // Tiered Shipping Logic
+  let shippingFee = 0;
+  if (items.length > 0) {
+    if (taxableAmount <= 1000) {
+      shippingFee = 150;
+    } else if (taxableAmount <= 1999) {
+      shippingFee = 100;
+    } else {
+      shippingFee = 0;
+    }
+  }
   
   const totalAmount = taxableAmount + tax + shippingFee;
 
@@ -281,22 +291,29 @@ export const createOrder = async (req, res, next) => {
     }], { session });
 
     // 4. Prepare ICICI Payload for S2S
-    const merchantId = process.env.ICICI_MERCHANT_ID || '100000000007164';
-    const aggregatorID = 'A' + merchantId; // Typical convention or hardcoded to what we found
-    let hostUrl = 'https://www.sweettreeon.com';
-    const reqHost = req.get('host') || '';
-    if (reqHost.includes('localhost') || reqHost.includes('127.0.0.1')) {
-      hostUrl = `http://${reqHost}`;
-    } else if (reqHost) {
-      hostUrl = `https://${reqHost}`;
+    const merchantId = config.ICICI.MERCHANT_ID;
+    if (!merchantId) throw new Error('ICICI_MERCHANT_ID missing');
+    const aggregatorID = config.ICICI.AGG_ID || ('A' + merchantId.substring(1));
+    
+    let returnURL = config.ICICI.RETURN_URL;
+    if (!returnURL || config.NODE_ENV !== 'production') {
+      let hostUrl = 'https://www.sweettreeon.com';
+      const reqHost = req.get('host') || '';
+      if (reqHost.includes('localhost') || reqHost.includes('127.0.0.1')) {
+        hostUrl = `http://${reqHost}`;
+      } else if (reqHost) {
+        hostUrl = `https://${reqHost}`;
+      }
+      returnURL = `${hostUrl}/api/orders/icici-callback`;
     }
-    const returnURL = `${hostUrl}/api/orders/icici-callback`;
-    const actionUrl = process.env.ICICI_INITIATE_SALE_URL || 'https://pgpayuat.icici.bank.in/tsp/pg/api/v2/initiateSale';
+
+    const actionUrl = config.ICICI.INITIATE_SALE_URL;
+    if (!actionUrl) throw new Error('ICICI_INITIATE_SALE_URL missing');
     
     const iciciPayload = {
       addlParam1: "000",
       addlParam2: "111",
-      aggregatorID: 'A' + merchantId.substring(1), // usually 'A' + merchantId or specific provided
+      aggregatorID: aggregatorID,
       amount: Number(totalAmount).toFixed(2),
       currencyCode: "356", // INR
       customerEmailID: req.user.email || "test@gmail.com",
@@ -309,11 +326,6 @@ export const createOrder = async (req, res, next) => {
       transactionType: "SALE",
       txnDate: new Date().toISOString().replace(/[-:T.]/g, '').substring(0, 14) // YYYYMMDDHHMMSS
     };
-
-    // Override aggregatorID if the user gave us one specifically (A1000...)
-    if (merchantId === "100000000007164") {
-      iciciPayload.aggregatorID = "A100000000007164";
-    }
 
     // Generate Secure Hash
     iciciPayload.secureHash = generateICICISecureHash(iciciPayload);
@@ -464,24 +476,7 @@ export const iciciCallback = async (req, res, next) => {
         await lockedPayment.save({ session });
 
         // Restore stock
-        for (const item of lockedOrder.items) {
-          await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true, session });
-          await Inventory.findOneAndUpdate(
-            { product: item.product },
-            { 
-              $inc: { stockQuantity: item.quantity },
-              $push: {
-                adjustments: {
-                  quantityChanged: item.quantity,
-                  type: 'AuditAdjustment',
-                  reason: `Amount Mismatch Stock Restoral (Order ID: ${lockedOrder._id})`,
-                  adjustedBy: lockedOrder.user
-                }
-              }
-            },
-            { runValidators: true, session }
-          );
-        }
+        await restoreOrderStock(lockedOrder, 'Amount Mismatch Stock Restoral', session);
 
         await session.commitTransaction();
         session.endSession();
@@ -525,24 +520,7 @@ export const iciciCallback = async (req, res, next) => {
       await lockedPayment.save({ session });
 
       // Restore stock
-      for (const item of lockedOrder.items) {
-        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true, session });
-        await Inventory.findOneAndUpdate(
-          { product: item.product },
-          { 
-            $inc: { stockQuantity: item.quantity },
-            $push: {
-              adjustments: {
-                quantityChanged: item.quantity,
-                type: 'AuditAdjustment',
-                reason: `Payment Failure Stock Restoral (Order ID: ${lockedOrder._id})`,
-                adjustedBy: lockedOrder.user
-              }
-            }
-          },
-          { runValidators: true, session }
-        );
-      }
+      await restoreOrderStock(lockedOrder, 'Payment Failure Stock Restoral', session);
 
       await session.commitTransaction();
       session.endSession();
@@ -636,24 +614,7 @@ export const iciciAdvice = async (req, res, next) => {
         lockedPayment.encResponse = JSON.stringify(responseParams);
         await lockedPayment.save({ session });
 
-        for (const item of lockedOrder.items) {
-          await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true, session });
-          await Inventory.findOneAndUpdate(
-            { product: item.product },
-            { 
-              $inc: { stockQuantity: item.quantity },
-              $push: {
-                adjustments: {
-                  quantityChanged: item.quantity,
-                  type: 'AuditAdjustment',
-                  reason: `Amount Mismatch Stock Restoral (Order ID: ${lockedOrder._id})`,
-                  adjustedBy: lockedOrder.user
-                }
-              }
-            },
-            { runValidators: true, session }
-          );
-        }
+        await restoreOrderStock(lockedOrder, 'Amount Mismatch Stock Restoral', session);
 
         await session.commitTransaction();
         session.endSession();
@@ -694,24 +655,7 @@ export const iciciAdvice = async (req, res, next) => {
       lockedPayment.encResponse = JSON.stringify(responseParams);
       await lockedPayment.save({ session });
 
-      for (const item of lockedOrder.items) {
-        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true, session });
-        await Inventory.findOneAndUpdate(
-          { product: item.product },
-          { 
-            $inc: { stockQuantity: item.quantity },
-            $push: {
-              adjustments: {
-                quantityChanged: item.quantity,
-                type: 'AuditAdjustment',
-                reason: `Payment Failure Stock Restoral (Order ID: ${lockedOrder._id})`,
-                adjustedBy: lockedOrder.user
-              }
-            }
-          },
-          { runValidators: true, session }
-        );
-      }
+      await restoreOrderStock(lockedOrder, 'Payment Failure Stock Restoral', session);
 
       await session.commitTransaction();
       session.endSession();
@@ -828,29 +772,17 @@ export const updateOrderStatus = async (req, res, next) => {
     if (status === 'Confirmed') updateQuery.$set.confirmedAt = Date.now();
     if (status === 'Packed') updateQuery.$set.packedAt = Date.now();
     if (status === 'Shipped') updateQuery.$set.shippedAt = Date.now();
-    if (status === 'Delivered') updateQuery.$set.deliveredAt = Date.now();
+    if (status === 'Delivered') {
+      updateQuery.$set.deliveredAt = Date.now();
+      if (order.paymentMode === 'COD' || order.paymentStatus === 'Pending') {
+        updateQuery.$set.paymentStatus = 'Paid';
+      }
+    }
 
     // If Order is Cancelled, restore items to stock
     if (status === 'Cancelled') {
       
-      for (const item of order.items) {
-        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true });
-        await Inventory.findOneAndUpdate(
-          { product: item.product },
-          { 
-            $inc: { stockQuantity: item.quantity },
-            $push: {
-              adjustments: {
-                quantityChanged: item.quantity,
-                type: 'AuditAdjustment',
-                reason: `Order Cancellation (ID: ${order._id})`,
-                adjustedBy: req.user._id
-              }
-            }
-          },
-          { runValidators: true }
-        );
-      }
+      await restoreOrderStock(order, 'Order Cancellation', null);
     }
 
     const updatedOrder = await Order.findByIdAndUpdate(req.params.id, updateQuery, { new: true });

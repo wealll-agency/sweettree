@@ -2,6 +2,7 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import Inventory from '../models/Inventory.js';
 import Payment from '../models/Payment.js';
+import { restoreOrderStock } from './stockRestoral.js';
 
 // Revert stock for abandoned pending orders (older than 30 minutes)
 export const cleanupAbandonedOrders = async () => {
@@ -31,24 +32,7 @@ export const cleanupAbandonedOrders = async () => {
       }
 
       // Restore stock
-      for (const item of order.items) {
-        await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity, totalSold: -item.quantity } }, { runValidators: true });
-        await Inventory.findOneAndUpdate(
-          { product: item.product },
-          { 
-            $inc: { stockQuantity: item.quantity },
-            $push: {
-              adjustments: {
-                quantityChanged: item.quantity,
-                type: 'AuditAdjustment',
-                reason: `Abandoned Order Timeout Stock Restoral (Order ID: ${order._id})`,
-                adjustedBy: order.user
-              }
-            }
-          },
-          { runValidators: true }
-        );
-      }
+      await restoreOrderStock(order, 'Abandoned Order Timeout Stock Restoral');
     }
   } catch (error) {
     console.error('[Cron] Error cleaning up abandoned orders:', error);

@@ -317,7 +317,6 @@ export default function CouponManagerPage() {
                     className="form-control bg-light border-0" 
                     value={formData.minPurchaseAmount} 
                     onChange={(e) => setFormData({...formData, minPurchaseAmount: e.target.value})}
-                    placeholder="0 (No minimum)"
                     min="0"
                     required
                   />

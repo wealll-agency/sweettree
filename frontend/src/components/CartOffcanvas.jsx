@@ -53,8 +53,8 @@ const CartOffcanvas = () => {
     router.push(`/shop-details?id=${productId}`);
   };
 
-  // Sweettree free shipping threshold is 1999
-  const freeShippingThreshold = 1999;
+  // Sweettree free shipping threshold is 2000
+  const freeShippingThreshold = 2000;
   const remainingForFreeShipping = freeShippingThreshold - subtotal;
   const progressPercent = Math.min((subtotal / freeShippingThreshold) * 100, 100);
 
@@ -174,7 +174,7 @@ const CartOffcanvas = () => {
                 </div>
                 <div className="d-flex justify-content-between mb-2 fs-7 text-muted">
                   <span>Shipping:</span>
-                  <span>{shippingFee === 0 ? <span className="text-success fw-bold">FREE</span> : 'To be calculated'}</span>
+                  <span>{shippingFee === 0 ? <span className="text-success fw-bold">FREE</span> : `₹${shippingFee}`}</span>
                 </div>
                 {mrpDiscount > 0 && (
                   <div className="d-flex justify-content-between mb-2 fs-7 text-success">

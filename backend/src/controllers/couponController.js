@@ -90,6 +90,18 @@ export const getCoupons = async (req, res, next) => {
   }
 };
 
+// @desc    Get public active coupons
+// @route   GET /api/coupons/public
+// @access  Public
+export const getPublicCoupons = async (req, res, next) => {
+  try {
+    const coupons = await Coupon.find({ isActive: true }).sort({ createdAt: -1 });
+    res.json({ success: true, coupons });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Delete coupon code
 // @route   DELETE /api/coupons/:id
 // @access  Private/Admin

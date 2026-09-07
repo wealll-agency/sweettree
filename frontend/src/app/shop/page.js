@@ -33,7 +33,7 @@ function ShopContent() {
       try {
         const res = await api.get('/banners');
         if (res.data.success) {
-          const promoBanners = res.data.banners.filter(b => b.placement === 'Promotional');
+          const promoBanners = res.data.banners.filter(b => b.placement === 'ShopBanner');
           if (promoBanners.length > 0) {
             setPromotionalBanners(promoBanners);
           }
@@ -310,12 +310,12 @@ function ShopContent() {
                     width={1920} 
                     height={300} 
                     priority={true} 
-                    style={{ width: '100%', height: 'auto', display: 'block', marginBottom: '15px' }} 
+                    style={{ width: '100%', aspectRatio: '1920/300', objectFit: 'cover', display: 'block', marginBottom: '15px' }} 
                   />
                 </a>
               ))
             ) : (
-              <Image src="/shop_banner.jpg" alt="Shop Banner" width={1920} height={300} priority={true} style={{ width: '100%', height: 'auto', display: 'block' }} />
+              <Image src="/shop_banner.jpg" alt="Shop Banner" width={1920} height={300} priority={true} style={{ width: '100%', aspectRatio: '1920/300', objectFit: 'cover', display: 'block' }} />
             )}
           </div>
         </div>

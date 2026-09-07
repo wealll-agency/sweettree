@@ -57,9 +57,16 @@ export const getSalesChartData = async (req, res) => {
 // @access  Private/Admin/Manager
 export const getDashboardSummary = async (req, res, next) => {
   try {
-    // 1. Calculate Total Sales & Revenue (Total amount of Paid/Delivered orders)
+    // 1. Calculate Total Sales & Revenue (Real amount of orders where customer payment is received)
     const salesAggregation = await Order.aggregate([
-      { $match: { paymentStatus: 'Paid', orderStatus: { $ne: 'Cancelled' } } },
+      { 
+        $match: { 
+          $or: [
+            { paymentStatus: 'Paid', orderStatus: { $ne: 'Cancelled' } },
+            { paymentMode: 'COD', orderStatus: 'Delivered' }
+          ]
+        } 
+      },
       { $group: { _id: null, totalSales: { $sum: '$totalAmount' }, count: { $sum: 1 } } }
     ]);
     const totalSales = salesAggregation[0]?.totalSales || 0;
@@ -90,13 +97,15 @@ export const getDashboardSummary = async (req, res, next) => {
       return acc;
     }, { Placed: 0, Confirmed: 0, Packed: 0, Shipped: 0, Delivered: 0, Cancelled: 0 });
 
-    // New: Calculate Customer Retention (New vs Old) for current month
+    // New: Calculate Customer Retention (New vs Old)
     const now = new Date();
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const usersThisMonth = await Order.distinct('user', {
-      paymentStatus: 'Paid',
-      orderStatus: { $ne: 'Cancelled' },
+      $or: [
+        { paymentStatus: 'Paid', orderStatus: { $ne: 'Cancelled' } },
+        { paymentMode: 'COD', orderStatus: 'Delivered' }
+      ],
       createdAt: { $gte: startOfCurrentMonth }
     });
 
@@ -108,8 +117,10 @@ export const getDashboardSummary = async (req, res, next) => {
         { 
           $match: { 
             user: { $in: usersThisMonth },
-            paymentStatus: 'Paid',
-            orderStatus: { $ne: 'Cancelled' }
+            $or: [
+              { paymentStatus: 'Paid', orderStatus: { $ne: 'Cancelled' } },
+              { paymentMode: 'COD', orderStatus: 'Delivered' }
+            ]
           } 
         },
         { 
@@ -129,13 +140,53 @@ export const getDashboardSummary = async (req, res, next) => {
       });
     }
 
-    const totalActiveCustomersThisMonth = newCustomersThisMonth + returningCustomersThisMonth;
     let newCustomerPercentage = 0;
     let returningCustomerPercentage = 0;
-    
-    if (totalActiveCustomersThisMonth > 0) {
-      newCustomerPercentage = Math.round((newCustomersThisMonth / totalActiveCustomersThisMonth) * 100);
+    let totalActive = newCustomersThisMonth + returningCustomersThisMonth;
+
+    if (totalActive > 0) {
+      newCustomerPercentage = Math.round((newCustomersThisMonth / totalActive) * 100);
       returningCustomerPercentage = 100 - newCustomerPercentage;
+    } else {
+      // Fallback to real overall customer loyalty: single-order buyers (New) vs repeat buyers (Returning / Old)
+      const allCustomerOrderCounts = await Order.aggregate([
+        { 
+          $match: { 
+            $or: [
+              { paymentStatus: 'Paid', orderStatus: { $ne: 'Cancelled' } },
+              { paymentMode: 'COD', orderStatus: 'Delivered' }
+            ]
+          } 
+        },
+        { $group: { _id: '$user', count: { $sum: 1 } } }
+      ]);
+
+      if (allCustomerOrderCounts.length > 0) {
+        let singleOrderCount = 0;
+        let repeatOrderCount = 0;
+        allCustomerOrderCounts.forEach(c => {
+          if (c.count <= 1) singleOrderCount++;
+          else repeatOrderCount++;
+        });
+        totalActive = allCustomerOrderCounts.length;
+        newCustomerPercentage = Math.round((singleOrderCount / totalActive) * 100);
+        returningCustomerPercentage = 100 - newCustomerPercentage;
+      } else {
+        // If no paid orders exist yet, calculate by registered customer signup age (last 30 days = New, earlier = Old)
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const customers = await User.find({ role: 'Customer' }).lean();
+        if (customers.length > 0) {
+          let recentSignups = 0;
+          let priorSignups = 0;
+          customers.forEach(c => {
+            if (new Date(c.createdAt) >= thirtyDaysAgo) recentSignups++;
+            else priorSignups++;
+          });
+          totalActive = customers.length;
+          newCustomerPercentage = Math.round((recentSignups / totalActive) * 100);
+          returningCustomerPercentage = 100 - newCustomerPercentage;
+        }
+      }
     }
 
     const currentMonthName = now.toLocaleString('default', { month: 'long' });
@@ -144,12 +195,19 @@ export const getDashboardSummary = async (req, res, next) => {
       month: currentMonthName,
       newPercentage: newCustomerPercentage,
       returningPercentage: returningCustomerPercentage,
-      totalActive: totalActiveCustomersThisMonth
+      totalActive
     };
 
     // New: Admin Wallet Stats
     const walletAggregation = await Order.aggregate([
-      { $match: { paymentStatus: 'Paid', orderStatus: { $ne: 'Cancelled' } } },
+      { 
+        $match: { 
+          $or: [
+            { paymentStatus: 'Paid', orderStatus: { $ne: 'Cancelled' } },
+            { paymentMode: 'COD', orderStatus: 'Delivered' }
+          ]
+        } 
+      },
       {
         $group: {
           _id: null,

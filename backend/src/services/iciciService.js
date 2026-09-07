@@ -45,7 +45,8 @@ export const verifyICICISecureHash = (responseParams) => {
  */
 export const processICICIRefund = async (merchantTranId, refundAmount, originalTxnId) => {
   const merchantId = config.ICICI.MERCHANT_ID;
-  const refundUrl = process.env.ICICI_REFUND_URL || 'https://pgpay.icicibank.com/pg/api/v2/refund';
+  const refundUrl = config.ICICI.REFUND_URL;
+  if (!refundUrl) throw new Error('ICICI_REFUND_URL is missing from environment variables');
   
   // Construct Refund Payload based on typical ICICI Server-to-Server Refund API specs
   const refundPayload = {

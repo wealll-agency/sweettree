@@ -344,7 +344,6 @@ export default function HomepageProductsPage() {
                   <input 
                     type="text" 
                     className="form-control" 
-                    placeholder="Search products by name..." 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
