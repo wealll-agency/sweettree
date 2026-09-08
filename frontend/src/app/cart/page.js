@@ -130,7 +130,7 @@ export default function CartPage() {
                           className="rounded object-fit-cover"
                         />
                         <div>
-                          <Link href={`/shop-details?id=${item.product}&name=${encodeURIComponent(item.name || '')}`} className="fw-bold text-dark text-decoration-none hover-green">
+                          <Link href={`/shop-details?${item.name ? item.name.toString().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-') : item.product}`} className="fw-bold text-dark text-decoration-none hover-green">
                             {item.name}
                           </Link>
                           <span className="d-block text-muted fs-8">Size: {item.size}</span>

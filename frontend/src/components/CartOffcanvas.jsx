@@ -50,8 +50,9 @@ const CartOffcanvas = () => {
         if (bsOffcanvas) bsOffcanvas.hide();
       }
     }
-    const nameParam = productName ? `&name=${encodeURIComponent(productName)}` : '';
-    router.push(`/shop-details?id=${productId}${nameParam}`);
+    const slugify = (text) => text ? text.toString().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-') : '';
+    const slug = slugify(productName) || productId;
+    router.push(`/shop-details?${slug}`);
   };
 
   // Sweettree free shipping threshold is 2000

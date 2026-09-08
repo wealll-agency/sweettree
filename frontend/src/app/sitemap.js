@@ -8,8 +8,9 @@ export default async function sitemap() {
     const response = await axios.get(`${apiUrl}/products/public?limit=1000`);
     const products = response.data?.data || [];
 
+    const slugify = (text) => text ? text.toString().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-') : '';
     const productUrls = products.map((product) => ({
-      url: `${baseUrl}/shop-details?id=${product._id}&name=${encodeURIComponent(product.name)}`,
+      url: `${baseUrl}/shop-details?${slugify(product.name) || product._id}`,
       lastModified: new Date(product.updatedAt || new Date()),
       changeFrequency: 'weekly',
       priority: 0.8,
