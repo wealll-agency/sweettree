@@ -244,7 +244,7 @@ export default function ShopDetailsClient({ initialProduct }) {
     }
   };
 
-  const isInWishlist = wishlistItems.some(item => item._id === realProduct._id);
+  const isInWishlist = mounted && wishlistItems.some(item => item._id === realProduct._id);
   const images = realProduct.images && realProduct.images.length > 0 ? realProduct.images : ['/top_product1.png'];
 
   const getImageUrl = (url) => {
@@ -573,7 +573,7 @@ export default function ShopDetailsClient({ initialProduct }) {
               <h4 className="fw-bold mb-4 border-bottom pb-3">Review this product</h4>
               <p className="text-muted fs-7 mb-4">Share your thoughts with other customers</p>
               
-              {user ? (
+              {mounted && user ? (
                 <form onSubmit={handleReviewSubmit}>
                   <div className="mb-4">
                     <label className="fw-bold mb-2 text-dark fs-6">Overall rating</label>
