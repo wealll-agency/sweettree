@@ -78,6 +78,18 @@ export default function ShopDetailsClient({ initialProduct }) {
     }
   }, [dispatch, realProduct, productIdParam]);
 
+  // 4. Automatically sync address bar URL to include product name
+  useEffect(() => {
+    if (realProduct && realProduct._id && realProduct.name && typeof window !== 'undefined') {
+      const encodedName = encodeURIComponent(realProduct.name);
+      const targetUrl = `/shop-details?id=${realProduct._id}&name=${encodedName}`;
+      const currentUrl = window.location.pathname + window.location.search;
+      if (currentUrl !== targetUrl) {
+        window.history.replaceState(null, '', targetUrl);
+      }
+    }
+  }, [realProduct]);
+
   const defaultPackName = realProduct ? `${realProduct.unitValue || 1} ${realProduct.unit || 'Pack'}` : '';
   const [selectedPack, setSelectedPack] = useState('');
   useEffect(() => {
