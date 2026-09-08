@@ -46,7 +46,7 @@ export async function generateMetadata({ searchParams }) {
 
   const title = product.metaTitle ? product.metaTitle : `${product.name} | SweetTree`;
   const description = product.metaDescription ? product.metaDescription : cleanDescription(product.description, product.name);
-  const canonicalUrl = `https://www.sweettreeon.com/shop-details?id=${product._id}`;
+  const canonicalUrl = `https://www.sweettreeon.com/shop-details?id=${product._id}&name=${encodeURIComponent(product.name)}`;
   const images = (product.images && product.images.length > 0)
     ? product.images.map(img => formatImageUrl(img))
     : ['https://www.sweettreeon.com/top_product1.png'];
@@ -99,6 +99,8 @@ export default async function ShopDetailsPage({ searchParams }) {
       ? product.images.map(img => formatImageUrl(img))
       : ['https://www.sweettreeon.com/top_product1.png'];
 
+    const productUrl = `https://www.sweettreeon.com/shop-details?id=${product._id}&name=${encodeURIComponent(product.name)}`;
+
     const productJsonLd = {
       "@context": "https://schema.org/",
       "@type": "Product",
@@ -108,7 +110,7 @@ export default async function ShopDetailsPage({ searchParams }) {
       "sku": product.sku || String(product._id),
       "offers": {
         "@type": "Offer",
-        "url": `https://www.sweettreeon.com/shop-details?id=${product._id}`,
+        "url": productUrl,
         "priceCurrency": "INR",
         "price": finalPrice,
         "availability": (product.stock && product.stock > 0) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
@@ -144,7 +146,7 @@ export default async function ShopDetailsPage({ searchParams }) {
           "@type": "ListItem",
           "position": 3,
           "name": product.name,
-          "item": `https://www.sweettreeon.com/shop-details?id=${product._id}`
+          "item": productUrl
         }
       ]
     };

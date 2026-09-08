@@ -440,7 +440,7 @@ function ShopContent() {
                                 <span className="text-muted text-decoration-line-through fs-7">₹{product.price}</span>
                               )}
                             </div>
-                            <Link href={`/shop-details?id=${product._id}`} className="btn btn-sm btn-brand px-4 text-white">
+                            <Link href={`/shop-details?id=${product._id}&name=${encodeURIComponent(product.name || '')}`} className="btn btn-sm btn-brand px-4 text-white">
                               View Details
                             </Link>
                           </div>

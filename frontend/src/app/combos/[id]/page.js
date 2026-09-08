@@ -229,7 +229,7 @@ export default function ComboDetailPage() {
                       {combo.components?.map((comp, idx) => (
                          <div key={idx} className="col-12 col-sm-6">
                            <Link 
-                             href={`/shop-details?id=${comp.product?._id || comp.product}`} 
+                             href={`/shop-details?id=${comp.product?._id || comp.product}&name=${encodeURIComponent(comp.name || comp.product?.name || '')}`} 
                              style={{ textDecoration: 'none', color: 'inherit' }}
                            >
                              <div className="border rounded p-2 d-flex align-items-center gap-3 h-100 transition-all product-card-hover" style={{ cursor: 'pointer' }}>

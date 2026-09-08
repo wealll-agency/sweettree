@@ -9,7 +9,7 @@ export default async function sitemap() {
     const products = response.data?.data || [];
 
     const productUrls = products.map((product) => ({
-      url: `${baseUrl}/shop-details?id=${product._id}`,
+      url: `${baseUrl}/shop-details?id=${product._id}&name=${encodeURIComponent(product.name)}`,
       lastModified: new Date(product.updatedAt || new Date()),
       changeFrequency: 'weekly',
       priority: 0.8,

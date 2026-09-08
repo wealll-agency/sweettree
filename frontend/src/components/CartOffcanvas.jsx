@@ -42,7 +42,7 @@ const CartOffcanvas = () => {
     dispatch(removeFromCart({ product: productId, size }));
   };
 
-  const handleProductClick = (productId) => {
+  const handleProductClick = (productId, productName) => {
     if (typeof window !== 'undefined' && window.bootstrap) {
       const offcanvasEl = document.getElementById('cartOffcanvas');
       if (offcanvasEl) {
@@ -50,7 +50,8 @@ const CartOffcanvas = () => {
         if (bsOffcanvas) bsOffcanvas.hide();
       }
     }
-    router.push(`/shop-details?id=${productId}`);
+    const nameParam = productName ? `&name=${encodeURIComponent(productName)}` : '';
+    router.push(`/shop-details?id=${productId}${nameParam}`);
   };
 
   // Sweettree free shipping threshold is 2000
@@ -113,14 +114,14 @@ const CartOffcanvas = () => {
                     height={60} 
                     className="rounded" 
                     style={{ objectFit: 'cover', cursor: 'pointer' }} 
-                    onClick={() => handleProductClick(item.product)}
+                    onClick={() => handleProductClick(item.product, item.name)}
                   />
                   <div className="ms-3 flex-grow-1">
                     <div className="text-primary fw-bold" style={{ fontSize: '10px' }}>SWEETTREE</div>
                     <h6 
                       className="fw-bold m-0 mb-2 text-dark" 
                       style={{ fontSize: '12px', lineHeight: '1.4', cursor: 'pointer' }}
-                      onClick={() => handleProductClick(item.product)}
+                      onClick={() => handleProductClick(item.product, item.name)}
                     >
                       {item.name}
                     </h6>

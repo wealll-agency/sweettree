@@ -148,7 +148,7 @@ const ProductCard = ({ product }) => {
               </div>
             )}
 
-            <Link href={`/shop-details?id=${resolvedProduct._id}`} style={{ display: 'block', position: 'relative', height: '100%', width: '100%' }}>
+            <Link href={`/shop-details?id=${resolvedProduct._id}&name=${encodeURIComponent(resolvedProduct.name || '')}`} style={{ display: 'block', position: 'relative', height: '100%', width: '100%' }}>
               <Swiper
                 modules={[Autoplay, EffectFade]}
                 effect="fade"
@@ -187,7 +187,7 @@ const ProductCard = ({ product }) => {
             </span>
           </div>
 
-          <Link href={`/shop-details?id=${resolvedProduct._id}`} style={{ textDecoration: 'none', marginBottom: 'auto' }}>
+          <Link href={`/shop-details?id=${resolvedProduct._id}&name=${encodeURIComponent(resolvedProduct.name || '')}`} style={{ textDecoration: 'none', marginBottom: 'auto' }}>
             <h3 className="product-card__title" title={resolvedProduct.name}>
               {resolvedProduct.name}
             </h3>
@@ -207,7 +207,7 @@ const ProductCard = ({ product }) => {
           <div className="product-card__actions" style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
             {resolvedProduct.stock <= 0 ? (
               <Link
-                href={`/shop-details?id=${resolvedProduct._id}`}
+                href={`/shop-details?id=${resolvedProduct._id}&name=${encodeURIComponent(resolvedProduct.name || '')}`}
                 className="product-card__cart"
                 style={{ flex: 1, background: '#f1f5f9', color: '#64748b', textDecoration: 'none', border: '1.5px solid #e2e8f0', boxShadow: 'none' }}
               >
