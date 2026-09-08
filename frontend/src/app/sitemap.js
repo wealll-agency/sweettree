@@ -4,7 +4,7 @@ export default async function sitemap() {
   const baseUrl = 'https://www.sweettreeon.com';
 
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:7050/api';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://www.sweettreeon.com/api';
     const response = await axios.get(`${apiUrl}/products/public?limit=1000`);
     const products = response.data?.data || [];
 

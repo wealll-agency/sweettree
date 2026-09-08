@@ -41,7 +41,7 @@ export const NuttyDelightOffers = () => {
 
   const getImageUrl = (url) => {
     if (!url) return '';
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:7050';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'https://www.sweettreeon.com';
     if (url.includes('localhost:')) return url.replace(/http:\/\/localhost:\d+/, baseUrl);
     if (url.startsWith('http') || url.startsWith('/')) return url;
     return `${baseUrl}${url}`;

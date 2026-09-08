@@ -347,6 +347,13 @@ export const getSystemSettings = async (req, res, next) => {
     const refundSetting = await SystemSetting.findOne({ key: 'refund' });
     const topSellingSetting = await SystemSetting.findOne({ key: 'topSellingSource' });
     const onlinePaymentSetting = await SystemSetting.findOne({ key: 'onlinePayment' });
+    const slidingNotificationSetting = await SystemSetting.findOne({ key: 'slidingNotification' });
+
+    const defaultSliding = {
+      enabled: true,
+      text: '|| 🥜 Sweettree Anmol Jumbo Nuts - Extra 10% OFF! 🥜 || 🎁 Nuts For Savings 🎁 || 🔥 PayDay Sale Is LIVE - Extra 15% OFF Sitewide! 🔥 ||',
+      speed: 5
+    };
 
     res.json({
       success: true,
@@ -354,7 +361,8 @@ export const getSystemSettings = async (req, res, next) => {
         cod: codSetting ? codSetting.value : true,
         refund: refundSetting ? refundSetting.value : true,
         topSellingSource: topSellingSetting ? topSellingSetting.value : 'automatic',
-        onlinePayment: onlinePaymentSetting ? onlinePaymentSetting.value : true
+        onlinePayment: onlinePaymentSetting ? onlinePaymentSetting.value : true,
+        slidingNotification: slidingNotificationSetting ? slidingNotificationSetting.value : defaultSliding
       }
     });
   } catch (error) {
@@ -399,6 +407,13 @@ export const updateSystemSettings = async (req, res, next) => {
           { upsert: true, new: true }
         );
       }
+      if (settings.slidingNotification !== undefined) {
+        await SystemSetting.findOneAndUpdate(
+          { key: 'slidingNotification' },
+          { value: settings.slidingNotification },
+          { upsert: true, new: true }
+        );
+      }
     }
 
     await logActivity(req.user._id, 'UPDATE_SYSTEM_SETTINGS', `Updated global access settings`, req);
@@ -407,6 +422,13 @@ export const updateSystemSettings = async (req, res, next) => {
     const refundSetting = await SystemSetting.findOne({ key: 'refund' });
     const topSellingSetting = await SystemSetting.findOne({ key: 'topSellingSource' });
     const onlinePaymentSetting = await SystemSetting.findOne({ key: 'onlinePayment' });
+    const slidingNotificationSetting = await SystemSetting.findOne({ key: 'slidingNotification' });
+
+    const defaultSliding = {
+      enabled: true,
+      text: '|| 🥜 Sweettree Anmol Jumbo Nuts - Extra 10% OFF! 🥜 || 🎁 Nuts For Savings 🎁 || 🔥 PayDay Sale Is LIVE - Extra 15% OFF Sitewide! 🔥 ||',
+      speed: 5
+    };
 
     res.json({
       success: true,
@@ -415,7 +437,8 @@ export const updateSystemSettings = async (req, res, next) => {
         cod: codSetting ? codSetting.value : true,
         refund: refundSetting ? refundSetting.value : true,
         topSellingSource: topSellingSetting ? topSellingSetting.value : 'automatic',
-        onlinePayment: onlinePaymentSetting ? onlinePaymentSetting.value : true
+        onlinePayment: onlinePaymentSetting ? onlinePaymentSetting.value : true,
+        slidingNotification: slidingNotificationSetting ? slidingNotificationSetting.value : defaultSliding
       }
     });
   } catch (error) {

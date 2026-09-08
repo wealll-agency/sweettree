@@ -10,6 +10,8 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 
+import SlidingTicker from './SlidingTicker';
+
 const HeroSlider = () => {
   const [desktopBanners, setDesktopBanners] = useState([]);
   const [mobileBanners, setMobileBanners] = useState([]);
@@ -19,18 +21,14 @@ const HeroSlider = () => {
     const fetchBanners = async () => {
       try {
         const res = await api.get('/banners');
-        if (res.data.success) {
+        if (res?.data?.success) {
           const heroBanners = res.data.banners.filter(b => b.placement === 'Hero');
-          if (heroBanners.length > 0) {
-            setDesktopBanners(heroBanners);
-          }
+          if (heroBanners.length > 0) setDesktopBanners(heroBanners);
           const botBanners = res.data.banners.filter(b => b.placement === 'Bottom');
-          if (botBanners.length > 0) {
-            setMobileBanners(botBanners);
-          }
+          if (botBanners.length > 0) setMobileBanners(botBanners);
         }
       } catch (error) {
-        console.error('Failed to fetch banners:', error);
+        console.error('Failed to fetch slider data:', error);
       } finally {
         setIsLoading(false);
       }
@@ -48,7 +46,7 @@ const HeroSlider = () => {
 
   const getImageUrl = (url) => {
     if (!url) return '';
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:7050';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'https://www.sweettreeon.com';
     if (url.includes('localhost:')) return url.replace(/http:\/\/localhost:\d+/, baseUrl);
     if (url.startsWith('http') || url.startsWith('/')) return url;
     return `${baseUrl}${url}`;
@@ -56,11 +54,7 @@ const HeroSlider = () => {
 
   return (
     <section className="hero-slider-wrapper">
-      <div className="marquee-wrapper">
-        <marquee behavior="scroll" direction="left" scrollamount="5">
-          || 🥜 Sweettree Anmol Jumbo Nuts - Extra 10% OFF! 🥜 || 🎁 Nuts For Savings 🎁 || 🔥 PayDay Sale Is LIVE - Extra 15% OFF Sitewide! 🔥 ||
-        </marquee>
-      </div>
+      <SlidingTicker />
       <div className="container-fluid px-4 px-lg-5 mt-3">
         {isLoading ? (
           <>

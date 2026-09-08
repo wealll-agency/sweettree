@@ -7,6 +7,7 @@ import { fetchProducts } from '../../store/productsSlice.js';
 import ProductCard from '../../components/ProductCard.jsx';
 import { useSearchParams } from 'next/navigation';
 import api from '../../utils/axiosConfig';
+import SlidingTicker from '../../components/SlidingTicker';
 
 function ShopContent() {
   const dispatch = useDispatch();
@@ -291,11 +292,7 @@ function ShopContent() {
 
   return (
     <>
-      <div className="marquee-wrapper">
-        <marquee behavior="scroll" direction="left" scrollamount="5">
-          || 🥜 Sweettree Anmol Jumbo Nuts - Extra 10% OFF! 🥜 || 🎁 Nuts For Savings 🎁 || 🔥 PayDay Sale Is LIVE - Extra 15% OFF Sitewide! 🔥 ||
-        </marquee>
-      </div>
+      <SlidingTicker />
 
       {/* Shop Banner */}
       <section className="shop-banner">

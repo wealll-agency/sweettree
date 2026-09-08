@@ -7,8 +7,16 @@ export default function AdminReportsPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   
+  const getApiBase = () => {
+    if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      return 'http://localhost:7050/api';
+    }
+    return 'https://www.sweettreeon.com/api';
+  };
+
   const handleExportPDF = () => {
-    let url = `${process.env.NEXT_PUBLIC_API_URL || 'https://www.sweettreeon.com/api'}/reports/export/pdf`;
+    let url = `${getApiBase()}/reports/export/pdf`;
     const params = [];
     if (startDate) params.push(`startDate=${startDate}`);
     if (endDate) params.push(`endDate=${endDate}`);
@@ -18,7 +26,7 @@ export default function AdminReportsPage() {
   };
 
   const handleExportExcel = () => {
-    let url = `${process.env.NEXT_PUBLIC_API_URL || 'https://www.sweettreeon.com/api'}/reports/export/excel`;
+    let url = `${getApiBase()}/reports/export/excel`;
     const params = [];
     if (startDate) params.push(`startDate=${startDate}`);
     if (endDate) params.push(`endDate=${endDate}`);

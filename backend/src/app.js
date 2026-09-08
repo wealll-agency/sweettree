@@ -11,7 +11,6 @@ import mongoose from 'mongoose';
 
 import config from './config/env.js';
 import errorHandler from './middleware/errorHandler.js';
-import { apiLimiter } from './middleware/rateLimiter.js';
 
 // Route imports
 import authRoutes from './routes/authRoutes.js';
@@ -30,6 +29,7 @@ import bannerRoutes from './routes/bannerRoutes.js';
 import comboRoutes from './routes/comboRoutes.js';
 import customSectionRoutes from './routes/customSectionRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,9 +70,6 @@ app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 
-// Apply global rate limiting to all API routes
-app.use('/api', apiLimiter);
-
 // Sanitize NoSQL injections
 app.use(mongoSanitize());
 
@@ -93,6 +90,7 @@ app.use('/api/banners', bannerRoutes);
 app.use('/api/combos', comboRoutes);
 app.use('/api/custom-sections', customSectionRoutes);
 app.use('/api/blogs', blogRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Legacy Health Endpoint (keep for backwards compatibility)
 app.get('/health', (req, res) => {

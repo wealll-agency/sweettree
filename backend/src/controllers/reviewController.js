@@ -2,12 +2,13 @@ import Review from '../models/Review.js';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import { logActivity } from '../middleware/logger.js';
+import { uploadFile } from '../services/storageService.js';
 
 // @desc    Add review for a product
 // @route   POST /api/reviews
 // @access  Private
 export const createProductReview = async (req, res, next) => {
-  const { productId, rating, comment, images } = req.body;
+  const { productId, rating, comment } = req.body;
 
   try {
     if (!rating || !comment || !productId) {
@@ -27,12 +28,18 @@ export const createProductReview = async (req, res, next) => {
     });
     const isVerifiedPurchase = orders.length > 0;
 
+    let uploadedImages = [];
+    if (req.files && req.files.length > 0) {
+      const uploadPromises = req.files.map(file => uploadFile(file));
+      uploadedImages = await Promise.all(uploadPromises);
+    }
+
     const review = await Review.create({
       user: req.user._id,
       product: productId,
       rating: Number(rating),
       comment,
-      images: images || [],
+      images: uploadedImages,
       isVerifiedPurchase
     });
 

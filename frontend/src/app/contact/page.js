@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
+import SlidingTicker from '../../components/SlidingTicker';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://www.sweettreeon.com/api';
 
@@ -38,11 +39,7 @@ export default function ContactPage() {
 
   return (
     <>
-      <div className="marquee-wrapper">
-        <marquee behavior="scroll" direction="left" scrollamount="5">
-          || 🥜 Sweettree Anmol Jumbo Nuts - Extra 10% OFF! 🥜 || 🎁 Nuts For Savings 🎁 || 🔥 PayDay Sale Is LIVE - Extra 15% OFF Sitewide! 🔥 ||
-        </marquee>
-      </div>
+      <SlidingTicker />
 
       {/* Contact Hero Section */}
       <section className="contact-hero-section">

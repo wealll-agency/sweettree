@@ -1,7 +1,9 @@
+import mongoose from 'mongoose';
 import Product from '../models/Product.js';
 import Inventory from '../models/Inventory.js';
 import SystemSetting from '../models/SystemSetting.js';
 import StockNotification from '../models/StockNotification.js';
+import Warehouse from '../models/Warehouse.js';
 import { logActivity } from '../middleware/logger.js';
 import { uploadFile } from '../services/storageService.js';
 
@@ -153,7 +155,7 @@ export const createProduct = async (req, res, next) => {
 
     let assignedWarehouse = warehouse === '' ? null : warehouse;
     if (!assignedWarehouse) {
-      const defaultWarehouse = await mongoose.model('Warehouse').findOne({ isActive: true });
+      const defaultWarehouse = await Warehouse.findOne({ isActive: true });
       if (defaultWarehouse) {
         assignedWarehouse = defaultWarehouse._id;
       }

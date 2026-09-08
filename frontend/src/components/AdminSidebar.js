@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../store/authSlice.js';
 import { clearCart } from '../store/cartSlice.js';
 import { fetchSidebarStatsAction } from '../store/adminSlice.js';
-import { LayoutDashboard, ShoppingBag, ClipboardList, ShoppingCart, Users, Receipt, LogOut, Tag, ChevronLeft, ChevronRight, RotateCcw, ChevronDown, ChevronUp, MessageSquare, MapPin, Package, Shield, Bell, Image, Gift } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, ClipboardList, ShoppingCart, Users, Receipt, LogOut, Tag, ChevronLeft, ChevronRight, RotateCcw, ChevronDown, ChevronUp, MessageSquare, MapPin, Package, Shield, Bell, Image, Gift, Palette, Megaphone } from 'lucide-react';
 import api from '../utils/axiosConfig.js';
 
 export default function AdminSidebar() {
@@ -66,10 +66,10 @@ export default function AdminSidebar() {
     { label: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
     { label: 'Enquiries', path: '/admin/enquiries', icon: <MessageSquare size={20} />, badge: unreadEnquiries },
     { label: 'Product Manager', path: '/admin/products', icon: <ShoppingBag size={20} /> },
-    { label: 'Combos', path: '/admin/combos', icon: <Gift size={20} /> },
+    { label: 'Promotion Manager', path: '/admin/promotion-manager', icon: <Megaphone size={20} /> },
     { label: 'Orders Queue', path: '/admin/orders', icon: <ShoppingCart size={20} />, badge: sidebarStats?.pendingOrders || 0 },
     { label: 'Inventory Manager', path: '/admin/inventory', icon: <ClipboardList size={20} />, badge: sidebarStats?.lowStockItems || 0 },
-    { label: 'Media Manager', path: '/admin/media-manager', icon: <Image size={20} /> },
+    { label: 'Theme Manager', path: '/admin/theme-manager', icon: <Palette size={20} /> },
     { label: 'Coupon Manager', path: '/admin/coupons', icon: <Tag size={20} /> },
     { label: 'Homepage Products', path: '/admin/homepage-products', icon: <LayoutDashboard size={20} /> },
     { label: 'Warehouses', path: '/admin/warehouses', icon: <MapPin size={20} /> },

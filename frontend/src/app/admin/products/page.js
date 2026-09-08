@@ -3,15 +3,15 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAdminProducts, addProduct, editProduct, removeProduct, toggleProductState, fetchWarehouses } from '../../../store/adminSlice.js';
-import { Plus, Edit, Trash2, X, Eye, Download, Search, LayoutGrid } from 'lucide-react';
+import { fetchAdminProducts, addProduct, editProduct, removeProduct, toggleProductState, fetchWarehouses, fetchCategories, createCategoryAction, addSubCategoryAction, deleteCategoryAction, deleteSubCategoryAction } from '../../../store/adminSlice.js';
+import { Plus, Edit, Trash2, X, Eye, Download, Search, LayoutGrid, FolderPlus, Tag, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useNotification } from '../../../context/NotificationContext';
 
 export default function AdminProductsPage() {
   const dispatch = useDispatch();
-  
-  const { products, productsLoading, warehouses } = useSelector((state) => state.admin);
+
+  const { products, productsLoading, warehouses, categories } = useSelector((state) => state.admin);
   const { user } = useSelector((state) => state.auth);
   const { showAlert, showConfirm } = useNotification();
 
@@ -28,17 +28,72 @@ export default function AdminProductsPage() {
   const [filterBrand, setFilterBrand] = useState('All Brands');
   const [filterCategory, setFilterCategory] = useState('Select category');
   const [filterSubCategory, setFilterSubCategory] = useState('Select Sub Category');
-  const [filterSubSubCategory, setFilterSubSubCategory] = useState('Select Sub Sub Category');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [showLimitedStockOnly, setShowLimitedStockOnly] = useState(false);
   const [viewingProduct, setViewingProduct] = useState(null);
   const [viewingBarcode, setViewingBarcode] = useState(null);
 
+  // Category Manager States
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [selectedCatForSub, setSelectedCatForSub] = useState('');
+  const [newSubCatName, setNewSubCatName] = useState('');
+
+  const handleCreateCategory = async (e) => {
+    e.preventDefault();
+    if (!newCatName.trim()) return;
+    try {
+      await dispatch(createCategoryAction({ name: newCatName.trim() })).unwrap();
+      dispatch(fetchCategories());
+      showAlert('Category created successfully', 'success');
+      setNewCatName('');
+    } catch (err) {
+      showAlert(err || 'Failed to create category', 'error');
+    }
+  };
+
+  const handleAddSubCategory = async (e) => {
+    e.preventDefault();
+    if (!selectedCatForSub || !newSubCatName.trim()) {
+      showAlert('Please select a main category and enter subcategory name', 'warning');
+      return;
+    }
+    try {
+      await dispatch(addSubCategoryAction({ categoryId: selectedCatForSub, subCategory: newSubCatName.trim() })).unwrap();
+      dispatch(fetchCategories());
+      showAlert('Subcategory added successfully', 'success');
+      setNewSubCatName('');
+    } catch (err) {
+      showAlert(err || 'Failed to add subcategory', 'error');
+    }
+  };
+
+  const handleDeleteCategory = (id, catName) => {
+    showConfirm(`Are you sure you want to delete category "${catName}"?`, async () => {
+      try {
+        await dispatch(deleteCategoryAction(id)).unwrap();
+        showAlert('Category deleted', 'success');
+      } catch (err) {
+        showAlert(err || 'Failed to delete category', 'error');
+      }
+    });
+  };
+
+  const handleDeleteSubCategory = (categoryId, subName) => {
+    showConfirm(`Delete subcategory "${subName}"?`, async () => {
+      try {
+        await dispatch(deleteSubCategoryAction({ categoryId, subCategory: subName })).unwrap();
+        showAlert('Subcategory removed', 'success');
+      } catch (err) {
+        showAlert(err || 'Failed to remove subcategory', 'error');
+      }
+    });
+  };
+
   // Form fields
   const [name, setName] = useState('');
-  const [category, setCategory] = useState('Dry Fruits');
+  const [category, setCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
-  const [subSubCategory, setSubSubCategory] = useState('');
   const [brand, setBrand] = useState('');
   const [productType, setProductType] = useState('Physical');
   const [warehouse, setWarehouse] = useState('');
@@ -47,7 +102,7 @@ export default function AdminProductsPage() {
   const [unitValue, setUnitValue] = useState('');
   const [searchTags, setSearchTags] = useState('');
   const [packSizes, setPackSizes] = useState([]); // [{ weight: 250, unit: 'g', price: 200 }]
-  
+
   const [price, setPrice] = useState(''); // Represents MRP (Unit Price)
   const [purchasePrice, setPurchasePrice] = useState('0'); // Represents Cost Price
   const [calculatedSellingPrice, setCalculatedSellingPrice] = useState('0');
@@ -66,7 +121,7 @@ export default function AdminProductsPage() {
   const [stock, setStock] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState('');
-  
+
   const [subImageFiles, setSubImageFiles] = useState([null, null, null]);
   const [subImagePreviews, setSubImagePreviews] = useState(['', '', '']);
 
@@ -93,13 +148,12 @@ export default function AdminProductsPage() {
       brand: filterBrand !== 'All Brands' ? filterBrand : '',
       category: filterCategory !== 'Select category' ? filterCategory : '',
       subCategory: filterSubCategory !== 'Select Sub Category' ? filterSubCategory : '',
-      subSubCategory: filterSubSubCategory !== 'Select Sub Sub Category' ? filterSubSubCategory : '',
       keyword: searchKeyword
     }));
   };
 
   useEffect(() => {
-    if (viewingProduct || viewingBarcode) {
+    if (viewingProduct || viewingBarcode || showCategoryModal) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -107,11 +161,12 @@ export default function AdminProductsPage() {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [viewingProduct, viewingBarcode]);
+  }, [viewingProduct, viewingBarcode, showCategoryModal]);
 
   useEffect(() => {
     dispatch(fetchAdminProducts({ limit: 1000 }));
     dispatch(fetchWarehouses());
+    dispatch(fetchCategories());
   }, [dispatch]);
 
   const handleToggle = (id, field, value) => {
@@ -125,7 +180,7 @@ export default function AdminProductsPage() {
     }
     const headers = ['SL', 'Product Name', 'Category', 'Product Type', 'MRP Price', 'Selling Price', 'Stock', 'Featured', 'Active'];
     const csvRows = [headers.join(',')];
-    
+
     products.forEach((p, index) => {
       const row = [
         index + 1,
@@ -140,7 +195,7 @@ export default function AdminProductsPage() {
       ];
       csvRows.push(row.join(','));
     });
-    
+
     const csvContent = "data:text/csv;charset=utf-8," + csvRows.join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
@@ -155,7 +210,6 @@ export default function AdminProductsPage() {
     setName('');
     setCategory('Dry Fruits');
     setSubCategory('');
-    setSubSubCategory('');
     setBrand('');
     setProductType('Physical');
     setWarehouse('');
@@ -193,7 +247,6 @@ export default function AdminProductsPage() {
     setName(product.name);
     setCategory(product.category);
     setSubCategory(product.subCategory || '');
-    setSubSubCategory(product.subSubCategory || '');
     setBrand(product.brand || '');
     setProductType(product.productType || 'Physical');
     setWarehouse(product.warehouse ? product.warehouse.toString() : '');
@@ -219,15 +272,15 @@ export default function AdminProductsPage() {
     setStock(product.stock.toString());
     setImagePreviewUrl(product.images[0] || '');
     setImageFile(null);
-    
+
     // Set sub-image previews if they exist
     const previews = ['', '', ''];
-    for(let i=1; i<=3; i++) {
-      if(product.images[i]) previews[i-1] = product.images[i];
+    for (let i = 1; i <= 3; i++) {
+      if (product.images[i]) previews[i - 1] = product.images[i];
     }
     setSubImagePreviews(previews);
     setSubImageFiles([null, null, null]);
-    
+
     setEditMode(true);
     setShowForm(true);
   };
@@ -246,14 +299,13 @@ export default function AdminProductsPage() {
     payload.append('name', name);
     payload.append('category', category);
     payload.append('subCategory', subCategory);
-    payload.append('subSubCategory', subSubCategory);
     payload.append('brand', brand);
     payload.append('productType', productType);
     if (warehouse) payload.append('warehouse', warehouse);
     payload.append('sku', sku);
     payload.append('unit', unit);
     payload.append('unitValue', unitValue);
-    
+
     // Arrays need special handling in FormData or just stringified
     // Since backend expects an array, let's join them and let backend split, 
     // OR we can just pass them as strings if backend is handling them.
@@ -285,7 +337,7 @@ export default function AdminProductsPage() {
     } else if (imagePreviewUrl) {
       payload.append('images', imagePreviewUrl);
     }
-    
+
     // Sub-images
     subImageFiles.forEach((file, index) => {
       if (file) {
@@ -333,7 +385,7 @@ export default function AdminProductsPage() {
       const newFiles = [...subImageFiles];
       newFiles[index] = file;
       setSubImageFiles(newFiles);
-      
+
       const newPreviews = [...subImagePreviews];
       newPreviews[index] = URL.createObjectURL(file);
       setSubImagePreviews(newPreviews);
@@ -358,7 +410,7 @@ export default function AdminProductsPage() {
   const handleNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
   };
-  
+
   const handlePrevPage = () => {
     if (currentPage > 1) setCurrentPage(prev => prev - 1);
   };
@@ -380,16 +432,16 @@ export default function AdminProductsPage() {
                   <Image src={viewingProduct.images[0] || 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=200'} alt="product" className="img-fluid rounded-3" width={180} height={180} style={{ height: '180px', objectFit: 'cover' }} />
                 </div>
               </div>
-              
+
               <h5 className="fw-bold text-dark text-center mb-1">{viewingProduct.name}</h5>
               <p className="text-muted text-center fs-7 mb-3"><span className="badge bg-light text-dark border">Category: {viewingProduct.category}</span></p>
-              
+
               <div className="d-flex justify-content-center align-items-center gap-3 mb-3">
                 <div className="text-center">
                   <span className="fs-7 text-muted d-block">Selling Price</span>
                   <p className="fw-bold text-brand fs-4 mb-0">
                     ₹{viewingProduct.discount > 0 ? (
-                      viewingProduct.discountType === 'Percent' 
+                      viewingProduct.discountType === 'Percent'
                         ? Math.round(viewingProduct.price * (1 - viewingProduct.discount / 100))
                         : Math.max(0, viewingProduct.price - viewingProduct.discount)
                     ) : viewingProduct.price}
@@ -402,13 +454,13 @@ export default function AdminProductsPage() {
                   </div>
                 )}
               </div>
-              
+
               <div className="text-center mb-3">
                 <span className={`badge px-3 py-2 ${viewingProduct.stock > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'}`}>
                   {viewingProduct.stock > 0 ? `${viewingProduct.stock} Units in Stock` : 'Out of Stock'}
                 </span>
               </div>
-              
+
               <div className="bg-light rounded-3 p-3 text-center">
                 <p className="m-0 fs-7 text-muted" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                   {viewingProduct.description || 'No description provided.'}
@@ -455,45 +507,45 @@ export default function AdminProductsPage() {
           </div>
           <div className="card-body">
             <div className="row g-3 align-items-end">
-              <div className="col-md-3">
+              <div className="col-md-4">
                 <label className="fw-medium mb-1 fs-7">Brand</label>
                 <select className="form-select" value={filterBrand} onChange={(e) => setFilterBrand(e.target.value)}>
                   <option value="All Brands">All Brands</option>
                   <option value="Sweettree">Sweettree</option>
                 </select>
               </div>
-              <div className="col-md-3">
+              <div className="col-md-4">
                 <label className="fw-medium mb-1 fs-7">Category</label>
                 <select className="form-select" value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
                   <option value="Select category">Select category</option>
-                  <option value="Dry Fruits">Dry Fruits</option>
-                  <option value="Healthy Snacking">Healthy Snacking</option>
-                  <option value="Combo Gift Box">Combo Gift Box</option>
+                  {categories && categories.map(c => (
+                    <option key={c._id} value={c.name}>{c.name}</option>
+                  ))}
                 </select>
               </div>
-              <div className="col-md-3">
+              <div className="col-md-4">
                 <label className="fw-medium mb-1 fs-7">Sub Category</label>
                 <select className="form-select" value={filterSubCategory} onChange={(e) => setFilterSubCategory(e.target.value)}>
                   <option value="Select Sub Category">Select Sub Category</option>
-                  <option value="Nuts">Nuts</option>
-                  <option value="Seeds">Seeds</option>
+                  {filterCategory !== 'Select category' ? (
+                    categories.find(c => c.name === filterCategory)?.subCategories.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))
+                  ) : (
+                    Array.from(new Set(categories.flatMap(c => c.subCategories || []))).map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))
+                  )}
                 </select>
               </div>
-              <div className="col-md-3">
-                <label className="fw-medium mb-1 fs-7">Sub Sub Category</label>
-                <select className="form-select" value={filterSubSubCategory} onChange={(e) => setFilterSubSubCategory(e.target.value)}>
-                  <option value="Select Sub Sub Category">Select Sub Sub Category</option>
-                </select>
-              </div>
-              
+
               <div className="col-12 d-flex justify-content-end gap-2 mt-4">
-                <button 
+                <button
                   className="btn btn-brand-secondary"
                   onClick={() => {
                     setFilterBrand('All Brands');
                     setFilterCategory('Select category');
                     setFilterSubCategory('Select Sub Category');
-                    setFilterSubSubCategory('Select Sub Sub Category');
                     setSearchKeyword('');
                     dispatch(fetchAdminProducts({})); // instantly reload all
                   }}
@@ -512,9 +564,9 @@ export default function AdminProductsPage() {
         <div className="card shadow-sm border-0 rounded-4 bg-white mb-4">
           <div className="card-body p-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div className="d-flex" style={{ width: '300px' }}>
-              <input 
-                type="text" 
-                className="form-control rounded-end-0 border-end-0" 
+              <input
+                type="text"
+                className="form-control rounded-end-0 border-end-0"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && loadProducts()}
@@ -527,8 +579,8 @@ export default function AdminProductsPage() {
               <button onClick={handleExport} className="btn btn-outline-brand d-flex align-items-center gap-2" style={{ borderColor: '#1c72b9', color: '#1c72b9' }}>
                 <Download size={16} /> Export
               </button>
-              <button onClick={() => setShowLimitedStockOnly(!showLimitedStockOnly)} className="btn d-flex align-items-center" style={{ backgroundColor: showLimitedStockOnly ? '#00b8b8' : '#00d2d3', color: '#fff', border: 'none' }}>
-                Limited Sotcks {showLimitedStockOnly && '(Active)'}
+              <button onClick={() => setShowCategoryModal(true)} className="btn btn-outline-secondary d-flex align-items-center gap-2">
+                <LayoutGrid size={16} /> Add Categories
               </button>
               <button onClick={() => setShowForm(true)} className="btn btn-brand d-flex align-items-center gap-2">
                 <Plus size={16} /> Add new product
@@ -547,7 +599,7 @@ export default function AdminProductsPage() {
               <X size={20} />
             </button>
           </div>
-          
+
           <form onSubmit={handleSubmit}>
             {/* General Setup Card */}
             <div className="card shadow-sm border-0 rounded-4 bg-white mb-4">
@@ -562,7 +614,7 @@ export default function AdminProductsPage() {
                     <label className="fw-medium mb-1 fs-7">Product Name</label>
                     <input type="text" required className="form-control" value={name} onChange={(e) => setName(e.target.value)} />
                   </div>
-                  
+
                   <div className="col-md-6">
                     <label className="fw-medium mb-1 fs-7">Warehouse Link</label>
                     <select className="form-select" value={warehouse} onChange={(e) => setWarehouse(e.target.value)}>
@@ -572,25 +624,30 @@ export default function AdminProductsPage() {
                       ))}
                     </select>
                   </div>
-                  
-                  <div className="col-md-4">
+
+                  <div className="col-md-6">
                     <label className="fw-medium mb-1 fs-7">Category</label>
-                    <select className="form-select" value={category} onChange={(e) => setCategory(e.target.value)}>
-                      <option value="Dry Fruits">Dry Fruits</option>
-                      <option value="Top Selling Products">Top Selling Products</option>
-                      <option value="Healthy Snacking">Healthy Snacking</option>
-                      <option value="Combo Gift Box">Combo Gift Box</option>
-                      <option value="Flavoured Nuts">Flavoured Nuts</option>
-                      <option value="Seeds And Berries">Seeds And Berries</option>
+                    <select className="form-select" value={category} onChange={(e) => { setCategory(e.target.value); setSubCategory(''); }}>
+                      <option value="">Select Category</option>
+                      {categories && categories.map(c => (
+                        <option key={c._id} value={c.name}>{c.name}</option>
+                      ))}
                     </select>
                   </div>
-                  <div className="col-md-4">
+                  <div className="col-md-6">
                     <label className="fw-medium mb-1 fs-7">Sub Category</label>
-                    <input type="text" className="form-control" value={subCategory} onChange={(e) => setSubCategory(e.target.value)} />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="fw-medium mb-1 fs-7">Sub Sub Category</label>
-                    <input type="text" className="form-control" value={subSubCategory} onChange={(e) => setSubSubCategory(e.target.value)} />
+                    {(() => {
+                      const activeCatObj = categories.find(c => c.name === category);
+                      const availableSubs = activeCatObj ? activeCatObj.subCategories : Array.from(new Set(categories.flatMap(c => c.subCategories || [])));
+                      return (
+                        <select className="form-select" value={subCategory} onChange={(e) => setSubCategory(e.target.value)}>
+                          <option value="">Select Sub Category</option>
+                          {availableSubs.map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      );
+                    })()}
                   </div>
 
                   <div className="col-md-6">
@@ -625,9 +682,9 @@ export default function AdminProductsPage() {
                     <div className="row g-3">
                       <div className="col-md-12 mb-3">
                         <label className="form-label text-muted fs-7 mb-1">Main Image</label>
-                        <input 
-                          type="file" 
-                          className="form-control" 
+                        <input
+                          type="file"
+                          className="form-control"
                           accept="image/*"
                           onChange={handleImageChange}
                           required={!editMode}
@@ -638,14 +695,14 @@ export default function AdminProductsPage() {
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Optional Sub Images */}
                       {[0, 1, 2].map(index => (
                         <div className="col-md-4" key={`sub-image-${index}`}>
                           <label className="form-label text-muted fs-7 mb-1">Sub Image {index + 1} (Optional)</label>
-                          <input 
-                            type="file" 
-                            className="form-control" 
+                          <input
+                            type="file"
+                            className="form-control"
                             accept="image/*"
                             onChange={(e) => handleSubImageChange(e, index)}
                           />
@@ -658,7 +715,7 @@ export default function AdminProductsPage() {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="col-md-12">
                     <label className="fw-medium mb-1 fs-7">Batch Number</label>
                     <input type="text" required className="form-control" value={batchNumber} onChange={(e) => setBatchNumber(e.target.value)} />
@@ -806,12 +863,6 @@ export default function AdminProductsPage() {
                     <label className="fw-medium mb-1 fs-7">Shipping Cost (₹)</label>
                     <input type="number" className="form-control" value={shippingCost} onChange={(e) => setShippingCost(e.target.value)} />
                   </div>
-                  <div className="col-md-6 d-flex flex-column justify-content-end pb-2 gap-3">
-                    <div className="form-check form-switch d-flex align-items-center">
-                      <label className="form-check-label fs-7 fw-medium mb-0 me-3">Shipping Cost Multiply With Qty</label>
-                      <input className="form-check-input" type="checkbox" checked={shippingMultiplyWithQty} onChange={(e) => setShippingMultiplyWithQty(e.target.checked)} />
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -855,71 +906,71 @@ export default function AdminProductsPage() {
                     currentProducts.map((prod, index) => (
                       <tr key={prod._id} className="border-bottom">
                         <td className="text-muted">{indexOfFirstItem + index + 1}</td>
-                      <td className="py-3">
-                        <div className="d-flex align-items-center gap-2">
-                          <Image
-                            src={prod.images[0] || 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=80'}
-                            alt={prod.name}
-                            className="rounded object-fit-cover"
-                            width={36}
-                            height={36}
-                            style={{ width: '36px', height: '36px' }}
-                          />
-                          <span className="fw-bold text-dark">{prod.name}</span>
-                        </div>
-                      </td>
-                      <td>{prod.productType || 'Physical'}</td>
-                      <td>₹{prod.price || 0}</td>
-                      <td className="fw-semibold">
-                        ₹{prod.discount > 0 ? (
-                          prod.discountType === 'Percent' 
-                            ? Math.round(prod.price * (1 - prod.discount / 100))
-                            : Math.max(0, prod.price - prod.discount)
-                        ) : prod.price}
-                      </td>
-                      <td className="text-center">
-                        <div className="form-check form-switch d-inline-block">
-                          <input 
-                            className="form-check-input cursor-pointer" 
-                            type="checkbox" 
-                            checked={prod.isFeatured || false} 
-                            onChange={(e) => handleToggle(prod._id, 'isFeatured', e.target.checked)} 
-                          />
-                        </div>
-                      </td>
-                      <td className="text-center">
-                        <div className="form-check form-switch d-inline-block">
-                          <input 
-                            className="form-check-input cursor-pointer" 
-                            type="checkbox" 
-                            checked={prod.isActive !== false} 
-                            onChange={(e) => handleToggle(prod._id, 'isActive', e.target.checked)} 
-                          />
-                        </div>
-                      </td>
-                      {user.role !== 'Staff' && (
-                        <td className="text-center">
-                          <div className="d-inline-flex gap-2">
-                            <button onClick={() => setViewingBarcode(prod)} className="btn btn-sm bg-white" style={{ border: '1px solid #00d2d3', color: '#00d2d3', padding: '0.25rem 0.4rem', borderRadius: '4px' }} title="Barcode">
-                              <LayoutGrid size={14} />
-                            </button>
-                            <button onClick={() => setViewingProduct(prod)} className="btn btn-sm bg-white" style={{ border: '1px solid #00d2d3', color: '#00d2d3', padding: '0.25rem 0.4rem', borderRadius: '4px' }} title="View">
-                              <Eye size={14} />
-                            </button>
-                            <button onClick={() => handleEditClick(prod)} className="btn btn-sm bg-white" style={{ border: '1px solid #1c72b9', color: '#1c72b9', padding: '0.25rem 0.4rem', borderRadius: '4px' }} title="Edit">
-                              <Edit size={14} />
-                            </button>
-                            {user.role === 'Super Admin' && (
-                              <button onClick={() => handleDeleteClick(prod._id)} className="btn btn-sm bg-white" style={{ border: '1px solid #f1416c', color: '#f1416c', padding: '0.25rem 0.4rem', borderRadius: '4px' }} title="Delete">
-                                <Trash2 size={14} />
-                              </button>
-                            )}
+                        <td className="py-3">
+                          <div className="d-flex align-items-center gap-2">
+                            <Image
+                              src={prod.images[0] || 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=80'}
+                              alt={prod.name}
+                              className="rounded object-fit-cover"
+                              width={36}
+                              height={36}
+                              style={{ width: '36px', height: '36px' }}
+                            />
+                            <span className="fw-bold text-dark">{prod.name}</span>
                           </div>
                         </td>
-                      )}
-                    </tr>
-                  ))
-                )}
+                        <td>{prod.productType || 'Physical'}</td>
+                        <td>₹{prod.price || 0}</td>
+                        <td className="fw-semibold">
+                          ₹{prod.discount > 0 ? (
+                            prod.discountType === 'Percent'
+                              ? Math.round(prod.price * (1 - prod.discount / 100))
+                              : Math.max(0, prod.price - prod.discount)
+                          ) : prod.price}
+                        </td>
+                        <td className="text-center">
+                          <div className="form-check form-switch d-inline-block">
+                            <input
+                              className="form-check-input cursor-pointer"
+                              type="checkbox"
+                              checked={prod.isFeatured || false}
+                              onChange={(e) => handleToggle(prod._id, 'isFeatured', e.target.checked)}
+                            />
+                          </div>
+                        </td>
+                        <td className="text-center">
+                          <div className="form-check form-switch d-inline-block">
+                            <input
+                              className="form-check-input cursor-pointer"
+                              type="checkbox"
+                              checked={prod.isActive !== false}
+                              onChange={(e) => handleToggle(prod._id, 'isActive', e.target.checked)}
+                            />
+                          </div>
+                        </td>
+                        {user.role !== 'Staff' && (
+                          <td className="text-center">
+                            <div className="d-inline-flex gap-2">
+                              <button onClick={() => setViewingBarcode(prod)} className="btn btn-sm bg-white" style={{ border: '1px solid #00d2d3', color: '#00d2d3', padding: '0.25rem 0.4rem', borderRadius: '4px' }} title="Barcode">
+                                <LayoutGrid size={14} />
+                              </button>
+                              <button onClick={() => setViewingProduct(prod)} className="btn btn-sm bg-white" style={{ border: '1px solid #00d2d3', color: '#00d2d3', padding: '0.25rem 0.4rem', borderRadius: '4px' }} title="View">
+                                <Eye size={14} />
+                              </button>
+                              <button onClick={() => handleEditClick(prod)} className="btn btn-sm bg-white" style={{ border: '1px solid #1c72b9', color: '#1c72b9', padding: '0.25rem 0.4rem', borderRadius: '4px' }} title="Edit">
+                                <Edit size={14} />
+                              </button>
+                              {user.role === 'Super Admin' && (
+                                <button onClick={() => handleDeleteClick(prod._id)} className="btn btn-sm bg-white" style={{ border: '1px solid #f1416c', color: '#f1416c', padding: '0.25rem 0.4rem', borderRadius: '4px' }} title="Delete">
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -932,15 +983,15 @@ export default function AdminProductsPage() {
                 Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredProducts.length)} of {filteredProducts.length} entries
               </span>
               <div className="d-flex gap-2">
-                <button 
-                  onClick={handlePrevPage} 
+                <button
+                  onClick={handlePrevPage}
                   disabled={currentPage === 1}
                   className="btn btn-outline-secondary btn-sm px-3"
                 >
                   Previous
                 </button>
-                <button 
-                  onClick={handleNextPage} 
+                <button
+                  onClick={handleNextPage}
                   disabled={currentPage === totalPages}
                   className="btn btn-outline-secondary btn-sm px-3"
                 >
@@ -950,6 +1001,152 @@ export default function AdminProductsPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Category Manager Modal */}
+      {showCategoryModal && typeof document !== 'undefined' && createPortal(
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.65)', zIndex: 1050, backdropFilter: 'blur(6px)' }}>
+          <div className="card shadow-lg border-0 rounded-4" style={{ width: '720px', maxWidth: '95vw', maxHeight: '90vh', overflow: 'hidden' }}>
+            {/* Header */}
+            <div className="card-header bg-white d-flex justify-content-between align-items-center border-bottom pt-4 px-4 pb-3">
+              <div className="d-flex align-items-center gap-2">
+                <div className="rounded-circle p-2 d-flex align-items-center justify-content-center" style={{ backgroundColor: '#e8f5e9', color: '#2e7d32' }}>
+                  <LayoutGrid size={22} />
+                </div>
+                <div>
+                  <h5 className="fw-bold m-0 text-dark">Category & Subcategory Manager</h5>
+                  <small className="text-muted">Add, view, and organize product categories</small>
+                </div>
+              </div>
+              <button className="btn btn-sm btn-light rounded-circle p-2 d-flex align-items-center justify-content-center border" onClick={() => setShowCategoryModal(false)}>
+                <X size={18} className="text-muted" />
+              </button>
+            </div>
+
+            <div className="card-body p-4" style={{ overflowY: 'auto', maxHeight: 'calc(90vh - 85px)', backgroundColor: '#f8f9fa' }}>
+              {/* Form 1: Add Main Category */}
+              <div className="bg-white p-3 rounded-3 mb-4 border shadow-sm">
+                <h6 className="fw-bold text-dark mb-2 fs-7 text-uppercase d-flex align-items-center gap-2" style={{ letterSpacing: '0.05em', color: '#1b5e20' }}>
+                  <Tag size={15} style={{ color: '#2e7d32' }} /> Add New Main Category
+                </h6>
+                <form onSubmit={handleCreateCategory} className="d-flex gap-2">
+                  <input
+                    type="text"
+                    className="form-control form-control-lg fs-6"
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    required
+                    style={{ borderRadius: '8px', border: '1px solid #ced4da' }}
+                  />
+                  <button
+                    type="submit"
+                    className="btn px-4 text-nowrap d-flex align-items-center gap-2 fw-bold shadow-sm"
+                    style={{ backgroundColor: '#2e7d32', color: '#ffffff', borderRadius: '8px', border: 'none' }}
+                  >
+                    <Plus size={18} /> Add Category
+                  </button>
+                </form>
+              </div>
+
+              {/* Form 2: Add Subcategory to Category */}
+              <div className="bg-white p-3 rounded-3 mb-4 border shadow-sm">
+                <h6 className="fw-bold text-dark mb-2 fs-7 text-uppercase d-flex align-items-center gap-2" style={{ letterSpacing: '0.05em', color: '#0277bd' }}>
+                  <FolderPlus size={15} style={{ color: '#0288d1' }} /> Add Subcategory to Category
+                </h6>
+                <form onSubmit={handleAddSubCategory} className="row g-2">
+                  <div className="col-md-5">
+                    <select
+                      className="form-select form-select-lg fs-6"
+                      value={selectedCatForSub}
+                      onChange={(e) => setSelectedCatForSub(e.target.value)}
+                      required
+                      style={{ borderRadius: '8px', border: '1px solid #ced4da' }}
+                    >
+                      <option value="">Select Main Category...</option>
+                      {categories && categories.map(c => (
+                        <option key={c._id} value={c._id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-md-4">
+                    <input
+                      type="text"
+                      className="form-control form-control-lg fs-6"
+                      value={newSubCatName}
+                      onChange={(e) => setNewSubCatName(e.target.value)}
+                      required
+                      style={{ borderRadius: '8px', border: '1px solid #ced4da' }}
+                    />
+                  </div>
+                  <div className="col-md-3">
+                    <button
+                      type="submit"
+                      className="btn w-100 h-100 d-flex align-items-center justify-content-center gap-2 fw-bold shadow-sm"
+                      style={{ backgroundColor: '#0288d1', color: '#ffffff', borderRadius: '8px', border: 'none' }}
+                    >
+                      <Plus size={18} /> Add Sub
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Existing Categories & Subcategories List */}
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h6 className="fw-bold text-dark m-0 fs-7 text-uppercase" style={{ letterSpacing: '0.05em' }}>
+                  Active Categories ({categories?.length || 0})
+                </h6>
+              </div>
+
+              <div className="d-flex flex-column gap-3">
+                {categories && categories.length > 0 ? categories.map((cat) => (
+                  <div key={cat._id} className="border rounded-3 p-3 bg-white shadow-sm">
+                    <div className="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                      <h6 className="fw-bold m-0 text-dark d-flex align-items-center gap-2" style={{ fontSize: '15px' }}>
+                        <span className="badge rounded-pill bg-success-subtle text-success border border-success-subtle p-2">
+                          <Tag size={14} />
+                        </span>
+                        {cat.name}
+                      </h6>
+                      <button
+                        className="btn btn-sm btn-outline-danger px-3 py-1 d-flex align-items-center gap-1 fs-7 fw-semibold rounded-pill"
+                        onClick={() => handleDeleteCategory(cat._id, cat.name)}
+                        title="Delete entire category"
+                      >
+                        <Trash2 size={13} /> Delete Category
+                      </button>
+                    </div>
+
+                    <div className="d-flex flex-wrap align-items-center gap-2 mt-2">
+                      <span className="fs-7 text-muted me-1 fw-medium">Subcategories:</span>
+                      {cat.subCategories && cat.subCategories.length > 0 ? cat.subCategories.map((sub, idx) => (
+                        <span key={idx} className="badge bg-light text-dark border d-flex align-items-center gap-2 py-2 px-3 rounded-pill fs-7 fw-medium shadow-2xs">
+                          {sub}
+                          <button
+                            type="button"
+                            className="btn border-0 p-0 text-danger ms-1 d-flex align-items-center justify-content-center"
+                            style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#ffebee' }}
+                            onClick={() => handleDeleteSubCategory(cat._id, sub)}
+                            title="Remove subcategory"
+                          >
+                            <X size={11} />
+                          </button>
+                        </span>
+                      )) : (
+                        <span className="text-muted fs-7 italic">No subcategories added yet</span>
+                      )}
+                    </div>
+                  </div>
+                )) : (
+                  <div className="text-center py-5 bg-white rounded-3 border">
+                    <p className="text-muted m-0">No categories added yet.</p>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
     </div>

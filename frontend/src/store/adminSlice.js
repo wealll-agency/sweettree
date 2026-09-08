@@ -8,6 +8,7 @@ const REFUNDS_URL = '/refunds';
 const DELHIVERY_URL = '/delhivery';
 const WAREHOUSES_URL = '/warehouses';
 const COUPONS_URL = '/coupons';
+const CATEGORIES_URL = '/categories';
 
 export const fetchDashboardStats = createAsyncThunk(
   'admin/fetchDashboardStats',
@@ -342,6 +343,66 @@ export const markInventoryAsRead = createAsyncThunk(
   }
 );
 
+export const fetchCategories = createAsyncThunk(
+  'admin/fetchCategories',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(CATEGORIES_URL);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch categories');
+    }
+  }
+);
+
+export const createCategoryAction = createAsyncThunk(
+  'admin/createCategory',
+  async (categoryData, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(CATEGORIES_URL, categoryData);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to create category');
+    }
+  }
+);
+
+export const addSubCategoryAction = createAsyncThunk(
+  'admin/addSubCategory',
+  async ({ categoryId, subCategory }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${CATEGORIES_URL}/${categoryId}/subcategories`, { subCategory });
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to add subcategory');
+    }
+  }
+);
+
+export const deleteCategoryAction = createAsyncThunk(
+  'admin/deleteCategory',
+  async (id, { rejectWithValue }) => {
+    try {
+      await axios.delete(`${CATEGORIES_URL}/${id}`);
+      return id;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete category');
+    }
+  }
+);
+
+export const deleteSubCategoryAction = createAsyncThunk(
+  'admin/deleteSubCategory',
+  async ({ categoryId, subCategory }, { rejectWithValue }) => {
+    try {
+      const response = await axios.delete(`${CATEGORIES_URL}/${categoryId}/subcategories`, { data: { subCategory } });
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete subcategory');
+    }
+  }
+);
+
 const adminSlice = createSlice({
   name: 'admin',
   initialState: {
@@ -365,6 +426,7 @@ const adminSlice = createSlice({
     shipmentsCurrentPage: 1,
     selectedShipment: null,
     warehouses: [],
+    categories: [],
     loading: false,
     ordersLoading: false,
     productsLoading: false,
@@ -541,8 +603,32 @@ const adminSlice = createSlice({
         if (index > -1) {
           state.lowStockDetails[index] = action.payload;
         }
-        if (state.sidebarStats.lowStockItems > 0) {
-          state.sidebarStats.lowStockItems -= 1;
+      })
+      // Category Reducers
+      .addCase(fetchCategories.fulfilled, (state, action) => {
+        state.categories = action.payload;
+      })
+      .addCase(createCategoryAction.fulfilled, (state, action) => {
+        const index = state.categories.findIndex(c => c._id === action.payload._id);
+        if (index !== -1) {
+          state.categories[index] = action.payload;
+        } else {
+          state.categories.push(action.payload);
+        }
+      })
+      .addCase(addSubCategoryAction.fulfilled, (state, action) => {
+        const index = state.categories.findIndex(c => c._id === action.payload._id);
+        if (index !== -1) {
+          state.categories[index] = action.payload;
+        }
+      })
+      .addCase(deleteCategoryAction.fulfilled, (state, action) => {
+        state.categories = state.categories.filter(c => c._id !== action.payload);
+      })
+      .addCase(deleteSubCategoryAction.fulfilled, (state, action) => {
+        const index = state.categories.findIndex(c => c._id === action.payload._id);
+        if (index !== -1) {
+          state.categories[index] = action.payload;
         }
       });
   }

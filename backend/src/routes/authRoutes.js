@@ -13,12 +13,11 @@ import {
   updateSystemSettings
 } from '../controllers/authController.js';
 import { protect, authorizeRoles } from '../middleware/auth.js';
-import { authLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
-router.post('/register', authLimiter, registerUser);
-router.post('/login', authLimiter, loginUser);
+router.post('/register', registerUser);
+router.post('/login', loginUser);
 router.post('/logout', protect, logoutUser);
 router.post('/refresh', refreshTokenUser);
 router.route('/profile')

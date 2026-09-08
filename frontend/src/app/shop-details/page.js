@@ -49,25 +49,28 @@ function ShopDetailsContent() {
     if (productIdParam) {
       dispatch(fetchProductDetails(productIdParam));
       dispatch(fetchProductReviews(productIdParam));
-    } else {
-      // Fetch public list to match by name
-      dispatch(fetchProducts({ limit: 100 }));
+    } else if (productNameParam && products && products.length > 0) {
+      const searchName = productNameParam.toLowerCase().trim();
+      const matched = products.find(p => p.name.toLowerCase().trim() === searchName);
+      if (matched) {
+        dispatch(fetchProductDetails(matched._id));
+        dispatch(fetchProductReviews(matched._id));
+      }
+    } else if (!products || products.length === 0) {
+      dispatch(fetchProducts());
     }
-  }, [dispatch, productIdParam]);
+  }, [dispatch, productIdParam, productNameParam, products]);
 
   // 2. Resolve the real product: either the fetched selectedProduct (if id param) or matched from list (if name param)
-  let realProduct = null;
-  if (productIdParam) {
-    if (selectedProduct && selectedProduct._id === productIdParam) {
-      realProduct = selectedProduct;
-    }
-  } else if (productNameParam && products && products.length > 0) {
-    realProduct = products.find(p => {
-      const pName = p.name.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
-      const searchName = productNameParam.toLowerCase().replace(/\.\.\./g, '').replace(/[^a-zA-Z0-9]/g, '');
-      return pName.includes(searchName) || searchName.includes(pName);
-    });
-  }
+  const realProduct = selectedProduct || (products && products.length > 0 ? (
+    productIdParam
+      ? products.find(p => p._id === productIdParam)
+      : products.find(p => {
+          const pName = p.name.toLowerCase().trim();
+          const searchName = productNameParam.toLowerCase().trim();
+          return pName.includes(searchName) || searchName.includes(pName);
+        })
+  ) : null);
 
   // 3. If matched by name, dispatch its reviews
   useEffect(() => {
@@ -136,15 +139,13 @@ function ShopDetailsContent() {
       name: realProduct.name,
       price: finalPrice,
       discount: 0, // already applied
-      image: realProduct.images?.[0] || '/top_product1.png',
-      stock: realProduct.stock || 100
+      image: realProduct.images && realProduct.images.length > 0 ? realProduct.images[0] : '/placeholder.png',
+      unit: selectedPack || defaultPackName,
+      unitValue: 1,
+      stock: realProduct.stock,
+      category: realProduct.category
     };
-    
-    dispatch(addToCart({
-      product: mockProduct,
-      quantity,
-      size: selectedPack || defaultPackName
-    }));
+    dispatch(addToCart({ product: mockProduct, quantity, packSize: selectedPack || defaultPackName }));
 
     if (typeof window !== 'undefined' && window.bootstrap) {
       const offcanvas = document.getElementById('cartOffcanvas');
@@ -188,13 +189,19 @@ function ShopDetailsContent() {
       return;
     }
 
-    dispatch(submitProductReview({ productId: realProduct._id, rating, comment: comment.trim() }))
+    const formData = new FormData();
+    formData.append('productId', realProduct._id);
+    formData.append('rating', rating);
+    formData.append('comment', comment.trim());
+
+    dispatch(submitProductReview(formData))
       .unwrap()
       .then(() => {
         setReviewSuccess('Review submitted successfully!');
         setComment('');
         setRating(5);
         setReviewError('');
+        dispatch(fetchProductReviews(realProduct._id));
       })
       .catch((err) => {
         setReviewError(err || 'Failed to submit review. You can only review once and must buy this product first.');
@@ -500,36 +507,63 @@ function ShopDetailsContent() {
       </div>
 
       {/* Customer Reviews Section (Always Visible) */}
-      <div className="mb-5 animate-fade-in text-start">
-        <h5 className="fw-bold mb-4 text-uppercase" style={{ fontSize: '16px', letterSpacing: '0.05em', color: '#005B6E' }}>Customer Reviews ({reviews.length})</h5>
-        <div className="row g-4">
+      <div className="mb-5 animate-fade-in text-start border-top pt-5">
+        <h3 className="fw-bold mb-4" style={{ color: '#111' }}>Customer Reviews</h3>
+        <div className="row g-5">
           
           {/* Reviews List */}
-          <div className="col-lg-7">
-            <h5 className="fw-bold mb-4">Customer Feedback</h5>
-            
+          <div className="col-lg-8">
             {reviewsLoading ? (
               <p className="text-muted">Loading reviews...</p>
             ) : reviews.length === 0 ? (
-              <p className="text-muted">No reviews yet for this product. Be the first to write a review!</p>
+              <div className="text-center py-5 bg-light rounded-3">
+                <MessageCircle size={48} className="text-muted mb-3 opacity-50" />
+                <h5 className="fw-bold text-dark">No reviews yet</h5>
+                <p className="text-muted">Be the first to review this product!</p>
+              </div>
             ) : (
-              <div className="d-flex flex-column gap-3">
+              <div className="d-flex flex-column gap-4">
                 {reviews.map((rev) => (
-                  <div key={rev._id} className="border-bottom pb-3">
-                    <div className="d-flex align-items-center justify-content-between mb-2">
-                      <h6 className="fw-bold m-0">{rev.user?.name || 'Anonymous User'}</h6>
-                      <small className="text-muted">{new Date(rev.createdAt).toLocaleDateString()}</small>
+                  <div key={rev._id} className="pb-4 border-bottom">
+                    <div className="d-flex align-items-center gap-2 mb-2">
+                      <div className="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style={{ width: '36px', height: '36px', fontSize: '14px', fontWeight: 'bold' }}>
+                        {(rev.user?.name || 'A')[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <h6 className="fw-bold m-0" style={{ fontSize: '15px' }}>{rev.user?.name || 'Amazon Customer'}</h6>
+                      </div>
                     </div>
                     
                     <div className="d-flex align-items-center gap-2 mb-2">
                       <div className="d-flex text-warning">
                         {[...Array(rev.rating).keys()].map(x => <Star key={x} fill="#F59E0B" color="#F59E0B" size={14} />)}
+                        {[...Array(5 - rev.rating).keys()].map(x => <Star key={x} color="#ddd" size={14} />)}
                       </div>
                       {rev.isVerifiedPurchase && (
-                        <span className="badge bg-success-subtle text-success fs-8">Verified Purchase</span>
+                        <span className="text-success fw-bold" style={{ fontSize: '12px' }}>Verified Purchase</span>
                       )}
                     </div>
-                    <p className="text-muted m-0 fs-7">{rev.comment}</p>
+                    
+                    <small className="text-muted d-block mb-3">Reviewed on {new Date(rev.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</small>
+                    <p className="m-0 text-dark mb-3" style={{ fontSize: '15px', lineHeight: '1.6' }}>{rev.comment}</p>
+                    
+                    {rev.images && rev.images.length > 0 && (
+                      <div className="d-flex gap-2 flex-wrap mt-2">
+                        {rev.images.map((img, idx) => (
+                          <div key={idx} className="border rounded overflow-hidden" style={{ width: '80px', height: '80px', cursor: 'pointer' }}>
+                            <a href={getImageUrl(img)} target="_blank" rel="noopener noreferrer">
+                              <Image 
+                                src={getImageUrl(img)} 
+                                width={80} 
+                                height={80} 
+                                alt="Review Image" 
+                                className="img-fluid w-100 h-100 object-fit-cover"
+                              />
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -537,49 +571,52 @@ function ShopDetailsContent() {
           </div>
 
           {/* Write a Review Form */}
-          <div className="col-lg-5">
-            <div className="bg-light p-4 rounded-0 rounded-lg-3 border-0 border-top border-bottom border-lg mx-n4 mx-lg-0">
-              <h5 className="fw-bold mb-3">Write a Review</h5>
+          <div className="col-lg-4">
+            <div className="bg-white border rounded-3 p-4 shadow-sm position-sticky" style={{ top: '100px' }}>
+              <h4 className="fw-bold mb-4 border-bottom pb-3">Review this product</h4>
+              <p className="text-muted fs-7 mb-4">Share your thoughts with other customers</p>
               
               {user ? (
                 <form onSubmit={handleReviewSubmit}>
-                  <div className="mb-3">
-                    <label className="fw-medium mb-1">Rating</label>
-                    <select 
-                      className="form-select"
-                      value={rating}
-                      onChange={(e) => setRating(Number(e.target.value))}
-                    >
-                      <option value="5">5 Stars (Excellent)</option>
-                      <option value="4">4 Stars (Good)</option>
-                      <option value="3">3 Stars (Average)</option>
-                      <option value="2">2 Stars (Poor)</option>
-                      <option value="1">1 Star (Very Poor)</option>
-                    </select>
+                  <div className="mb-4">
+                    <label className="fw-bold mb-2 text-dark fs-6">Overall rating</label>
+                    <div className="d-flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star 
+                          key={star} 
+                          size={28} 
+                          className="cursor-pointer" 
+                          fill={star <= rating ? "#F59E0B" : "none"} 
+                          color={star <= rating ? "#F59E0B" : "#ccc"} 
+                          onClick={() => setRating(star)} 
+                        />
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="mb-3">
-                    <label className="fw-medium mb-1">Your Comment</label>
+                  <div className="mb-4">
+                    <label className="fw-bold mb-2 text-dark fs-6">Written review</label>
                     <textarea
                       rows="4"
                       className="form-control"
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
+                      style={{ fontSize: '14px', resize: 'none' }}
                     ></textarea>
                   </div>
 
-                  {reviewError && <div className="alert alert-danger p-2 fs-7 mb-3">{reviewError}</div>}
-                  {reviewSuccess && <div className="alert alert-success p-2 fs-7 mb-3">{reviewSuccess}</div>}
+                  {reviewError && <div className="alert alert-danger p-2 fs-7 mb-3"><i className="fas fa-exclamation-circle me-1"></i> {reviewError}</div>}
+                  {reviewSuccess && <div className="alert alert-success p-2 fs-7 mb-3"><i className="fas fa-check-circle me-1"></i> {reviewSuccess}</div>}
 
-                  <button type="submit" className="btn btn-brand w-100 py-2" style={{ backgroundColor: '#005B6E', border: '1px solid #005B6E', color: 'white' }}>
-                    Submit Review
+                  <button type="submit" className="btn w-100 py-2 fw-bold" style={{ backgroundColor: '#FFD814', color: '#111', border: '1px solid #FCD200', borderRadius: '8px' }}>
+                    Submit
                   </button>
                 </form>
               ) : (
                 <div className="text-center py-3">
-                  <MessageCircle className="text-muted mb-2" size={32} />
-                  <p className="text-muted fs-7 mb-3">You must be logged in to review products.</p>
-                  <Link href="/login" className="btn btn-brand btn-sm" style={{ backgroundColor: '#005B6E', color: 'white' }}>Log In</Link>
+                  <button onClick={() => router.push('/login')} className="btn w-100 py-2 fw-bold" style={{ backgroundColor: '#fff', color: '#111', border: '1px solid #D5D9D9', borderRadius: '8px', boxShadow: '0 2px 5px rgba(15,17,17,.15)' }}>
+                    Write a customer review
+                  </button>
                 </div>
               )}
             </div>

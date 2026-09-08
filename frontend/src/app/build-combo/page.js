@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { Star, ShoppingCart } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
 import api from '../../utils/axiosConfig';
+import SlidingTicker from '../../components/SlidingTicker';
 
 export default function BuildComboPage() {
   return (
@@ -81,11 +82,7 @@ function ComboListingContent() {
 
   return (
     <>
-      <div className="marquee-wrapper">
-        <marquee behavior="scroll" direction="left" scrollamount="5">
-          || 🥜 Sweettree Anmol Jumbo Nuts - Extra 10% OFF! 🥜 || 🎁 Nuts For Savings 🎁 || 🔥 PayDay Sale Is LIVE - Extra 15% OFF Sitewide! 🔥 ||
-        </marquee>
-      </div>
+      <SlidingTicker />
 
       {/* Combo Box Banner */}
       <section className="shop-banner">

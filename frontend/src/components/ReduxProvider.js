@@ -54,7 +54,7 @@ function StateHydrator() {
 
     // Session Restoration on Startup
     const initAuth = async () => {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://www.sweettreeon.com/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:7050/api' : 'https://www.sweettreeon.com/api');
       
       // Optimistic session restoration from localStorage
       const localUser = localStorage.getItem('sweettree_user');
@@ -90,7 +90,7 @@ function StateHydrator() {
       async (error) => {
         const originalRequest = error.config;
         if (error.response && error.response.status === 401 && !originalRequest._retry) {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://www.sweettreeon.com/api';
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:7050/api' : 'https://www.sweettreeon.com/api');
           // Don't retry if it's the login or refresh endpoint itself
           if (originalRequest.url && (originalRequest.url.includes('/login') || originalRequest.url.includes('/refresh'))) {
             return Promise.reject(error);

@@ -4,6 +4,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import api from '../../utils/axiosConfig';
 
+import SlidingTicker from '../../components/SlidingTicker';
+
 export default function AboutPage() {
   const [banners, setBanners] = useState({});
 
@@ -29,11 +31,7 @@ export default function AboutPage() {
 
   return (
     <>
-      <div className="marquee-wrapper">
-        <marquee behavior="scroll" direction="left" scrollamount="5">
-          || 🥜 Sweettree Anmol Jumbo Nuts - Extra 10% OFF! 🥜 || 🎁 Nuts For Savings 🎁 || 🔥 PayDay Sale Is LIVE - Extra 15% OFF Sitewide! 🔥 ||
-        </marquee>
-      </div>
+      <SlidingTicker />
 
       {/* Breadcrumb Banner */}
       <section 
