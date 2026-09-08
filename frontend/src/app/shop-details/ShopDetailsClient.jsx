@@ -14,6 +14,52 @@ import api from '../../utils/axiosConfig';
 import { useNotification } from '../../context/NotificationContext';
 import ProductCard from '../../components/ProductCard';
 
+function slugify(text) {
+  if (!text) return '';
+  return text.toString().trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-');
+}
+
+function matchesProduct(product, query) {
+  if (!product || !query) return false;
+  const decoded = decodeURIComponent(query).toLowerCase().trim();
+  const prodId = product._id ? product._id.toString() : '';
+  if (prodId === decoded) return true;
+
+  const prodName = product.name ? product.name.toLowerCase().trim() : '';
+  const prodSlug = slugify(product.name).toLowerCase();
+  const querySlug = slugify(decoded).toLowerCase();
+
+  return (
+    prodName === decoded ||
+    prodSlug === querySlug ||
+    prodName.replace(/[^a-z0-9]/g, '') === decoded.replace(/[^a-z0-9]/g, '')
+  );
+}
+
+function extractQuery(searchParams) {
+  if (!searchParams) return '';
+  if (searchParams.get('id')) return searchParams.get('id');
+  if (searchParams.get('name')) return searchParams.get('name');
+  for (const [key] of searchParams.entries()) {
+    if (key && key !== 'id' && key !== 'name') {
+      return key;
+    }
+  }
+  if (typeof window !== 'undefined' && window.location.search) {
+    const rawSearch = window.location.search.replace(/^\?/, '');
+    if (rawSearch) {
+      const firstPart = rawSearch.split('&')[0];
+      if (!firstPart.startsWith('id=') && !firstPart.startsWith('name=')) {
+        return decodeURIComponent(firstPart);
+      }
+    }
+  }
+  return '';
+}
+
 export default function ShopDetailsClient({ initialProduct }) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -40,48 +86,45 @@ export default function ShopDetailsClient({ initialProduct }) {
     setMounted(true);
   }, []);
 
-  const productIdParam = searchParams.get('id');
-  const productNameParam = searchParams.get('name') || '';
+  const query = extractQuery(searchParams);
 
-  // 1. Dispatch fetch details and reviews
+  // Resolve the real product matching current URL query strictly:
+  // 1. Check initialProduct (if matches query)
+  // 2. Check selectedProduct (if matches query)
+  // 3. Check products list (if matches query)
+  // 4. Fallback to initialProduct
+  const realProduct = (initialProduct && matchesProduct(initialProduct, query) ? initialProduct : null) ||
+    (selectedProduct && matchesProduct(selectedProduct, query) ? selectedProduct : null) ||
+    (products && products.length > 0 ? products.find(p => matchesProduct(p, query)) : null) ||
+    (initialProduct || null);
+
+  // Dispatch fetch details and reviews for the target product
   useEffect(() => {
-    if (productIdParam) {
-      dispatch(fetchProductDetails(productIdParam));
-      dispatch(fetchProductReviews(productIdParam));
-    } else if (productNameParam && products && products.length > 0) {
-      const searchName = productNameParam.toLowerCase().trim();
-      const matched = products.find(p => p.name.toLowerCase().trim() === searchName);
-      if (matched) {
-        dispatch(fetchProductDetails(matched._id));
-        dispatch(fetchProductReviews(matched._id));
+    if (!query) return;
+
+    let targetId = null;
+    if (/^[0-9a-fA-F]{24}$/.test(query)) {
+      targetId = query;
+    } else if (realProduct && realProduct._id) {
+      targetId = realProduct._id;
+    } else if (products && products.length > 0) {
+      const matched = products.find(p => matchesProduct(p, query));
+      if (matched) targetId = matched._id;
+    }
+
+    if (targetId) {
+      if (!selectedProduct || selectedProduct._id !== targetId) {
+        dispatch(fetchProductDetails(targetId));
       }
+      dispatch(fetchProductReviews(targetId));
     } else if (!products || products.length === 0) {
       dispatch(fetchProducts());
     }
-  }, [dispatch, productIdParam, productNameParam, products]);
+  }, [dispatch, query, products, realProduct, selectedProduct]);
 
-  // 2. Resolve the real product: selectedProduct from Redux -> initialProduct from SSR -> matched from products list
-  const realProduct = selectedProduct || (initialProduct && initialProduct._id === productIdParam ? initialProduct : null) || initialProduct || (products && products.length > 0 ? (
-    productIdParam
-      ? products.find(p => p._id === productIdParam)
-      : products.find(p => {
-          const pName = p.name.toLowerCase().trim();
-          const searchName = productNameParam.toLowerCase().trim();
-          return pName.includes(searchName) || searchName.includes(pName);
-        })
-  ) : null);
-
-  // 3. If matched by name, dispatch its reviews
+  // Automatically sync address bar URL to product slug
   useEffect(() => {
-    if (realProduct && !productIdParam) {
-      dispatch(fetchProductReviews(realProduct._id));
-    }
-  }, [dispatch, realProduct, productIdParam]);
-
-  // 4. Automatically sync address bar URL to product name
-  useEffect(() => {
-    if (realProduct && realProduct.name && typeof window !== 'undefined') {
-      const slugify = (text) => text.toString().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-');
+    if (realProduct && realProduct.name && query && matchesProduct(realProduct, query) && typeof window !== 'undefined') {
       const productSlug = slugify(realProduct.name);
       const targetUrl = `/shop-details?${productSlug}`;
       const currentSearch = window.location.search;
@@ -89,7 +132,7 @@ export default function ShopDetailsClient({ initialProduct }) {
         window.history.replaceState(null, '', targetUrl);
       }
     }
-  }, [realProduct]);
+  }, [realProduct, query]);
 
   const defaultPackName = realProduct ? `${realProduct.unitValue || 1} ${realProduct.unit || 'Pack'}` : '';
   const [selectedPack, setSelectedPack] = useState('');
