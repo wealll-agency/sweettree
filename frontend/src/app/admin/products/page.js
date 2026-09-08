@@ -101,6 +101,9 @@ export default function AdminProductsPage() {
   const [unit, setUnit] = useState('kg');
   const [unitValue, setUnitValue] = useState('');
   const [searchTags, setSearchTags] = useState('');
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
+  const [metaKeywords, setMetaKeywords] = useState('');
   const [packSizes, setPackSizes] = useState([]); // [{ weight: 250, unit: 'g', price: 200 }]
 
   const [price, setPrice] = useState(''); // Represents MRP (Unit Price)
@@ -217,6 +220,9 @@ export default function AdminProductsPage() {
     setUnit('kg');
     setUnitValue('');
     setSearchTags('');
+    setMetaTitle('');
+    setMetaDescription('');
+    setMetaKeywords('');
     setPackSizes([]);
     setPrice('');
     setPurchasePrice('0');
@@ -254,6 +260,9 @@ export default function AdminProductsPage() {
     setUnit(product.unit || 'kg');
     setUnitValue(product.unitValue || '');
     setSearchTags(product.searchTags ? product.searchTags.join(', ') : '');
+    setMetaTitle(product.metaTitle || '');
+    setMetaDescription(product.metaDescription || '');
+    setMetaKeywords(product.metaKeywords ? product.metaKeywords.join(', ') : (product.searchTags ? product.searchTags.join(', ') : ''));
     setPackSizes(product.packSizes || []);
     setPrice(product.price.toString());
     setPurchasePrice(product.purchasePrice ? product.purchasePrice.toString() : '0');
@@ -315,6 +324,9 @@ export default function AdminProductsPage() {
     // Currently backend: `const { ingredients } = req.body;` If it's a string, `ingredients || []` will be a string. 
     // Let's pass them exactly as the user typed, and we will update backend to parse if needed.
     payload.append('searchTags', searchTags);
+    payload.append('metaTitle', metaTitle);
+    payload.append('metaDescription', metaDescription);
+    payload.append('metaKeywords', metaKeywords);
     payload.append('price', price);
     payload.append('purchasePrice', purchasePrice);
     payload.append('minOrderQty', minOrderQty);
@@ -862,6 +874,48 @@ export default function AdminProductsPage() {
                   <div className="col-md-3">
                     <label className="fw-medium mb-1 fs-7">Shipping Cost (₹)</label>
                     <input type="number" className="form-control" value={shippingCost} onChange={(e) => setShippingCost(e.target.value)} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SEO Section Card */}
+            <div className="card shadow-sm border-0 rounded-4 bg-white mb-4">
+              <div className="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <h6 className="fw-bold m-0 text-dark d-flex align-items-center gap-2">
+                  <i className="fas fa-search text-muted"></i> SEO Section & Meta Information
+                </h6>
+              </div>
+              <div className="card-body">
+                <div className="row g-4">
+                  <div className="col-md-12">
+                    <label className="fw-medium mb-1 fs-7">Meta Title (SEO Title)</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={metaTitle}
+                      onChange={(e) => setMetaTitle(e.target.value)}
+                    />
+                    <small className="text-muted fs-8">Leave empty to automatically use Product Name | SweetTree</small>
+                  </div>
+                  <div className="col-md-12">
+                    <label className="fw-medium mb-1 fs-7">Meta Description (SEO Description)</label>
+                    <textarea
+                      rows="3"
+                      className="form-control"
+                      value={metaDescription}
+                      onChange={(e) => setMetaDescription(e.target.value)}
+                    ></textarea>
+                    <small className="text-muted fs-8">Recommended length: 150-160 characters</small>
+                  </div>
+                  <div className="col-md-12">
+                    <label className="fw-medium mb-1 fs-7">Meta Keywords / Search Tags (Comma-separated)</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={metaKeywords}
+                      onChange={(e) => setMetaKeywords(e.target.value)}
+                    />
                   </div>
                 </div>
               </div>

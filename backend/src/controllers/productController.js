@@ -131,6 +131,7 @@ export const getProductById = async (req, res, next) => {
 export const createProduct = async (req, res, next) => {
   const { 
     name, category, subCategory, subSubCategory, brand, productType, sku, unit, unitValue, searchTags, 
+    metaTitle, metaDescription, metaKeywords,
     price, purchasePrice, minOrderQty, discount, discountType, taxAmount, taxCalculation, 
     shippingCost, shippingMultiplyWithQty, isFeatured, isActive, showOnHomepage, manualTopSelling, newArrival,
     description, ingredients, benefits, images, videos, batchNumber, expiryDate, stock, packSizes, warehouse
@@ -171,7 +172,10 @@ export const createProduct = async (req, res, next) => {
       sku: sku || '',
       unit: unit || 'kg',
       unitValue: unitValue ? Number(unitValue) : 1,
-      searchTags: searchTags || [],
+      searchTags: typeof searchTags === 'string' ? searchTags.split(',').map(s => s.trim()).filter(Boolean) : (searchTags || []),
+      metaTitle: metaTitle || '',
+      metaDescription: metaDescription || '',
+      metaKeywords: typeof metaKeywords === 'string' ? metaKeywords.split(',').map(k => k.trim()).filter(Boolean) : (metaKeywords || []),
       price,
       purchasePrice: purchasePrice || 0,
       minOrderQty: minOrderQty || 1,
@@ -239,7 +243,10 @@ export const updateProduct = async (req, res, next) => {
       product.sku = req.body.sku !== undefined ? req.body.sku : product.sku;
       product.unit = req.body.unit || product.unit;
       product.unitValue = req.body.unitValue !== undefined ? Number(req.body.unitValue) : product.unitValue;
-      product.searchTags = req.body.searchTags || product.searchTags;
+      product.searchTags = req.body.searchTags !== undefined ? (typeof req.body.searchTags === 'string' ? req.body.searchTags.split(',').map(s => s.trim()).filter(Boolean) : req.body.searchTags) : product.searchTags;
+      product.metaTitle = req.body.metaTitle !== undefined ? req.body.metaTitle : product.metaTitle;
+      product.metaDescription = req.body.metaDescription !== undefined ? req.body.metaDescription : product.metaDescription;
+      product.metaKeywords = req.body.metaKeywords !== undefined ? (typeof req.body.metaKeywords === 'string' ? req.body.metaKeywords.split(',').map(k => k.trim()).filter(Boolean) : req.body.metaKeywords) : product.metaKeywords;
       
       product.price = req.body.price !== undefined ? req.body.price : product.price;
       product.purchasePrice = req.body.purchasePrice !== undefined ? req.body.purchasePrice : product.purchasePrice;

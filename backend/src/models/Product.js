@@ -11,6 +11,9 @@ const productSchema = new mongoose.Schema({
   unit: { type: String, default: 'kg' },
   unitValue: { type: Number, default: 1 },
   searchTags: [{ type: String }],
+  metaTitle: { type: String, default: '' },
+  metaDescription: { type: String, default: '' },
+  metaKeywords: [{ type: String }],
   
   price: { type: Number, required: true, min: 0 }, // This represents Unit Price
   purchasePrice: { type: Number, default: 0, min: 0 },
