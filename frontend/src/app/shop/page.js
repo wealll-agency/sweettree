@@ -1,7 +1,13 @@
 'use client';
+import { TagsSection } from '../../components/HomeSections';
 import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, Pagination, Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/css/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '../../store/productsSlice.js';
 import ProductCard from '../../components/ProductCard.jsx';
@@ -21,6 +27,7 @@ function ShopContent() {
   const [priceFrom, setPriceFrom] = useState('');
   const [filters, setFilters] = useState({});
   const [promotionalBanners, setPromotionalBanners] = useState([]);
+  const [isLoadingBanners, setIsLoadingBanners] = useState(true);
   const [priceTo, setPriceTo] = useState('');
   const [selectedStock, setSelectedStock] = useState('In Stock'); // Default to In Stock
   const [selectedBrand, setSelectedBrand] = useState(null);
@@ -39,7 +46,10 @@ function ShopContent() {
             setPromotionalBanners(promoBanners);
           }
         }
-      } catch (error) {}
+      } catch (error) {
+      } finally {
+        setIsLoadingBanners(false);
+      }
     };
     fetchBanners();
   }, []);
@@ -222,27 +232,7 @@ function ShopContent() {
         </div>
       </div>
 
-      {/* Brand Filter */}
-      <div className="filter-section border-top py-3">
-        <div className="d-flex justify-content-between align-items-center filter-toggle collapse-indicator" data-bs-toggle="collapse" data-bs-target={`#${prefix}brandFilter`}>
-          <span className="fw-bold" style={{ fontSize: '14px' }}>Brand</span>
-          <i className="fas fa-minus small"></i>
-        </div>
-        <div id={`${prefix}brandFilter`} className="collapse show mt-3">
-          <div className="d-flex flex-wrap gap-2">
-            {['Sweettree', 'Sweettree ANMOL', 'Sweettree SNACKRITE'].map((brand) => (
-              <button
-                key={brand}
-                onClick={() => setSelectedBrand(selectedBrand === brand ? null : brand)}
-                className="filter-tag-btn"
-                style={selectedBrand === brand ? { backgroundColor: 'var(--primary-color)', color: '#fff', borderColor: 'var(--primary-color)' } : {}}
-              >
-                {brand}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+
 
       {/* Discount Filter */}
       <div className="filter-section border-top py-3">
@@ -298,21 +288,50 @@ function ShopContent() {
       <section className="shop-banner">
         <div className="container-fluid px-1 px-md-4 px-lg-5">
           <div className="shop_banner_image">
-            {promotionalBanners.length > 0 ? (
-              promotionalBanners.map(banner => (
-                <a href={banner.targetLink || '#'} key={banner._id}>
-                  <Image 
-                    src={banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : ''}${banner.image}`} 
-                    alt={banner.title || "Shop Banner"} 
-                    width={1920} 
-                    height={300} 
-                    priority={true} 
-                    style={{ width: '100%', aspectRatio: '1920/300', objectFit: 'cover', display: 'block', marginBottom: '15px' }} 
-                  />
-                </a>
-              ))
+            {isLoadingBanners ? (
+              <div className="placeholder-glow w-100" style={{ maxWidth: '1920px' }}>
+                <div className="placeholder bg-light" style={{ width: '100%', height: '300px', display: 'block', borderRadius: '15px', marginBottom: '15px' }}></div>
+              </div>
+            ) : promotionalBanners.length > 1 ? (
+              <Swiper
+                modules={[Autoplay, Pagination, Navigation]}
+                spaceBetween={0}
+                slidesPerView={1}
+                autoplay={{ delay: 3000, disableOnInteraction: false }}
+                pagination={{ clickable: true }}
+                navigation={true}
+                loop={true}
+                style={{ marginBottom: '15px', borderRadius: '15px', overflow: 'hidden' }}
+                className="shop-banner-swiper"
+              >
+                {promotionalBanners.map((banner, index) => (
+                  <SwiperSlide key={banner._id}>
+                    <a href={banner.targetLink || '#'}>
+                      <Image 
+                        src={banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : ''}${banner.image}`} 
+                        alt={banner.title || "Shop Banner"} 
+                        width={2172} 
+                        height={724} 
+                        priority={index === 0} 
+                        style={{ width: '100%', height: 'auto', aspectRatio: '2172/724', display: 'block' }} 
+                      />
+                    </a>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            ) : promotionalBanners.length === 1 ? (
+              <a href={promotionalBanners[0].targetLink || '#'}>
+                <Image 
+                  src={promotionalBanners[0].image.startsWith('http') || promotionalBanners[0].image.startsWith('/') ? promotionalBanners[0].image : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : ''}${promotionalBanners[0].image}`} 
+                  alt={promotionalBanners[0].title || "Shop Banner"} 
+                  width={2172} 
+                  height={724} 
+                  priority={true} 
+                  style={{ width: '100%', height: 'auto', aspectRatio: '2172/724', display: 'block', marginBottom: '15px', borderRadius: '15px' }} 
+                />
+              </a>
             ) : (
-              <Image src="/shop_banner.jpg" alt="Shop Banner" width={1920} height={300} priority={true} style={{ width: '100%', aspectRatio: '1920/300', objectFit: 'cover', display: 'block' }} />
+              <Image src="/shop_banner.jpg" alt="Shop Banner" width={2172} height={724} priority={true} style={{ width: '100%', height: 'auto', aspectRatio: '2172/724', display: 'block', borderRadius: '15px' }} />
             )}
           </div>
         </div>
@@ -428,7 +447,7 @@ function ShopContent() {
                           <div className="col-8 col-md-9 ps-3 ps-md-4">
                             <div className="d-flex justify-content-between align-items-start">
                               <div>
-                                <span className="badge bg-light text-dark border mb-1">{product.brand || 'Sweettree'}</span>
+                                <span className="badge bg-light text-dark border mb-1">sweettreeon</span>
                                 <h5 className="fw-bold text-dark mb-1">{product.name}</h5>
                                 <p className="text-muted fs-7 mb-2 text-truncate-2" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.description}</p>
                               </div>
@@ -471,18 +490,7 @@ function ShopContent() {
       </div>
       
       {/* People Are Also Looking For Section */}
-      <section className="tags-section bg-white py-5">
-        <div className="container-fluid px-4 px-lg-5 py-3">
-          <h3 className="mb-4 text-start" style={{ fontSize: '24px', color: '#333' }}>People Are Also Looking For</h3>
-          <div className="d-flex flex-wrap gap-2">
-            <Link href="/shop?keyword=Cashew" className="search-tag-pill">Cashew Royale</Link>
-            <Link href="/shop?keyword=Cashew" className="search-tag-pill">Cashew Premium</Link>
-            <Link href="/shop?keyword=Almond" className="search-tag-pill">Almond American</Link>
-            <Link href="/shop?keyword=Walnut" className="search-tag-pill">Walnut Royale</Link>
-            <Link href="/shop?keyword=Dates" className="search-tag-pill">Dates Royale</Link>
-          </div>
-        </div>
-      </section>
+      <TagsSection />
     </>
   );
 }

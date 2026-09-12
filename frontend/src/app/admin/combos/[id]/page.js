@@ -424,56 +424,62 @@ export default function AdminComboEditPage() {
       {/* Product Search Modal */}
       {isModalOpen && typeof document !== 'undefined' && createPortal(
         <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050, backdropFilter: 'blur(4px)' }} onClick={() => setIsModalOpen(false)}>
-          <div className="card shadow-lg border-0 rounded-4" style={{ width: '800px', maxWidth: '95vw', maxHeight: '90vh', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-            <div className="card-header bg-white d-flex justify-content-between align-items-center border-bottom-0 pt-4 px-4">
-              <h5 className="fw-bold m-0 text-dark">Add Product to Combo</h5>
-              <button className="btn btn-sm btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" onClick={() => setIsModalOpen(false)}>
-                <X size={18} className="text-muted" />
-              </button>
-            </div>
-            <div className="card-body px-0 pb-0" style={{ overflowY: 'auto' }}>
-              <div className="p-3 border-bottom position-sticky top-0 bg-white px-4" style={{ zIndex: 10 }}>
-                <div className="input-group">
-                  <span className="input-group-text bg-white"><Search size={18} /></span>
-                  <div className="position-relative flex-grow-1">
-                    <input 
-                      type="text" 
-                      className="form-control" 
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                    />
-                    {!searchQuery && (
-                      <span className="position-absolute text-muted" style={{ top: '8px', left: '12px', pointerEvents: 'none' }}>
-                        Search products by name or SKU...
-                      </span>
-                    )}
-                  </div>
-                  <button className="btn btn-primary" onClick={handleSearch} disabled={searching}>
-                    {searching ? 'Searching...' : 'Search'}
-                  </button>
-                </div>
+          <div className="card shadow-lg border-0 rounded-4" style={{ width: '800px', maxWidth: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="card-header bg-white d-flex flex-column border-bottom-0 pt-4 px-4 pb-3" style={{ zIndex: 20 }}>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="fw-bold m-0 text-dark">Add Product to Combo</h5>
+                <button className="btn btn-sm btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" onClick={() => setIsModalOpen(false)}>
+                  <X size={18} className="text-muted" />
+                </button>
               </div>
-              
-              <div className="list-group list-group-flush rounded-0 px-2 pb-2">
+              <div className="input-group shadow-sm rounded-3">
+                <span className="input-group-text bg-white border-end-0"><Search size={18} className="text-muted" /></span>
+                <div className="position-relative flex-grow-1">
+                  <input 
+                    type="text" 
+                    className="form-control border-start-0" 
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                  />
+                  {!searchQuery && (
+                    <span className="position-absolute text-muted" style={{ top: '50%', left: '0', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                      Search products by name or SKU...
+                    </span>
+                  )}
+                </div>
+                <button className="btn btn-primary px-4 fw-medium" onClick={handleSearch} disabled={searching}>
+                  {searching ? 'Searching...' : 'Search'}
+                </button>
+              </div>
+            </div>
+            <div className="card-body px-0 pb-0" style={{ overflowY: 'auto', backgroundColor: '#f8f9fa' }}>
+              <div className="list-group list-group-flush rounded-0 px-3 pb-3 pt-1 gap-2">
                 {products.length === 0 && !searching && (
-                  <div className="p-5 text-center text-muted">No products found.</div>
+                  <div className="p-5 text-center text-muted bg-white rounded-3 mx-3 mt-2 border border-dashed">
+                    <Search size={36} className="mb-2 opacity-25 mx-auto" />
+                    <h6>No products found</h6>
+                    <p className="fs-7 m-0">Try searching with a different keyword</p>
+                  </div>
                 )}
                 {products.map(product => (
-                  <div key={product._id} className="list-group-item border-0 border-bottom list-group-item-action p-3 d-flex justify-content-between align-items-center">
+                  <div key={product._id} className="bg-white rounded-3 p-3 d-flex justify-content-between align-items-center border shadow-sm transition-all hover-shadow">
                     <div className="d-flex align-items-center gap-3">
-                      <div style={{ width: '40px', height: '40px', position: 'relative', overflow: 'hidden', borderRadius: '4px', backgroundColor: '#f8f9fa' }}>
+                      <div style={{ width: '50px', height: '50px', position: 'relative', overflow: 'hidden', borderRadius: '8px', backgroundColor: '#f8f9fa', border: '1px solid #eee' }}>
                         {product.images?.[0] || product.image ? (
-                          <Image src={(product.images?.[0] || product.image).replace('/assets/images/', '/')} alt={product.name} fill style={{ objectFit: 'contain' }} sizes="40px" />
+                          <Image src={(product.images?.[0] || product.image).replace('/assets/images/', '/')} alt={product.name} fill style={{ objectFit: 'contain', padding: '4px' }} sizes="50px" />
                         ) : null}
                       </div>
                       <div>
-                        <h6 className="m-0 fw-bold">{product.name}</h6>
-                        <div className="text-muted fs-8">Stock: {product.stock} | Price: ₹{product.price}</div>
+                        <h6 className="m-0 fw-bold text-dark">{product.name}</h6>
+                        <div className="text-muted fs-8 mt-1 d-flex gap-3">
+                          <span><span className="fw-medium text-dark">Stock:</span> {product.stock}</span>
+                          <span><span className="fw-medium text-dark">Price:</span> ₹{product.price}</span>
+                        </div>
                       </div>
                     </div>
                     <button 
-                      className="btn btn-sm btn-outline-success" 
+                      className="btn btn-sm btn-outline-success px-3 fw-medium rounded-pill d-flex align-items-center gap-1" 
                       onClick={() => { addComponent(product); setIsModalOpen(false); }}
                     >
                       <Plus size={16} /> Add

@@ -1,4 +1,5 @@
 import Enquiry from '../models/Enquiry.js';
+import CatalogLead from '../models/CatalogLead.js';
 
 // POST /api/enquiries - Submit a new enquiry (public)
 export const submitEnquiry = async (req, res) => {
@@ -41,6 +42,30 @@ export const deleteEnquiry = async (req, res) => {
   try {
     await Enquiry.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Enquiry deleted.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// POST /api/enquiries/catalog-leads - Submit a new catalog lead (public)
+export const submitCatalogLead = async (req, res) => {
+  try {
+    const { name, phone } = req.body;
+    if (!name || !phone) {
+      return res.status(400).json({ success: false, message: 'Name and phone are required.' });
+    }
+    const lead = await CatalogLead.create({ name, phone });
+    res.status(201).json({ success: true, message: 'Catalog lead submitted successfully!', lead });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /api/enquiries/catalog-leads - Get all catalog leads (admin)
+export const getCatalogLeads = async (req, res) => {
+  try {
+    const leads = await CatalogLead.find().sort({ createdAt: -1 });
+    res.json({ success: true, leads });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

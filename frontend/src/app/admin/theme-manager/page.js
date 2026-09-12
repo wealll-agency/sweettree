@@ -5,7 +5,7 @@ import api from '../../../utils/axiosConfig';
 import { useNotification } from '../../../context/NotificationContext';
 import { 
   Trash2, Plus, Edit2, ArrowLeft, Home, Gift, Info, 
-  ShoppingBag, Check, Sparkles, Layers,
+  ShoppingBag, Check, Sparkles, Layers, FileText,
   ChevronRight, UploadCloud, RefreshCw
 } from 'lucide-react';
 import Image from 'next/image';
@@ -14,6 +14,9 @@ export default function ThemeManagerPage() {
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPageId, setSelectedPageId] = useState(null); // null = overview page selector
+  const [catalogPdf, setCatalogPdf] = useState('');
+  const [catalogPdfDirty, setCatalogPdfDirty] = useState(false);
+  const [savingPdf, setSavingPdf] = useState(false);
   const { showAlert, showConfirm } = useNotification();
 
   // Master definition of website pages and their corresponding theme sections
@@ -43,13 +46,13 @@ export default function ThemeManagerPage() {
     {
       id: 'about',
       title: 'About Us Page Theme',
-      subtitle: 'Manage About Hero Banner, Our Story, Mission & Vision Media',
-      badge: '4 Banner Sections',
+      subtitle: 'Manage About Hero Banner, Our Story, Mission & Vision Media, Wholesale Banner & Catalog PDF',
+      badge: '5 Theme Sections',
       icon: Info,
       color: '#0288d1',
       bgLight: '#e1f5fe',
       borderColor: '#81d4fa',
-      sections: ['AboutHero', 'AboutStory', 'AboutMission', 'AboutVision']
+      sections: ['AboutHero', 'AboutStory', 'AboutMission', 'AboutVision', 'AboutCta']
     },
     {
       id: 'shop',
@@ -94,10 +97,10 @@ export default function ThemeManagerPage() {
       id: 'ComboBox', 
       pageId: 'combos',
       title: 'Combo Box Banner', 
-      subtitle: 'Recommended: 1400 × 280 px | Aspect Ratio: 5:1 | Format: WebP / JPG / PNG', 
-      expectedRatio: 5/1, 
-      recWidth: 1400, 
-      recHeight: 280,
+      subtitle: 'Recommended: 2172 × 724 px | Aspect Ratio: 3:1 | Format: WebP / JPG / PNG', 
+      expectedRatio: 3/1, 
+      recWidth: 2172, 
+      recHeight: 724,
       previewClass: 'ratio-trending',
       previewMaxWidth: '100%',
       allowMultiple: true 
@@ -175,13 +178,25 @@ export default function ThemeManagerPage() {
       allowMultiple: false 
     },
     { 
+      id: 'AboutCta', 
+      pageId: 'about',
+      title: 'About Corporate Gifting & Wholesale Banner', 
+      subtitle: 'Recommended: 1400 × 500 px | Aspect Ratio: 14:5 | Format: WebP / JPG / PNG', 
+      expectedRatio: 14/5, 
+      recWidth: 1400, 
+      recHeight: 500,
+      previewClass: 'ratio-promo',
+      previewMaxWidth: '100%',
+      allowMultiple: false 
+    },
+    { 
       id: 'ShopBanner', 
       pageId: 'shop',
       title: 'Shop Page Header Banner', 
-      subtitle: 'Recommended: 1920 × 300 px | Aspect Ratio: 32:5 | Format: WebP / JPG / PNG', 
-      expectedRatio: 1920/300, 
-      recWidth: 1920, 
-      recHeight: 300,
+      subtitle: 'Recommended: 2172 × 724 px | Aspect Ratio: 3:1 | Format: WebP / JPG / PNG', 
+      expectedRatio: 3/1, 
+      recWidth: 2172, 
+      recHeight: 724,
       previewClass: 'ratio-shop-banner',
       previewMaxWidth: '100%',
       allowMultiple: true 
@@ -195,8 +210,14 @@ export default function ThemeManagerPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/banners?all=true');
-      if (res.data.success) setBanners(res.data.banners);
+      const [resBanners, resSettings] = await Promise.all([
+        api.get('/banners?all=true'),
+        api.get('/auth/settings')
+      ]);
+      if (resBanners.data.success) setBanners(resBanners.data.banners);
+      if (resSettings.data.success && resSettings.data.settings?.catalogPdf) {
+        setCatalogPdf(resSettings.data.settings.catalogPdf);
+      }
     } catch (error) {
       showAlert('Failed to fetch theme banners', 'error');
     } finally {
@@ -210,6 +231,68 @@ export default function ThemeManagerPage() {
       if (res.data.success) setBanners(res.data.banners);
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  // Catalog PDF handlers
+  const handleCatalogPdfUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
+      showAlert('Please select a valid PDF document file', 'error');
+      return;
+    }
+
+    const form = new FormData();
+    form.append('file', file);
+
+    try {
+      const res = await api.post('/uploads', form, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const uploadedUrl = res.data.url || res.data.path || res.data;
+      setCatalogPdf(uploadedUrl);
+      setCatalogPdfDirty(true);
+      showAlert('Catalog PDF uploaded to draft! Click "Save Catalog PDF" to apply.', 'info');
+    } catch (error) {
+      console.error('PDF Upload Error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to upload PDF';
+      showAlert(errorMessage, 'error');
+    }
+  };
+
+  const handleSaveCatalogPdf = async () => {
+    try {
+      setSavingPdf(true);
+      const res = await api.put('/auth/settings', {
+        settings: { catalogPdf }
+      });
+      if (res.data.success) {
+        showAlert('Catalog PDF saved successfully!', 'success');
+        setCatalogPdfDirty(false);
+      }
+    } catch (error) {
+      showAlert('Failed to save Catalog PDF', 'error');
+    } finally {
+      setSavingPdf(false);
+    }
+  };
+
+  const handleRemoveCatalogPdf = async () => {
+    const confirmed = await showConfirm('Are you sure you want to remove the Catalog PDF?');
+    if (confirmed) {
+      setCatalogPdf('');
+      setCatalogPdfDirty(true);
+      try {
+        await api.put('/auth/settings', {
+          settings: { catalogPdf: '' }
+        });
+        showAlert('Catalog PDF removed successfully!', 'success');
+        setCatalogPdfDirty(false);
+      } catch (error) {
+        showAlert('Failed to update Catalog PDF setting', 'error');
+      }
     }
   };
 
@@ -252,6 +335,8 @@ export default function ThemeManagerPage() {
         const newTempBanner = {
           _id: `temp_${Date.now()}`,
           title: `${placement} Banner`,
+          subtitle: '',
+          description: '',
           image: uploadedUrl,
           warning: warningMsg,
           placement: placement,
@@ -272,6 +357,8 @@ export default function ThemeManagerPage() {
     const newTempBanner = {
       _id: `temp_${Date.now()}`,
       title: `${placement} Banner`,
+      subtitle: '',
+      description: '',
       image: '',
       placement: placement,
       isActive: true,
@@ -315,6 +402,8 @@ export default function ThemeManagerPage() {
         if (banner.isNew) {
           await api.post('/banners', {
             title: banner.title,
+            subtitle: banner.subtitle,
+            description: banner.description,
             image: banner.image,
             placement: banner.placement,
             isActive: banner.isActive
@@ -322,6 +411,8 @@ export default function ThemeManagerPage() {
         } else {
           await api.put(`/banners/${banner._id}`, {
             title: banner.title,
+            subtitle: banner.subtitle,
+            description: banner.description,
             image: banner.image,
             placement: banner.placement,
             isActive: banner.isActive
@@ -491,49 +582,88 @@ export default function ThemeManagerPage() {
                     ) : (
                       sectionBanners.map((banner, idx) => (
                         <div key={banner._id} className="mb-4 pb-4 border-bottom last-border-none">
-                          <div className="d-flex align-items-start mb-3">
-                            <div className="flex-grow-1">
-                              <label className="fw-semibold mb-1" style={{ fontSize: '13px', color: '#4B5563' }}>
-                                Banner Image File <span className="text-primary ms-2" style={{fontSize: '11px'}}>(Recommended {section.recWidth}x{section.recHeight} px)</span>
-                              </label>
-                              <div className="d-flex align-items-center gap-3 mt-1">
-                                <input 
-                                  type="file" 
-                                  className="form-control form-control-sm rounded-3" 
-                                  style={{ maxWidth: '350px' }}
-                                  accept="image/*"
-                                  onChange={(e) => handleFileUpload(e, section.id, banner._id)}
-                                />
-                                <button 
-                                  className="btn btn-sm btn-outline-danger px-3 py-1 d-flex align-items-center gap-1 fs-7 fw-semibold rounded-3" 
-                                  onClick={() => handleRemove(banner)}
-                                >
-                                  <Trash2 size={14} /> Remove
-                                </button>
+                          <div className="row g-4">
+                            {/* Left Column: Upload & Text Inputs */}
+                            <div className="col-lg-6">
+                              <div className="d-flex align-items-start mb-3">
+                                <div className="flex-grow-1">
+                                  <label className="fw-semibold mb-1" style={{ fontSize: '13px', color: '#4B5563' }}>
+                                    Banner Image File <span className="text-danger ms-2 fw-bold" style={{fontSize: '11px'}}>EXACT REQUIRED SIZE: {section.recWidth}x{section.recHeight} px (Otherwise image will be cropped)</span>
+                                  </label>
+                                  <div className="d-flex align-items-center gap-3 mt-1">
+                                    <input 
+                                      type="file" 
+                                      className="form-control form-control-sm rounded-3" 
+                                      style={{ maxWidth: '350px' }}
+                                      accept="image/*"
+                                      onChange={(e) => handleFileUpload(e, section.id, banner._id)}
+                                    />
+                                    <button 
+                                      className="btn btn-sm btn-outline-danger px-3 py-1 d-flex align-items-center gap-1 fs-7 fw-semibold rounded-3" 
+                                      onClick={() => handleRemove(banner)}
+                                    >
+                                      <Trash2 size={14} /> Remove
+                                    </button>
+                                  </div>
+                                  
+                                  {banner.warning && (
+                                    <div className="mt-2 p-2 rounded-3" style={{ backgroundColor: '#FFFBEB', color: '#B45309', fontSize: '12px', border: '1px solid #FDE68A', display: 'inline-block' }}>
+                                      {banner.warning}
+                                    </div>
+                                  )}
+                                  
+                                  {['AboutStory', 'AboutMission', 'AboutVision'].includes(section.id) && (
+                                    <div className="mt-3 p-3 bg-light rounded-3 border border-light" style={{ maxWidth: '600px' }}>
+                                      <label className="fw-semibold mb-2 text-dark" style={{ fontSize: '13px' }}>Story Text Content</label>
+                                      
+                                      <div className="mb-2">
+                                        <input 
+                                          type="text" 
+                                          className="form-control form-control-sm shadow-none border-secondary-subtle" 
+                                          placeholder="Badge / Subtitle (e.g., OUR STORY)"
+                                          value={banner.subtitle || ''}
+                                          onChange={(e) => setBanners(prev => prev.map(b => b._id === banner._id ? { ...b, subtitle: e.target.value, isDirty: true } : b))}
+                                        />
+                                      </div>
+                                      <div className="mb-2">
+                                        <input 
+                                          type="text" 
+                                          className="form-control form-control-sm shadow-none border-secondary-subtle fw-semibold" 
+                                          placeholder="Main Title (e.g., A Legacy of Premium Quality...)"
+                                          value={banner.title || ''}
+                                          onChange={(e) => setBanners(prev => prev.map(b => b._id === banner._id ? { ...b, title: e.target.value, isDirty: true } : b))}
+                                        />
+                                      </div>
+                                      <div>
+                                        <textarea 
+                                          className="form-control form-control-sm shadow-none border-secondary-subtle" 
+                                          rows="5"
+                                          placeholder="Story Description Paragraphs..."
+                                          value={banner.description || ''}
+                                          onChange={(e) => setBanners(prev => prev.map(b => b._id === banner._id ? { ...b, description: e.target.value, isDirty: true } : b))}
+                                        ></textarea>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                              
-                              {banner.warning && (
-                                <div className="mt-2 p-2 rounded-3" style={{ backgroundColor: '#FFFBEB', color: '#B45309', fontSize: '12px', border: '1px solid #FDE68A', display: 'inline-block' }}>
-                                  {banner.warning}
-                                </div>
-                              )}
                             </div>
-                          </div>
-                          
-                          {/* Live Banner Preview */}
-                          <div>
-                            <label className="fw-semibold mb-1 fs-8 text-uppercase tracking-wider" style={{ color: '#6B7280' }}>LIVE BANNER PREVIEW</label>
-                            <div 
-                              className={`banner-img-container ${section.previewClass} rounded-3 shadow-2xs`} 
-                              style={{ border: '2px dashed #E5E7EB', backgroundColor: '#F9FAFB', maxWidth: section.previewMaxWidth || '100%' }}
-                            >
-                              {banner.image ? (
-                                <img src={getImageUrl(banner.image)} alt="Preview" />
-                              ) : (
-                                <div className="d-flex w-100 h-100 align-items-center justify-content-center text-muted" style={{ fontSize: '12px' }}>
-                                  No Image Selected
-                                </div>
-                              )}
+                            
+                            {/* Right Column: Live Banner Preview */}
+                            <div className="col-lg-6">
+                              <label className="fw-semibold mb-1 fs-8 text-uppercase tracking-wider" style={{ color: '#6B7280' }}>LIVE BANNER PREVIEW</label>
+                              <div 
+                                className={`banner-img-container ${section.previewClass} rounded-3 shadow-2xs`} 
+                                style={{ border: '2px dashed #E5E7EB', backgroundColor: '#F9FAFB', maxWidth: section.previewMaxWidth || '100%' }}
+                              >
+                                {banner.image ? (
+                                  <img src={getImageUrl(banner.image)} alt="Preview" />
+                                ) : (
+                                  <div className="d-flex w-100 h-100 align-items-center justify-content-center text-muted" style={{ fontSize: '12px' }}>
+                                    No Image Selected
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -555,6 +685,87 @@ export default function ThemeManagerPage() {
               </div>
             );
           })}
+
+          {/* About Us Page Catalog PDF Manager */}
+          {selectedPageId === 'about' && (
+            <div className="mb-4">
+              <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+                <div className="card-header bg-white p-4 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+                  <div>
+                    <h6 className="fw-bold mb-1 text-dark fs-6 d-flex align-items-center gap-2">
+                      <FileText size={18} style={{ color: selectedPage.color }} />
+                      About Page Catalog PDF Manager
+                    </h6>
+                    <small className="text-muted" style={{ fontSize: '11px' }}>
+                      Upload the product catalog PDF. Customers can download it by clicking the "Download Catalog" button on the About Us page.
+                    </small>
+                  </div>
+                  <button 
+                    className="btn btn-sm px-4 py-2 fw-semibold rounded-3 shadow-2xs d-flex align-items-center gap-2" 
+                    style={{ backgroundColor: '#2e7d32', color: '#ffffff', border: 'none' }}
+                    onClick={handleSaveCatalogPdf}
+                    disabled={savingPdf}
+                  >
+                    <Check size={16} /> Save Catalog PDF
+                  </button>
+                </div>
+
+                <div className="card-body p-4">
+                  <div className="mb-3">
+                    <label className="fw-semibold mb-1" style={{ fontSize: '13px', color: '#4B5563' }}>
+                      Select Catalog PDF File <span className="text-primary ms-2" style={{fontSize: '11px'}}>(Format: PDF | Max size: 50MB)</span>
+                    </label>
+                    <div className="d-flex align-items-center gap-3 mt-1">
+                      <input 
+                        type="file" 
+                        className="form-control form-control-sm rounded-3" 
+                        style={{ maxWidth: '400px' }}
+                        accept="application/pdf,.pdf"
+                        onChange={handleCatalogPdfUpload}
+                      />
+                      {catalogPdf && (
+                        <button 
+                          className="btn btn-sm btn-outline-danger px-3 py-1 d-flex align-items-center gap-1 fs-7 fw-semibold rounded-3" 
+                          onClick={handleRemoveCatalogPdf}
+                        >
+                          <Trash2 size={14} /> Remove PDF
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Current Catalog Status & Test Link */}
+                  <div className="p-3 rounded-3 mt-3" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                    <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                      <div className="d-flex align-items-center gap-2">
+                        <FileText size={20} className={catalogPdf ? 'text-success' : 'text-secondary'} />
+                        <div>
+                          <span className="fw-semibold fs-7 d-block text-dark">
+                            {catalogPdf ? 'Uploaded Catalog PDF:' : 'No Catalog PDF Uploaded Yet'}
+                          </span>
+                          {catalogPdf && (
+                            <small className="text-muted text-break" style={{ fontSize: '11px' }}>
+                              {catalogPdf}
+                            </small>
+                          )}
+                        </div>
+                      </div>
+                      {catalogPdf && (
+                        <a 
+                          href={getImageUrl(catalogPdf)} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="btn btn-sm btn-outline-primary rounded-pill px-3 fs-8 fw-semibold d-flex align-items-center gap-1"
+                        >
+                          <UploadCloud size={14} /> View / Test PDF
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
 

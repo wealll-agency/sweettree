@@ -179,7 +179,7 @@ const ProductCard = ({ product }) => {
         <div className="product-card__content">
           <div className="product-card__meta">
             <span className="product-card__brand">
-              {resolvedProduct.brand || 'SWEETTREE'}
+              sweettreeon
             </span>
             <span className="product-card__rating">
               <Star size={12} fill="#ffb800" color="#ffb800" stroke="#ffb800" />

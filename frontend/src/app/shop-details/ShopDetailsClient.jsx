@@ -117,7 +117,10 @@ export default function ShopDetailsClient({ initialProduct }) {
         dispatch(fetchProductDetails(targetId));
       }
       dispatch(fetchProductReviews(targetId));
-    } else if (!products || products.length === 0) {
+    }
+    
+    // Always fetch products list if it's empty, so we can calculate related products
+    if (!products || products.length === 0) {
       dispatch(fetchProducts());
     }
   }, [dispatch, query, products, realProduct, selectedProduct]);
@@ -467,88 +470,142 @@ export default function ShopDetailsClient({ initialProduct }) {
              <button onClick={() => dispatch(toggleWishlist(realProduct))} className="btn btn-outline-dark px-3"><Heart size={20} fill={isInWishlist ? 'var(--accent-color)' : 'none'} color={isInWishlist ? 'var(--accent-color)' : 'currentColor'} /></button>
           </div>
 
-        </div>
-      </div>
-
-      {/* Desktop Version: Tabs */}
-      <div className="d-none d-md-block border-top pt-5 mb-5 text-center px-4">
-        <div className="d-flex justify-content-center gap-5 border-bottom mb-4">
-           {['description', 'ingredients', 'benefits'].map((tab) => (
-             <button 
-                key={tab} 
-                className={`btn border-0 text-capitalize fw-bold pb-3 rounded-0 ${activeTab === tab ? 'border-bottom border-dark border-2' : 'text-muted'}`}
-                onClick={() => setActiveTab(tab)}
-                style={{ fontSize: '14px' }}
-             >
-                {tab}
-             </button>
-           ))}
-        </div>
-        
-        {activeTab === 'description' && (
-           <p className="text-muted" style={{ fontSize: '14px', lineHeight: '1.8' }}>
-             {realProduct.description}
-           </p>
-        )}
-        {activeTab === 'ingredients' && (
-           <p className="text-muted" style={{ fontSize: '14px', lineHeight: '1.8' }}>
-             {realProduct.ingredients?.length > 0 ? realProduct.ingredients.join(', ') : 'No ingredients specified.'}
-           </p>
-        )}
-        {activeTab === 'benefits' && (
-           <p className="text-muted" style={{ fontSize: '14px', lineHeight: '1.8' }}>
-             {realProduct.benefits?.length > 0 ? realProduct.benefits.join(', ') : 'No benefits specified.'}
-           </p>
-        )}
-      </div>
-
-      {/* Mobile Version: Accordion Dropdown */}
-      <div className="d-md-none px-4 mb-5 text-start">
-        <div className="accordion" id="productDetailsAccordion">
-          <div className="accordion-item border-0 border-bottom border-top rounded-0">
-            <h2 className="accordion-header" id="headingDetails">
-              <button 
-                className="accordion-button collapsed bg-white shadow-none fw-bold px-0 text-dark" 
-                type="button" 
-                data-bs-toggle="collapse" 
-                data-bs-target="#collapseDetails" 
-                aria-expanded="false" 
-                aria-controls="collapseDetails"
-                style={{ fontSize: '15px' }}
-              >
-                Product Details
-              </button>
-            </h2>
-            <div id="collapseDetails" className="accordion-collapse collapse" aria-labelledby="headingDetails" data-bs-parent="#productDetailsAccordion">
-              <div className="accordion-body px-0 py-3">
-                {realProduct.description && (
-                  <div className="mb-3">
-                    <h6 className="fw-bold" style={{ fontSize: '14px', color: '#005B6E' }}>Description</h6>
-                    <p className="text-muted mb-0" style={{ fontSize: '13px', lineHeight: '1.6' }}>{realProduct.description}</p>
+          {/* Product Details - Mobile (Accordion) */}
+          <div className="mt-4 mb-4 pt-4 border-top d-block d-md-none">
+            <div className="accordion accordion-flush" id="productDetailsAccordion">
+              <div className="accordion-item border-0">
+                <h2 className="accordion-header" id="headingProductDetails">
+                  <button className="accordion-button collapsed px-0 fw-bold bg-white" style={{ fontSize: '14px', color: '#111', boxShadow: 'none' }} type="button" data-bs-toggle="collapse" data-bs-target="#collapseProductDetails" aria-expanded="false" aria-controls="collapseProductDetails">
+                    Product Details
+                  </button>
+                </h2>
+                <div id="collapseProductDetails" className="accordion-collapse collapse" aria-labelledby="headingProductDetails" data-bs-parent="#productDetailsAccordion">
+                  <div className="accordion-body px-0 pt-3 pb-0">
+                    {realProduct.description && (
+                      <div className="mb-4">
+                        <h6 className="fw-bold text-uppercase tracking-wider mb-2" style={{ fontSize: '13px', color: '#005B6E', letterSpacing: '0.05em' }}>Product Description</h6>
+                        <p className="text-muted mb-0" style={{ fontSize: '14px', lineHeight: '1.7' }}>{realProduct.description}</p>
+                      </div>
+                    )}
+                    {realProduct.ingredients?.length > 0 && (
+                      <div className="mb-4">
+                        <h6 className="fw-bold text-uppercase tracking-wider mb-2" style={{ fontSize: '13px', color: '#005B6E', letterSpacing: '0.05em' }}>Ingredients</h6>
+                        <p className="text-muted mb-0" style={{ fontSize: '14px', lineHeight: '1.7' }}>{realProduct.ingredients.join(', ')}</p>
+                      </div>
+                    )}
+                    {realProduct.benefits?.length > 0 && (
+                      <div className="mb-0">
+                        <h6 className="fw-bold text-uppercase tracking-wider mb-2" style={{ fontSize: '13px', color: '#005B6E', letterSpacing: '0.05em' }}>Benefits</h6>
+                        <ul className="text-muted mb-0 ps-3" style={{ fontSize: '14px', lineHeight: '1.7' }}>
+                          {realProduct.benefits.map((benefit, idx) => (
+                            <li key={idx} className="mb-1">{benefit}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
-                )}
-                {realProduct.ingredients?.length > 0 && (
-                  <div className="mb-3">
-                    <h6 className="fw-bold" style={{ fontSize: '14px', color: '#005B6E' }}>Ingredients</h6>
-                    <p className="text-muted mb-0" style={{ fontSize: '13px', lineHeight: '1.6' }}>{realProduct.ingredients.join(', ')}</p>
-                  </div>
-                )}
-                {realProduct.benefits?.length > 0 && (
-                  <div>
-                    <h6 className="fw-bold" style={{ fontSize: '14px', color: '#005B6E' }}>Benefits</h6>
-                    <p className="text-muted mb-0" style={{ fontSize: '13px', lineHeight: '1.6' }}>{realProduct.benefits.join(', ')}</p>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Product Details - Desktop (Tabs) */}
+         <div className="mt-4 mb-4 pt-4 border-top d-none d-md-block">
+           {/* Tab Navigation */}
+           <div className="d-flex gap-4 border-bottom mb-3" style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
+             {realProduct.description && (
+               <button 
+                 onClick={() => setActiveTab('description')}
+                 className={`btn p-0 pb-2 rounded-0 border-0 ${activeTab === 'description' ? 'border-bottom border-2 border-dark fw-bold text-dark' : 'text-muted'}`}
+                 style={{ fontSize: '14px', background: 'transparent' }}
+               >
+                 Description
+               </button>
+             )}
+             {realProduct.ingredients?.length > 0 && (
+               <button 
+                 onClick={() => setActiveTab('ingredients')}
+                 className={`btn p-0 pb-2 rounded-0 border-0 ${activeTab === 'ingredients' ? 'border-bottom border-2 border-dark fw-bold text-dark' : 'text-muted'}`}
+                 style={{ fontSize: '14px', background: 'transparent' }}
+               >
+                 Ingredients
+               </button>
+             )}
+             {realProduct.benefits?.length > 0 && (
+               <button 
+                 onClick={() => setActiveTab('benefits')}
+                 className={`btn p-0 pb-2 rounded-0 border-0 ${activeTab === 'benefits' ? 'border-bottom border-2 border-dark fw-bold text-dark' : 'text-muted'}`}
+                 style={{ fontSize: '14px', background: 'transparent' }}
+               >
+                 Benefits
+               </button>
+             )}
+           </div>
+
+           {/* Tab Content */}
+           <div style={{ height: '130px', overflow: 'hidden', paddingRight: '10px' }}>
+             {activeTab === 'description' && realProduct.description && (
+               <div className="mb-2">
+                 <p className="text-muted mb-0" style={{ fontSize: '14px', lineHeight: '1.7' }}>{realProduct.description}</p>
+               </div>
+             )}
+             
+             {activeTab === 'ingredients' && realProduct.ingredients?.length > 0 && (
+               <div className="mb-2">
+                 <p className="text-muted mb-0" style={{ fontSize: '14px', lineHeight: '1.7' }}>{realProduct.ingredients.join(', ')}</p>
+               </div>
+             )}
+             
+             {activeTab === 'benefits' && realProduct.benefits?.length > 0 && (
+               <div className="mb-0">
+                 <ul className="text-muted mb-0 ps-3" style={{ fontSize: '14px', lineHeight: '1.7' }}>
+                   {realProduct.benefits.map((benefit, idx) => (
+                     <li key={idx} className="mb-1">{benefit}</li>
+                   ))}
+                 </ul>
+               </div>
+             )}
+           </div>
+         </div>
+
         </div>
       </div>
 
+      {/* Strict horizontal line for desktop */}
+      <hr className="d-none d-md-block m-0 mb-5" style={{ borderTop: '2px solid #ccc', opacity: 1 }} />
+
+
+
       {/* Recommended Products */}
-      <div className="mb-5 animate-fade-in">
+      <style>{`
+        .recommended-section-wrapper {
+          zoom: 0.85;
+        }
+        @media (max-width: 767px) {
+          .recommended-section-wrapper {
+            zoom: 1;
+          }
+          .products-grid.mobile-scroll-grid {
+            display: flex !important;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            gap: 12px;
+            padding-bottom: 15px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; 
+          }
+          .products-grid.mobile-scroll-grid::-webkit-scrollbar {
+            display: none;
+          }
+          .products-grid.mobile-scroll-grid > div {
+            flex: 0 0 calc(50vw - 20px);
+            max-width: calc(50vw - 20px);
+          }
+        }
+      `}</style>
+      <div className="mb-5 animate-fade-in recommended-section-wrapper">
         <h5 className="fw-bold mb-4 text-uppercase text-start" style={{ fontSize: '16px', letterSpacing: '0.05em', color: '#005B6E' }}>Recommended Products</h5>
-        <div className="products-grid recommended-grid">
+        <div className="products-grid mobile-scroll-grid">
           {relatedProducts.length > 0 ? relatedProducts.map((prod) => (
             <div key={prod._id}>
               <ProductCard product={prod} />

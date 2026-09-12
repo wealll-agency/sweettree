@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import { Mail, MailOpen, Trash2, RefreshCw } from 'lucide-react';
+import { Mail, MailOpen, Trash2, RefreshCw, FileText, X, Download } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import api from '../../../utils/axiosConfig.js';
 import { useNotification } from '../../../context/NotificationContext';
 
@@ -10,7 +11,24 @@ export default function EnquiriesPage() {
   const [enquiries, setEnquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
+  const [showCatalogModal, setShowCatalogModal] = useState(false);
+  const [catalogLeads, setCatalogLeads] = useState([]);
+  const [loadingLeads, setLoadingLeads] = useState(false);
   const { showConfirm } = useNotification();
+
+  const fetchCatalogLeads = async () => {
+    setLoadingLeads(true);
+    try {
+      const res = await api.get('/enquiries/catalog-leads');
+      if (res.data.success) {
+        setCatalogLeads(res.data.leads);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingLeads(false);
+    }
+  };
 
   const fetchEnquiries = useCallback(async () => {
     setLoading(true);
@@ -66,6 +84,9 @@ export default function EnquiriesPage() {
               🔔 {unread} New
             </span>
           )}
+          <button className="btn btn-primary d-flex align-items-center gap-2" onClick={() => { setShowCatalogModal(true); fetchCatalogLeads(); }}>
+            <FileText size={16} /> Catalog Data
+          </button>
           <button className="btn btn-outline-secondary d-flex align-items-center gap-2" onClick={fetchEnquiries}>
             <RefreshCw size={16} /> Refresh
           </button>
@@ -159,6 +180,57 @@ export default function EnquiriesPage() {
           )}
         </div>
       </div>
+
+      {/* Catalog Leads Modal */}
+      {showCatalogModal && typeof document !== 'undefined' && createPortal(
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050, backdropFilter: 'blur(4px)' }} onClick={() => setShowCatalogModal(false)}>
+          <div className="card shadow-lg border-0 rounded-4" style={{ width: '600px', maxWidth: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="card-header bg-white d-flex justify-content-between align-items-center border-bottom-0 pt-4 px-4 pb-3">
+              <h5 className="fw-bold m-0 text-dark d-flex align-items-center gap-2">
+                <FileText size={20} className="text-primary" /> Catalog Download Leads
+              </h5>
+              <button className="btn btn-sm btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" onClick={() => setShowCatalogModal(false)}>
+                <X size={18} className="text-muted" />
+              </button>
+            </div>
+            <div className="card-body px-0 pb-0" style={{ overflowY: 'auto', backgroundColor: '#f8f9fa' }}>
+              {loadingLeads ? (
+                <div className="text-center py-5">
+                  <div className="spinner-border text-primary" role="status" />
+                  <p className="text-muted mt-3">Loading leads...</p>
+                </div>
+              ) : catalogLeads.length === 0 ? (
+                <div className="text-center py-5 text-muted">
+                  <Download size={40} className="mb-3 opacity-25 mx-auto" />
+                  <p>No catalog downloads yet.</p>
+                </div>
+              ) : (
+                <div className="table-responsive px-4 pb-4">
+                  <table className="table table-hover align-middle bg-white rounded-3 overflow-hidden shadow-sm">
+                    <thead className="table-light">
+                      <tr>
+                        <th>Name</th>
+                        <th>Mobile Number</th>
+                        <th>Date Downloaded</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {catalogLeads.map((lead) => (
+                        <tr key={lead._id}>
+                          <td className="fw-medium text-dark">{lead.name}</td>
+                          <td><a href={`tel:${lead.phone}`} className="text-decoration-none">{lead.phone}</a></td>
+                          <td className="text-muted fs-7">{formatDate(lead.createdAt)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

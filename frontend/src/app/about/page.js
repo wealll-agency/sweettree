@@ -1,25 +1,49 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
+import { DownloadCloud, X } from 'lucide-react';
+import { TagsSection } from '../../components/HomeSections';
 import api from '../../utils/axiosConfig';
+import { useNotification } from '../../context/NotificationContext';
 
 import SlidingTicker from '../../components/SlidingTicker';
 
 export default function AboutPage() {
   const [banners, setBanners] = useState({});
+  const [catalogPdf, setCatalogPdf] = useState('');
+  const [showCatalogModal, setShowCatalogModal] = useState(false);
+  const [catalogLead, setCatalogLead] = useState({ name: '', phone: '' });
+  const [submittingLead, setSubmittingLead] = useState(false);
+  const { showAlert } = useNotification();
+
+  const getImageUrl = (url) => {
+    if (!url) return '';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : '';
+    if (url.startsWith('http') || url.startsWith('/')) return url;
+    return `${baseUrl}${url}`;
+  };
 
   useEffect(() => {
     const fetchBannersAndBlogs = async () => {
       try {
-        const bannersRes = await api.get('/banners');
+        const [bannersRes, settingsRes] = await Promise.all([
+          api.get('/banners'),
+          api.get('/auth/settings')
+        ]);
         
         if (bannersRes.data.success) {
           const bannerMap = {};
           bannersRes.data.banners.forEach(b => {
             bannerMap[b.placement] = b.image;
+            bannerMap[`${b.placement}Obj`] = b;
           });
           setBanners(bannerMap);
+        }
+
+        if (settingsRes.data.success && settingsRes.data.settings?.catalogPdf) {
+          setCatalogPdf(settingsRes.data.settings.catalogPdf);
         }
       } catch (error) {
         console.error('Failed to fetch about page data', error);
@@ -28,6 +52,35 @@ export default function AboutPage() {
     
     fetchBannersAndBlogs();
   }, []);
+
+  const handleCatalogDownload = async (e) => {
+    e.preventDefault();
+    if (!catalogLead.name || !catalogLead.phone) {
+      showAlert('Please enter your name and mobile number', 'warning');
+      return;
+    }
+    setSubmittingLead(true);
+    try {
+      const res = await api.post('/enquiries/catalog-leads', catalogLead);
+      if (res.data.success) {
+        setShowCatalogModal(false);
+        setCatalogLead({ name: '', phone: '' });
+        showAlert('Starting download...', 'success');
+        
+        const link = document.createElement('a');
+        link.href = getImageUrl(catalogPdf);
+        link.target = "_blank";
+        link.download = "sweettree-catalog.pdf";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (err) {
+      showAlert('Something went wrong. Please try again.', 'danger');
+    } finally {
+      setSubmittingLead(false);
+    }
+  };
 
   return (
     <>
@@ -56,19 +109,34 @@ export default function AboutPage() {
           <div className="row align-items-center gy-5">
             <div className="col-lg-6 position-relative">
               <div className="position-relative about-story-img-wrap">
-                <Image src={banners.AboutStory || "/banner_slider_image3.jpeg"} alt="Sweettree Store" width={800} height={600} style={{ width: '100%', height: 'auto', objectFit: 'cover' }} className="img-fluid rounded-4 shadow-lg w-100 about-story-img" unoptimized={!!banners.AboutStory} />
+                <Image src={banners.AboutStory || "/banner_slider_image3.jpeg"} alt="Sweettree Store" width={800} height={600} style={{ width: '100%', height: 'auto' }} className="img-fluid rounded-4 shadow-lg w-100 about-story-img" unoptimized={!!banners.AboutStory} />
               </div>
               <div className="position-absolute rounded-4 d-none d-lg-block about-story-bg-shape"></div>
             </div>
             <div className="col-lg-6 ps-lg-5 text-center text-lg-start mt-5 mt-lg-0">
-              <span className="d-inline-block px-3 py-1 rounded-pill mb-3 fw-bold shadow-sm about-story-badge">OUR STORY</span>
-              <h2 className="fw-bold mb-4 about-story-title">A Legacy of Premium Quality Dried Fruits & Nuts</h2>
-              <p className="text-muted about-story-text">
-                At Sweettree, we believe in delivering nothing but the best to your family. Our journey started with a simple vision: to bridge the gap between premium quality, farm-fresh nuts, and health-conscious consumers. Over the years, we have mastered the art of sourcing the most exquisite nuts, seeds, and dried fruits from the finest orchards around the world.
-              </p>
-              <p className="text-muted about-story-text">
-                Every product in our collection is carefully handpicked, rigorously processed, and meticulously packed to preserve its natural crunch, flavor, and immense nutritional value. With a deep commitment to excellence, Sweettree isn't just a brand—it's a promise of purity, tradition, and well-being.
-              </p>
+              <span className="d-inline-block px-3 py-1 rounded-pill mb-3 fw-bold shadow-sm about-story-badge">
+                {banners.AboutStoryObj?.subtitle || 'OUR STORY'}
+              </span>
+              <h2 className="fw-bold mb-4 about-story-title">
+                {banners.AboutStoryObj?.title || 'A Legacy of Premium Quality Dried Fruits & Nuts'}
+              </h2>
+              
+              {banners.AboutStoryObj?.description ? (
+                banners.AboutStoryObj.description.split('\n').map((paragraph, index) => (
+                  <p key={index} className="text-muted about-story-text">
+                    {paragraph}
+                  </p>
+                ))
+              ) : (
+                <>
+                  <p className="text-muted about-story-text">
+                    At Sweettree, we believe in delivering nothing but the best to your family. Our journey started with a simple vision: to bridge the gap between premium quality, farm-fresh nuts, and health-conscious consumers. Over the years, we have mastered the art of sourcing the most exquisite nuts, seeds, and dried fruits from the finest orchards around the world.
+                  </p>
+                  <p className="text-muted about-story-text">
+                    Every product in our collection is carefully handpicked, rigorously processed, and meticulously packed to preserve its natural crunch, flavor, and immense nutritional value. With a deep commitment to excellence, Sweettree isn't just a brand—it's a promise of purity, tradition, and well-being.
+                  </p>
+                </>
+              )}
               <div className="d-flex align-items-center mt-4 gap-4 justify-content-center justify-content-lg-start">
                 <div className="d-flex align-items-center gap-3 text-start">
                   <div className="rounded-circle d-flex align-items-center justify-content-center text-white about-feature-icon-wrapper">
@@ -148,29 +216,53 @@ export default function AboutPage() {
           <div className="row align-items-center mb-5 pb-lg-4">
             <div className="col-lg-6 order-lg-2 position-relative mb-4 mb-lg-0">
               <div className="about-mission-img-wrap">
-                <Image src={banners.AboutMission || "/banner_slider_image1.jpeg"} alt="Our Mission" width={800} height={600} style={{ width: '100%', height: 'auto', objectFit: 'cover' }} className="img-fluid w-100 about-mission-img" unoptimized={!!banners.AboutMission} />
+                <Image src={banners.AboutMission || "/banner_slider_image1.jpeg"} alt="Our Mission" width={800} height={600} style={{ width: '100%', height: 'auto' }} className="img-fluid w-100 about-mission-img" unoptimized={!!banners.AboutMission} />
               </div>
             </div>
             <div className="col-lg-6 order-lg-1 pe-lg-5 text-center text-lg-start">
-              <span className="d-inline-block px-3 py-1 rounded-pill mb-3 fw-bold about-mission-badge">OUR MISSION</span>
-              <h2 className="fw-bold mb-3 about-mission-title">Bringing Nature's Best to Your Table</h2>
-              <p className="text-muted mb-0 about-mission-text">
-                Our mission is to establish a robust and ethical supply chain that empowers local farmers while delivering uncompromised quality dry fruits and nuts globally. We are dedicated to making nutritional excellence and natural flavors seamlessly accessible to households everywhere, ensuring every bite is as wholesome as nature intended.
-              </p>
+              <span className="d-inline-block px-3 py-1 rounded-pill mb-3 fw-bold about-mission-badge">
+                {banners.AboutMissionObj?.subtitle || 'OUR MISSION'}
+              </span>
+              <h2 className="fw-bold mb-3 about-mission-title">
+                {banners.AboutMissionObj?.title || "Bringing Nature's Best to Your Table"}
+              </h2>
+              {banners.AboutMissionObj?.description ? (
+                banners.AboutMissionObj.description.split('\n').map((paragraph, index) => (
+                  <p key={index} className="text-muted mb-3 about-mission-text">
+                    {paragraph}
+                  </p>
+                ))
+              ) : (
+                <p className="text-muted mb-0 about-mission-text">
+                  Our mission is to establish a robust and ethical supply chain that empowers local farmers while delivering uncompromised quality dry fruits and nuts globally. We are dedicated to making nutritional excellence and natural flavors seamlessly accessible to households everywhere, ensuring every bite is as wholesome as nature intended.
+                </p>
+              )}
             </div>
           </div>
           <div className="row align-items-center">
             <div className="col-lg-6 position-relative mb-4 mb-lg-0">
               <div className="about-vision-img-wrap">
-                <Image src={banners.AboutVision || "/banner_slider_image2.jpeg"} alt="Our Vision" width={800} height={600} style={{ width: '100%', height: 'auto', objectFit: 'cover' }} className="img-fluid w-100 about-vision-img" unoptimized={!!banners.AboutVision} />
+                <Image src={banners.AboutVision || "/banner_slider_image2.jpeg"} alt="Our Vision" width={800} height={600} style={{ width: '100%', height: 'auto' }} className="img-fluid w-100 about-vision-img" unoptimized={!!banners.AboutVision} />
               </div>
             </div>
             <div className="col-lg-6 ps-lg-5 text-center text-lg-start">
-              <span className="d-inline-block px-3 py-1 rounded-pill mb-3 fw-bold about-vision-badge">OUR VISION</span>
-              <h2 className="fw-bold mb-3 about-mission-title">Redefining Premium Health Snacking</h2>
-              <p className="text-muted mb-0 about-mission-text">
-                We envision a world where wholesome, natural snacks universally replace artificial and processed alternatives. By continuously innovating and expanding our sustainably sourced offerings, we strive to become the leading symbol of purity, enriching lives and fostering a globally health-conscious community.
-              </p>
+              <span className="d-inline-block px-3 py-1 rounded-pill mb-3 fw-bold about-vision-badge">
+                {banners.AboutVisionObj?.subtitle || 'OUR VISION'}
+              </span>
+              <h2 className="fw-bold mb-3 about-mission-title">
+                {banners.AboutVisionObj?.title || 'Redefining Premium Health Snacking'}
+              </h2>
+              {banners.AboutVisionObj?.description ? (
+                banners.AboutVisionObj.description.split('\n').map((paragraph, index) => (
+                  <p key={index} className="text-muted mb-3 about-mission-text">
+                    {paragraph}
+                  </p>
+                ))
+              ) : (
+                <p className="text-muted mb-0 about-mission-text">
+                  We envision a world where wholesome, natural snacks universally replace artificial and processed alternatives. By continuously innovating and expanding our sustainably sourced offerings, we strive to become the leading symbol of purity, enriching lives and fostering a globally health-conscious community.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -180,7 +272,14 @@ export default function AboutPage() {
       <section className="cta-banner my-5 py-md-3">
         <div className="container-fluid px-4 px-lg-5">
           <div className="position-relative overflow-hidden rounded-4 shadow-sm text-center text-md-start about-cta-container">
-            <Image src="/wholesale-banner.jpg" alt="Wholesale" fill style={{ objectFit: 'cover' }} className="position-absolute about-cta-bg-img" />
+            <Image 
+              src={banners.AboutCta ? getImageUrl(banners.AboutCta) : "/wholesale-banner.jpg"} 
+              alt="Wholesale" 
+              fill 
+              style={{ objectFit: 'cover' }} 
+              className="position-absolute about-cta-bg-img" 
+              unoptimized={!!banners.AboutCta}
+            />
             <div className="position-absolute w-100 h-100 about-cta-bg-overlay"></div>
             <div className="position-relative py-5 px-4 px-md-5 d-flex flex-column justify-content-center h-100 about-cta-content">
               <div className="col-md-9 col-lg-7">
@@ -191,7 +290,18 @@ export default function AboutPage() {
                 </p>
                 <div className="d-flex flex-wrap gap-3 mt-2 justify-content-center justify-content-md-start">
                   <Link href="/contact" className="btn fw-bold px-4 py-2 rounded-pill shadow about-cta-btn-primary">Contact Us Today <i className="fas fa-arrow-right ms-2"></i></Link>
-                  <a href="#" className="btn btn-outline-light fw-bold px-4 py-2 rounded-pill about-cta-btn-outline">Download Catalog <i className="fas fa-file-pdf ms-2"></i></a>
+                  <button 
+                    onClick={(e) => {
+                      if (!catalogPdf) {
+                        showAlert('Product catalog will be available to download soon!', 'info');
+                      } else {
+                        setShowCatalogModal(true);
+                      }
+                    }} 
+                    className="btn btn-outline-light fw-bold px-4 py-2 rounded-pill about-cta-btn-outline"
+                  >
+                    Download Catalog <i className="fas fa-file-pdf ms-2"></i>
+                  </button>
                 </div>
               </div>
             </div>
@@ -234,20 +344,74 @@ export default function AboutPage() {
       </section>
 
       {/* People Are Also Looking For Section */}
-      <section className="tags-section bg-white py-5">
-        <div className="container-fluid px-4 px-lg-5 py-3">
-          <h3 className="mb-4 text-start" style={{ fontSize: '24px', color: '#333' }}>People Are Also Looking For</h3>
-          <div className="d-flex flex-wrap gap-2">
-            <a href="#" className="search-tag-pill">Cashew Royale</a>
-            <a href="#" className="search-tag-pill">Cashew Premium</a>
-            <a href="#" className="search-tag-pill">Almond American</a>
-            <a href="#" className="search-tag-pill">Mamra</a>
-            <a href="#" className="search-tag-pill">Kishmish Royale</a>
-            <a href="#" className="search-tag-pill">Kishmish Premium</a>
-            <a href="#" className="search-tag-pill">Walnut Royale</a>
+      <TagsSection />
+      {/* Catalog Lead Capture Modal */}
+      {showCatalogModal && typeof document !== 'undefined' && createPortal(
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(15, 23, 42, 0.65)', zIndex: 1050, backdropFilter: 'blur(8px)' }} onClick={() => setShowCatalogModal(false)}>
+          <div className="card shadow-lg border-0 rounded-4 overflow-hidden" style={{ width: '440px', maxWidth: '95vw', background: '#FFFFFF' }} onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="position-absolute top-0 end-0 bg-transparent border-0 text-muted p-3" 
+              onClick={() => setShowCatalogModal(false)}
+              style={{ zIndex: 10, cursor: 'pointer' }}
+            >
+              <X size={20} />
+            </button>
+            <div className="p-4 text-center pb-3 pt-5">
+              <div className="mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center shadow-sm" style={{ width: '64px', height: '64px', backgroundColor: '#e8f5e9', color: '#2e7d32' }}>
+                <DownloadCloud size={32} />
+              </div>
+              <h5 className="fw-bold text-dark mb-2" style={{ fontSize: '22px' }}>
+                Download Catalog
+              </h5>
+              <p className="mb-0 text-muted fs-7" style={{ lineHeight: '1.5' }}>
+                Please enter your details below to instantly download our premium product catalog.
+              </p>
+            </div>
+            
+            <div className="p-4 pt-2">
+              <form onSubmit={handleCatalogDownload}>
+                <div className="mb-3 text-start">
+                  <label className="form-label fw-bold text-dark" style={{ fontSize: '13px' }}>FULL NAME <span className="text-danger">*</span></label>
+                  <input 
+                    type="text" 
+                    className="form-control py-2.5 bg-light border-light shadow-none" 
+                    placeholder="Enter your name"
+                    value={catalogLead.name}
+                    onChange={(e) => setCatalogLead({ ...catalogLead, name: e.target.value })}
+                    required
+                    style={{ fontSize: '15px' }}
+                  />
+                </div>
+                <div className="mb-4 text-start">
+                  <label className="form-label fw-bold text-dark" style={{ fontSize: '13px' }}>MOBILE NUMBER <span className="text-danger">*</span></label>
+                  <input 
+                    type="tel" 
+                    className="form-control py-2.5 bg-light border-light shadow-none" 
+                    placeholder="Enter your mobile number"
+                    value={catalogLead.phone}
+                    onChange={(e) => setCatalogLead({ ...catalogLead, phone: e.target.value })}
+                    required
+                    style={{ fontSize: '15px' }}
+                  />
+                </div>
+                <button 
+                  type="submit" 
+                  className="btn w-100 py-3 fw-bold rounded-3 text-white shadow-sm d-flex align-items-center justify-content-center gap-2" 
+                  style={{ backgroundColor: '#2e7d32', transition: 'all 0.2s ease', letterSpacing: '0.5px' }}
+                  disabled={submittingLead}
+                >
+                  {submittingLead ? (
+                    <><span className="spinner-border spinner-border-sm"></span> Processing...</>
+                  ) : (
+                    <>DOWNLOAD PDF <i className="fas fa-arrow-down ms-1"></i></>
+                  )}
+                </button>
+              </form>
+            </div>
           </div>
-        </div>
-      </section>
+        </div>,
+        document.body
+      )}
     </>
   );
 }

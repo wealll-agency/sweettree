@@ -10,7 +10,7 @@ import 'swiper/css/navigation';
 const ProductCarouselSection = ({ title, products }) => {
   return (
     <>
-      <section className="section-wrapper animated-gradient-bg pb-5 relative-nav">
+      <section className="section-wrapper animated-gradient-bg pb-3 pb-md-4 relative-nav">
         <div className="container-fluid px-1 px-md-4 px-lg-5 text-center">
           <h2 className="main-title">{title}</h2>
           <Swiper

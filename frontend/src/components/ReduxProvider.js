@@ -10,6 +10,20 @@ import { hydrateWishlist } from '../store/wishlistSlice.js';
 import axios from 'axios';
 import api from '../utils/axiosConfig.js';
 
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 function StateHydrator() {
   const dispatch = useDispatch();
 
@@ -97,20 +111,35 @@ function StateHydrator() {
           }
           
           // If the user is a guest (not logged in), don't try to refresh and don't force a redirect.
-          // This allows guests to stay on the checkout page even if fetchCoupons returns 401.
           if (typeof window !== 'undefined' && !localStorage.getItem('sweettree_user')) {
             return Promise.reject(error);
           }
 
+          if (isRefreshing) {
+            return new Promise(function(resolve, reject) {
+              failedQueue.push({ resolve, reject });
+            }).then(() => {
+              return api(originalRequest);
+            }).catch(err => {
+              return Promise.reject(err);
+            });
+          }
+
           originalRequest._retry = true;
+          isRefreshing = true;
+
           try {
              await axios.post(`${apiUrl}/auth/refresh`, {}, { withCredentials: true });
+             isRefreshing = false;
+             processQueue(null, 'success');
              // The backend set a new HttpOnly access token cookie, so retry the original request
              return api(originalRequest);
           } catch(err) {
-             // Refresh failed, user is definitely logged out
+             isRefreshing = false;
+             processQueue(err, null);
              dispatch(setCredentials(null));
-             if (typeof window !== 'undefined') {
+             
+             if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
                window.location.href = '/login?session_expired=true';
              }
              return Promise.reject(err);

@@ -7,6 +7,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Star, ShoppingCart } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, Pagination, Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/css/navigation';
 import api from '../../utils/axiosConfig';
 import SlidingTicker from '../../components/SlidingTicker';
 
@@ -22,6 +27,7 @@ function ComboListingContent() {
   const [combos, setCombos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [comboBanners, setComboBanners] = useState([]);
+  const [isLoadingBanners, setIsLoadingBanners] = useState(true);
   const [viewType, setViewType] = useState('grid');
   const [sortBy, setSortBy] = useState('Best Selling');
   const { showAlert } = useNotification();
@@ -37,7 +43,10 @@ function ComboListingContent() {
             setComboBanners(fetchedBanners);
           }
         }
-      } catch (error) {}
+      } catch (error) {
+      } finally {
+        setIsLoadingBanners(false);
+      }
     };
     fetchBanners();
   }, []);
@@ -88,36 +97,65 @@ function ComboListingContent() {
       <section className="shop-banner">
         <div className="container-fluid px-1 px-md-4 px-lg-5">
           <div className="shop_banner_image">
-            {comboBanners.length > 0 ? (
-              comboBanners.map(banner => (
-                <a href={banner.targetLink || '#'} key={banner._id}>
-                  <Image 
-                    src={banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : ''}${banner.image}`} 
-                    alt={banner.title || "Combo Box Banner"} 
-                    width={1920} 
-                    height={300} 
-                    priority={true} 
-                    style={{ width: '100%', height: '100%', maxHeight: '350px', objectFit: 'cover', display: 'block', marginBottom: '15px', borderRadius: '15px' }} 
-                  />
-                </a>
-              ))
+            {isLoadingBanners ? (
+              <div className="placeholder-glow w-100" style={{ maxWidth: '1920px' }}>
+                <div className="placeholder bg-light" style={{ width: '100%', height: '300px', display: 'block', borderRadius: '15px', marginBottom: '15px' }}></div>
+              </div>
+            ) : comboBanners.length > 1 ? (
+              <Swiper
+                modules={[Autoplay, Pagination, Navigation]}
+                spaceBetween={0}
+                slidesPerView={1}
+                autoplay={{ delay: 3000, disableOnInteraction: false }}
+                pagination={{ clickable: true }}
+                navigation={true}
+                loop={true}
+                style={{ marginBottom: '15px', borderRadius: '15px', overflow: 'hidden' }}
+                className="combo-banner-swiper"
+              >
+                {comboBanners.map((banner, index) => (
+                  <SwiperSlide key={banner._id}>
+                    <a href={banner.targetLink || '#'}>
+                      <Image 
+                        src={banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : ''}${banner.image}`} 
+                        alt={banner.title || "Combo Box Banner"} 
+                        width={2172} 
+                        height={724} 
+                        priority={index === 0} 
+                        style={{ width: '100%', height: 'auto', aspectRatio: '2172/724', display: 'block' }} 
+                      />
+                    </a>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            ) : comboBanners.length === 1 ? (
+              <a href={comboBanners[0].targetLink || '#'}>
+                <Image 
+                  src={comboBanners[0].image.startsWith('http') || comboBanners[0].image.startsWith('/') ? comboBanners[0].image : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : ''}${comboBanners[0].image}`} 
+                  alt={comboBanners[0].title || "Combo Box Banner"} 
+                  width={2172} 
+                  height={724} 
+                  priority={true} 
+                  style={{ width: '100%', height: 'auto', aspectRatio: '2172/724', display: 'block', marginBottom: '15px', borderRadius: '15px' }} 
+                />
+              </a>
             ) : (
-              <Image src="/shop_banner.jpg" alt="Shop Banner" width={1920} height={300} priority={true} style={{ width: '100%', height: 'auto', display: 'block' }} />
+              <Image src="/shop_banner.jpg" alt="Shop Banner" width={2172} height={724} priority={true} style={{ width: '100%', height: 'auto', aspectRatio: '2172/724', display: 'block', borderRadius: '15px' }} />
             )}
           </div>
         </div>
       </section>
 
-      <div className="container-fluid px-4 px-lg-5 py-5 pb-5">
+      <div className="container-fluid px-3 px-lg-5 pt-3 pt-md-5 pb-5">
         <nav aria-label="breadcrumb">
-          <ol className="breadcrumb mb-4" style={{ fontSize: '13px' }}>
+          <ol className="breadcrumb mb-3 mb-md-4" style={{ fontSize: '13px' }}>
             <li className="breadcrumb-item"><Link href="/" className="text-muted">Home</Link></li>
             <li className="breadcrumb-item active text-dark fw-bold" aria-current="page">Combo Boxes</li>
           </ol>
         </nav>
 
         {/* Minimal View Bar */}
-        <div className="view-tools-bar mb-4">
+        <div className="view-tools-bar mb-0 mb-lg-4">
           <div className="d-none d-lg-flex align-items-center">
             <button 
               onClick={() => setViewType('grid')}
@@ -246,7 +284,7 @@ function ComboListingContent() {
                     <div className="product-card__content">
                       <div className="product-card__meta">
                         <span className="product-card__brand">
-                          {combo.brand || 'SWEETTREE'}
+                          sweettreeon
                         </span>
                         <span className="product-card__rating">
                           <Star size={12} fill="#ffb800" color="#ffb800" stroke="#ffb800" />
@@ -310,7 +348,7 @@ function ComboListingContent() {
                       <div className="col-8 col-md-9 ps-3 ps-md-4">
                         <div className="d-flex justify-content-between align-items-start">
                           <div>
-                            <span className="badge bg-light text-dark border mb-1">{combo.brand || 'SWEETTREE'}</span>
+                            <span className="badge bg-light text-dark border mb-1">sweettreeon</span>
                             <h5 className="fw-bold text-dark mb-1">{combo.name}</h5>
                             <p className="text-muted fs-7 mb-2 text-truncate-2" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>Premium curated combo featuring {combo.components?.length || 0} carefully selected items.</p>
                           </div>

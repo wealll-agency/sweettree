@@ -1,4 +1,5 @@
 'use client';
+import { TagsSection } from '../../components/HomeSections';
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -225,20 +226,7 @@ export default function BlogPage() {
       </section>
 
       {/* People Are Also Looking For Section */}
-      <section className="tags-section bg-white py-5">
-        <div className="container-fluid px-4 px-lg-5 py-3">
-          <h3 className="mb-4 text-start" style={{ fontSize: '24px', color: '#333' }}>People Are Also Looking For</h3>
-          <div className="d-flex flex-wrap gap-2">
-            <a href="#" className="search-tag-pill">Cashew Royale</a>
-            <a href="#" className="search-tag-pill">Cashew Premium</a>
-            <a href="#" className="search-tag-pill">Almond American</a>
-            <a href="#" className="search-tag-pill">Mamra</a>
-            <a href="#" className="search-tag-pill">Kishmish Royale</a>
-            <a href="#" className="search-tag-pill">Kishmish Premium</a>
-            <a href="#" className="search-tag-pill">Walnut Royale</a>
-          </div>
-        </div>
-      </section>
+      <TagsSection />
     </>
   );
 }

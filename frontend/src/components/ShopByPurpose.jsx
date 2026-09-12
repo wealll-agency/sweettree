@@ -6,13 +6,13 @@ import Image from 'next/image';
 const ShopByPurpose = () => {
   return (
     <section className="shop-by-purpose-section bg-white">
-      <div className="container-fluid px-4 px-lg-5 text-center pt-4">
+      <div className="container-fluid px-3 px-lg-5 text-center pt-4">
         <h2 className="main-title mb-2">Shop By Purpose</h2>
-        <p className="mb-5 mx-auto" style={{ maxWidth: '650px', color: '#444', fontSize: '15px' }}>
+        <p className="mb-4 mb-md-5 mx-auto" style={{ maxWidth: '650px', color: '#444', fontSize: '15px' }}>
           We just made it easy for you to shop on your terms. Let's get started to find your way for Passion for Nutrition.
         </p>
 
-        <div className="row g-4 justify-content-center pt-5 pb-4">
+        <div className="row g-3 g-md-4 justify-content-center pt-4 pb-4">
           <div className="col-6 col-md-3">
             <div className="purpose-card card-bg-gifting">
               <div className="purpose-default">

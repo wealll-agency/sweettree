@@ -149,6 +149,18 @@ export const refreshTokenUser = async (req, res, next) => {
     res.json({ success: true, token: accessToken });
   } catch (error) {
     console.error(`Refresh token error: ${error.message}`);
+    
+    // Clear cookies to prevent infinite reload loops
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      ...(process.env.NODE_ENV === 'production' && { domain: '.sweettreeon.com' }),
+      expires: new Date(0)
+    };
+    res.cookie('token', '', cookieOptions);
+    res.cookie('refreshToken', '', cookieOptions);
+
     return res.status(401).json({ success: false, message: 'Not authorized, invalid refresh token' });
   }
 };
@@ -348,6 +360,7 @@ export const getSystemSettings = async (req, res, next) => {
     const topSellingSetting = await SystemSetting.findOne({ key: 'topSellingSource' });
     const onlinePaymentSetting = await SystemSetting.findOne({ key: 'onlinePayment' });
     const slidingNotificationSetting = await SystemSetting.findOne({ key: 'slidingNotification' });
+    const catalogPdfSetting = await SystemSetting.findOne({ key: 'catalogPdf' });
 
     const defaultSliding = {
       enabled: true,
@@ -362,7 +375,8 @@ export const getSystemSettings = async (req, res, next) => {
         refund: refundSetting ? refundSetting.value : true,
         topSellingSource: topSellingSetting ? topSellingSetting.value : 'automatic',
         onlinePayment: onlinePaymentSetting ? onlinePaymentSetting.value : true,
-        slidingNotification: slidingNotificationSetting ? slidingNotificationSetting.value : defaultSliding
+        slidingNotification: slidingNotificationSetting ? slidingNotificationSetting.value : defaultSliding,
+        catalogPdf: catalogPdfSetting ? catalogPdfSetting.value : ''
       }
     });
   } catch (error) {
@@ -414,6 +428,13 @@ export const updateSystemSettings = async (req, res, next) => {
           { upsert: true, new: true }
         );
       }
+      if (settings.catalogPdf !== undefined) {
+        await SystemSetting.findOneAndUpdate(
+          { key: 'catalogPdf' },
+          { value: String(settings.catalogPdf) },
+          { upsert: true, new: true }
+        );
+      }
     }
 
     await logActivity(req.user._id, 'UPDATE_SYSTEM_SETTINGS', `Updated global access settings`, req);
@@ -423,6 +444,7 @@ export const updateSystemSettings = async (req, res, next) => {
     const topSellingSetting = await SystemSetting.findOne({ key: 'topSellingSource' });
     const onlinePaymentSetting = await SystemSetting.findOne({ key: 'onlinePayment' });
     const slidingNotificationSetting = await SystemSetting.findOne({ key: 'slidingNotification' });
+    const catalogPdfSetting = await SystemSetting.findOne({ key: 'catalogPdf' });
 
     const defaultSliding = {
       enabled: true,
@@ -438,7 +460,8 @@ export const updateSystemSettings = async (req, res, next) => {
         refund: refundSetting ? refundSetting.value : true,
         topSellingSource: topSellingSetting ? topSellingSetting.value : 'automatic',
         onlinePayment: onlinePaymentSetting ? onlinePaymentSetting.value : true,
-        slidingNotification: slidingNotificationSetting ? slidingNotificationSetting.value : defaultSliding
+        slidingNotification: slidingNotificationSetting ? slidingNotificationSetting.value : defaultSliding,
+        catalogPdf: catalogPdfSetting ? catalogPdfSetting.value : ''
       }
     });
   } catch (error) {

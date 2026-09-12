@@ -1,17 +1,36 @@
 'use client';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addToCart, removeFromCart } from '../store/cartSlice';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { ShoppingCart, Trash2, Receipt, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 
 const CartOffcanvas = () => {
   const dispatch = useDispatch();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { items, subtotal, discount, tax, shippingFee, total } = useSelector((state) => state.cart);
   const dbProducts = useSelector((state) => state.products?.items || []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.bootstrap) {
+      const offcanvasEl = document.getElementById('cartOffcanvas');
+      if (offcanvasEl) {
+        const bsOffcanvas = window.bootstrap.Offcanvas.getInstance(offcanvasEl);
+        if (bsOffcanvas) {
+          bsOffcanvas.hide();
+        }
+      }
+      // Clean up stray backdrops which can happen on back navigation
+      const backdrops = document.querySelectorAll('.offcanvas-backdrop');
+      backdrops.forEach(backdrop => backdrop.remove());
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    }
+  }, [pathname, searchParams]);
 
   let calculatedTotalMrp = 0;
   items.forEach(item => {
@@ -25,21 +44,38 @@ const CartOffcanvas = () => {
   const totalSavings = mrpDiscount + discount;
   const savingsPercent = calculatedTotalMrp > 0 ? Math.round((totalSavings / calculatedTotalMrp) * 100) : 0;
 
-  const handleIncrement = (product, size) => {
-    dispatch(addToCart({ product, quantity: 1, size }));
+  const handleIncrement = (item) => {
+    const payload = { size: item.size, quantity: 1, itemType: item.itemType };
+    if (item.itemType === 'Combo') {
+      payload.combo = { _id: item.combo, comboPrice: item.price }; // addToCart expects combo object with comboPrice when itemType is Combo
+    } else {
+      payload.product = { _id: item.product, price: item.price };
+    }
+    dispatch(addToCart(payload));
   };
 
-  const handleDecrement = (product, size) => {
-    const item = items.find(i => i.product === product._id && i.size === size);
+  const handleDecrement = (item) => {
     if (item && item.quantity > 1) {
-      dispatch(addToCart({ product, quantity: -1, size }));
+      const payload = { size: item.size, quantity: -1, itemType: item.itemType };
+      if (item.itemType === 'Combo') {
+        payload.combo = { _id: item.combo, comboPrice: item.price }; // addToCart expects combo object with comboPrice when itemType is Combo
+      } else {
+        payload.product = { _id: item.product, price: item.price };
+      }
+      dispatch(addToCart(payload));
     } else {
-      dispatch(removeFromCart({ product: product._id, size }));
+      handleRemove(item);
     }
   };
 
-  const handleRemove = (productId, size) => {
-    dispatch(removeFromCart({ product: productId, size }));
+  const handleRemove = (item) => {
+    const payload = { size: item.size, itemType: item.itemType };
+    if (item.itemType === 'Combo') {
+      payload.combo = item.combo;
+    } else {
+      payload.product = item.product;
+    }
+    dispatch(removeFromCart(payload));
   };
 
   const handleProductClick = (productId, productName) => {
@@ -103,9 +139,9 @@ const CartOffcanvas = () => {
             </div>
           ) : (
             items.map((item, index) => (
-              <div key={`${item.product}-${item.size}-${index}`} className="card border-0 shadow-sm rounded-3 mb-3 p-3">
+              <div key={`${item.product || item.combo}-${item.size}-${index}`} className="card border-0 shadow-sm rounded-3 mb-3 p-3">
                 <div className="d-flex position-relative">
-                  <button onClick={() => handleRemove(item.product, item.size)} className="position-absolute top-0 end-0 bg-transparent border-0 text-muted p-0" style={{ right: '-5px' }}>
+                  <button onClick={() => handleRemove(item)} className="position-absolute top-0 end-0 bg-transparent border-0 text-muted p-0" style={{ right: '-5px' }}>
                     <Trash2 size={16} />
                   </button>
                   <Image 
@@ -129,9 +165,9 @@ const CartOffcanvas = () => {
                     
                     <div className="d-flex justify-content-between align-items-center mt-3">
                       <div className="input-group border rounded" style={{ width: '80px', height: '30px' }}>
-                        <button className="btn btn-sm btn-light border-0 px-2" onClick={() => handleDecrement({ _id: item.product, price: item.price, name: item.name, images: [item.image], stock: item.maxStock }, item.size)}>-</button>
+                        <button className="btn btn-sm btn-light border-0 px-2" onClick={() => handleDecrement(item)}>-</button>
                         <input type="text" className="form-control form-control-sm text-center border-0 p-0 fw-bold bg-white" value={item.quantity} readOnly />
-                        <button className="btn btn-sm btn-light border-0 px-2" onClick={() => handleIncrement({ _id: item.product, price: item.price, name: item.name, images: [item.image], stock: item.maxStock }, item.size)}>+</button>
+                        <button className="btn btn-sm btn-light border-0 px-2" onClick={() => handleIncrement(item)} disabled={item.quantity >= item.maxStock}>+</button>
                       </div>
                       <div className="text-end">
                         <div className="fw-bold fs-6">₹{(item.price * item.quantity).toFixed(2)}</div>

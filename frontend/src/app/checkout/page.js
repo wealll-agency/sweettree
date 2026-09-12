@@ -107,7 +107,7 @@ export default function CheckoutPage() {
         const res = await api.get(`/products`);
         if (res.data.success) {
           // Exclude products already in cart, get top 3
-          const cartProductIds = items.map(item => item.product);
+          const cartProductIds = items.map(item => item.product || item.combo);
           const availableRecs = res.data.products
             .filter(p => !cartProductIds.includes(p._id) && p.stock > 0)
             .slice(0, 3);
@@ -336,7 +336,7 @@ export default function CheckoutPage() {
       const applicableProducts = response.data.applicableProducts || [];
 
       if (applicableProducts.length > 0) {
-        const hasEligibleItem = items.some(item => applicableProducts.includes(item.product));
+        const hasEligibleItem = items.some(item => applicableProducts.includes(item.product || item.combo));
         if (!hasEligibleItem && !response.data.isCombo) {
           setCouponError('This coupon is not valid for any items in your cart.');
           dispatch(applyCouponCode({ code: '', discountPercentage: 0, applicableProducts: [], isCombo: false }));
@@ -381,7 +381,17 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="container-fluid px-4 px-lg-5 py-5 animate-fade-in">
+    <div className="container-fluid px-4 px-lg-5 py-5 animate-fade-in checkout-mobile-container">
+      <style>{`
+        @media (max-width: 767px) {
+          footer {
+            display: none !important;
+          }
+          .checkout-mobile-container {
+            padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)) !important;
+          }
+        }
+      `}</style>
       <h1 className="fw-bold mb-4 display-font">Secure Checkout</h1>
 
       <div className="row g-5">
@@ -641,7 +651,7 @@ export default function CheckoutPage() {
             {/* Small recap list */}
             <div className="d-flex flex-column gap-3 mb-4" style={{ maxHeight: '220px', overflowY: 'auto' }}>
               {items.map(item => (
-                <div key={`${item.product}-${item.size}`} className="d-flex align-items-center justify-content-between">
+                <div key={`${item.product || item.combo}-${item.size}`} className="d-flex align-items-center justify-content-between">
                   <div className="d-flex align-items-center gap-2">
                     <ShoppingBag size={18} className="text-muted" />
                     <div>
@@ -787,7 +797,26 @@ export default function CheckoutPage() {
               <h5 className="fw-bold mb-3 fs-6 d-flex align-items-center gap-2">
                 <ShoppingBag size={16} /> You May Also Like
               </h5>
-              <div className="row g-3">
+              <style>{`
+                .checkout-recs-row {
+                  flex-wrap: nowrap !important;
+                  overflow-x: auto;
+                  scrollbar-width: none;
+                  padding-bottom: 10px;
+                  margin-bottom: -10px;
+                  -webkit-overflow-scrolling: touch;
+                }
+                .checkout-recs-row::-webkit-scrollbar {
+                  display: none;
+                }
+                @media (min-width: 768px) {
+                  .checkout-recs-row {
+                    flex-wrap: wrap !important;
+                    overflow-x: visible;
+                  }
+                }
+              `}</style>
+              <div className="row g-3 checkout-recs-row">
                 {recommendedProducts.map(product => {
                   const activePrice = product.price;
 

@@ -4582,7 +4582,6 @@ a {
 
 .about-story-img {
   border: 6px solid #fff;
-  object-fit: cover;
 }
 
 .about-story-bg-shape {
@@ -4754,8 +4753,6 @@ a {
 }
 
 .about-mission-img {
-  max-height: 400px;
-  object-fit: cover;
   transition: transform 0.6s ease;
 }
 
@@ -4770,8 +4767,6 @@ a {
 }
 
 .about-vision-img {
-  max-height: 400px;
-  object-fit: cover;
   transition: transform 0.6s ease;
 }
 

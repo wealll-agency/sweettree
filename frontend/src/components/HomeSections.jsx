@@ -1,11 +1,11 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation, EffectCoverflow } from 'swiper/modules';
 import Link from 'next/link';
 import Image from 'next/image';
 
-import { useState, useEffect } from 'react';
+
 import api from '../utils/axiosConfig';
 
 export const NuttyDelightOffers = () => {
@@ -48,9 +48,9 @@ export const NuttyDelightOffers = () => {
   };
 
   return (
-    <section className="section-wrapper bg-white pb-3 pb-md-5 relative-nav nutty-delight-section">
+    <section className="bg-white pt-0 pb-3 pb-md-5 relative-nav nutty-delight-section">
       <div className="container-fluid px-4 px-lg-5 text-center offers-container-override">
-        <h2 className="main-title offers-title">Trending Now</h2>
+        <h2 className="main-title offers-title mt-2 mt-md-3">Trending Now</h2>
         
         {loading ? (
           <div className="d-flex justify-content-center gap-3 py-4">
@@ -67,7 +67,7 @@ export const NuttyDelightOffers = () => {
             navigation={true}
             autoplay={{ delay: 3000, disableOnInteraction: false }}
             breakpoints={{
-              0: { slidesPerView: 1.2, spaceBetween: 15 },
+              0: { slidesPerView: 1.1, spaceBetween: 10 },
               768: { slidesPerView: 2, spaceBetween: 20 },
               1024: { slidesPerView: 3, spaceBetween: 0 },
             }}
@@ -112,16 +112,25 @@ export const NuttyDelightOffers = () => {
         
         @media (max-width: 768px) {
           .offers-title {
-            margin-bottom: 20px !important;
+            margin-bottom: 16px !important;
           }
           .offers-slider {
-            padding: 10px 0 20px 0 !important;
+            padding: 10px 0 16px 0 !important;
           }
           .nutty-delight-section {
-            padding-bottom: 1rem !important;
+            background: linear-gradient(135deg, #fdfbf7 0%, #f4efe2 100%) !important;
+            margin: 12px 10px !important;
+            border-radius: 24px !important;
+            padding-bottom: 0.8rem !important;
+            border: 1px solid rgba(215, 203, 185, 0.5) !important;
+            box-shadow: none !important;
+            overflow: hidden !important;
+          }
+          .nutty-delight-section .offers-container-override .swiper-slide-active .offer-card {
+            box-shadow: none !important;
           }
           .nutty-delight-section .container-fluid {
-             padding-top: 20px !important;
+             padding-top: 18px !important;
           }
         }
         .offers-container-override .swiper-button-next:after,
@@ -479,36 +488,49 @@ export const Faqs = () => {
 };
 
 export const TagsSection = () => {
+  const [isTagsExpanded, setIsTagsExpanded] = useState(false);
+  const tags = [
+    "Cashew Royale", "Cashew Premium", "Almond American", "Mamra", 
+    "Kishmish Royale", "Kishmish Premium", "Walnut Royale", "Anjeer", 
+    "Pista", "Dates Royale", "Kishmish Black", "Mate Coffee Creamer",
+    "Shahi Rose Trail Mix", "Crazy Crunchy Corn", "Museli Dry Fruits Medley",
+    "Fruity Orchard Mix", "BBQ Millets Trail Mix", "Museli Fruit & Nut",
+    "Cashew Green Chilli", "Cashew Salted", "Almond Salted", 
+    "Almond Peri Peri", "Cashew Cheese"
+  ];
+
   return (
-    <section className="tags-section bg-white py-5">
-      <div className="container-fluid px-4 px-lg-5 py-3">
+    <section className="tags-section bg-white pt-4 pb-1 pt-md-5 pb-md-5">
+      <div className="container-fluid px-4 px-lg-5 pt-2 pb-0 py-md-3">
         <h3 className="mb-4 text-start" style={{ fontSize: '24px', color: '#333' }}>People Are Also Looking For</h3>
         <div className="d-flex flex-wrap gap-2">
-          <Link href="/shop?keyword=Cashew Royale" className="search-tag-pill">Cashew Royale</Link>
-          <Link href="/shop?keyword=Cashew Premium" className="search-tag-pill">Cashew Premium</Link>
-          <Link href="/shop?keyword=Almond American" className="search-tag-pill">Almond American</Link>
-          <Link href="/shop?keyword=Mamra" className="search-tag-pill">Mamra</Link>
-          <Link href="/shop?keyword=Kishmish Royale" className="search-tag-pill">Kishmish Royale</Link>
-          <Link href="/shop?keyword=Kishmish Premium" className="search-tag-pill">Kishmish Premium</Link>
-          <Link href="/shop?keyword=Walnut Royale" className="search-tag-pill">Walnut Royale</Link>
-          <Link href="/shop?keyword=Anjeer" className="search-tag-pill">Anjeer</Link>
-          <Link href="/shop?keyword=Pista" className="search-tag-pill">Pista</Link>
-          <Link href="/shop?keyword=Dates Royale" className="search-tag-pill">Dates Royale</Link>
-
-          <Link href="/shop?keyword=Kishmish Black" className="search-tag-pill">Kishmish Black</Link>
-          <Link href="/shop?keyword=Mate Coffee Creamer" className="search-tag-pill">Mate Coffee Creamer</Link>
-          <Link href="/shop?keyword=Shahi Rose Trail Mix" className="search-tag-pill">Shahi Rose Trail Mix</Link>
-          <Link href="/shop?keyword=Crazy Crunchy Corn" className="search-tag-pill">Crazy Crunchy Corn</Link>
-          <Link href="/shop?keyword=Museli Dry Fruits Medley" className="search-tag-pill">Museli Dry Fruits Medley</Link>
-          <Link href="/shop?keyword=Fruity Orchard Mix" className="search-tag-pill">Fruity Orchard Mix</Link>
-          <Link href="/shop?keyword=BBQ Millets Trail Mix" className="search-tag-pill">BBQ Millets Trail Mix</Link>
-
-          <Link href="/shop?keyword=Museli Fruit & Nut" className="search-tag-pill">Museli Fruit & Nut</Link>
-          <Link href="/shop?keyword=Cashew Green Chilli" className="search-tag-pill">Cashew Green Chilli</Link>
-          <Link href="/shop?keyword=Cashew Salted" className="search-tag-pill">Cashew Salted</Link>
-          <Link href="/shop?keyword=Almond Salted" className="search-tag-pill">Almond Salted</Link>
-          <Link href="/shop?keyword=Almond Peri Peri" className="search-tag-pill">Almond Peri Peri</Link>
-          <Link href="/shop?keyword=Cashew Cheese" className="search-tag-pill">Cashew Cheese</Link>
+          {tags.map((tag, i) => (
+             <Link 
+               key={i} 
+               href={`/shop?keyword=${tag}`} 
+               className={`search-tag-pill ${!isTagsExpanded && i >= 6 ? 'd-none d-md-inline-block' : 'd-inline-block'}`}
+             >
+               {tag}
+             </Link>
+          ))}
+          {!isTagsExpanded && tags.length > 6 && (
+            <button 
+              className="search-tag-pill border-0 d-md-none fw-bold" 
+              style={{ backgroundColor: '#f0f0f0', color: '#555' }}
+              onClick={() => setIsTagsExpanded(true)}
+            >
+              View All <i className="fas fa-chevron-down ms-1"></i>
+            </button>
+          )}
+          {isTagsExpanded && (
+            <button 
+              className="search-tag-pill border-0 d-md-none fw-bold" 
+              style={{ backgroundColor: '#f0f0f0', color: '#555' }}
+              onClick={() => setIsTagsExpanded(false)}
+            >
+              Show Less <i className="fas fa-chevron-up ms-1"></i>
+            </button>
+          )}
         </div>
       </div>
     </section>

@@ -126,9 +126,9 @@ const calculateOrderTotals = async (items, couponCode) => {
   // Tiered Shipping Logic
   let shippingFee = 0;
   if (items.length > 0) {
-    if (taxableAmount <= 1000) {
+    if (subtotal <= 1000) {
       shippingFee = 150;
-    } else if (taxableAmount <= 1999) {
+    } else if (subtotal <= 1999) {
       shippingFee = 100;
     } else {
       shippingFee = 0;

@@ -27,16 +27,16 @@ const storage = multer.memoryStorage();
 
 export const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit (for videos)
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit (for videos & documents)
   fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png|webp|mp4|mov|avi/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype);
+    const ext = path.extname(file.originalname).toLowerCase();
+    const isImageOrVideo = /^\.(jpeg|jpg|png|webp|mp4|mov|avi)$/.test(ext);
+    const isPdf = ext === '.pdf' || file.mimetype.includes('pdf') || file.mimetype === 'application/octet-stream';
 
-    if (mimetype && extname) {
+    if (isImageOrVideo || isPdf) {
       return cb(null, true);
     } else {
-      cb(new Error('Only images (jpg, png, webp) and videos (mp4, mov, avi) are allowed'));
+      cb(new Error('Only images (jpg, png, webp), videos (mp4, mov, avi), and PDF documents are allowed'));
     }
   }
 });
@@ -47,7 +47,10 @@ export const upload = multer({
  * @returns {Promise<string>} URL of the uploaded resource
  */
 export const uploadFile = async (file) => {
-  const fileName = `${Date.now()}_${path.basename(file.originalname).replace(/\s+/g, '_')}`;
+  const ext = path.extname(file.originalname).toLowerCase();
+  const rawBaseName = path.basename(file.originalname, ext);
+  const safeBaseName = rawBaseName.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const fileName = `${Date.now()}_${safeBaseName || 'file'}${ext}`;
 
   if (isS3Configured) {
     try {
@@ -55,8 +58,7 @@ export const uploadFile = async (file) => {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: fileName,
         Body: file.buffer,
-        ContentType: file.mimetype,
-        // Remove ACL as some buckets block ACL controls
+        ContentType: file.mimetype || (ext === '.pdf' ? 'application/pdf' : 'application/octet-stream'),
       });
 
       await s3Client.send(command);

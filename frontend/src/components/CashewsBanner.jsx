@@ -37,10 +37,10 @@ const CashewsBanner = () => {
   };
 
   return (
-    <section className="wholesale-banner-section py-4 bg-white">
-      <div className="container-fluid px-4 px-lg-5 container-fluid-md">
+    <section className="wholesale-banner-section py-2 py-md-4 bg-white pb-0 pb-md-4">
+      <div className="container-fluid px-3 px-lg-5 container-fluid-md">
         {displayBanners.map((banner, index) => (
-          <Link href={banner.targetLink || '#'} key={banner._id || index} className="d-block mb-3">
+          <Link href={banner.targetLink || '#'} key={banner._id || index} className="d-block mb-1 mb-md-3">
             <div className="banner-img-container ratio-trending banner-rounded overflow-hidden shadow-sm">
               <Image 
                 src={getImageUrl(banner.image)} 

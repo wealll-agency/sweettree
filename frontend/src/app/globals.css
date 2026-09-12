@@ -548,13 +548,13 @@ h6,
 }
 
 .premium-nav-link:hover {
-  color: var(--primary-color);
-  background: rgba(0, 0, 0, 0.04);
-  transform: translateY(-2px);
+  /* color: var(--primary-color); */
+  /* background: rgba(0, 0, 0, 0.04); */
+  /* transform: translateY(-2px); */
 }
 
 .premium-nav-link:hover .nav-icon {
-  transform: scale(1.2);
+  /* transform: scale(1.2); */
 }
 
 /* Active underline */
@@ -572,7 +572,7 @@ h6,
 }
 
 .premium-nav-link:hover::after {
-  width: 60%;
+  /* width: 60%; */
 }
 
 /* Highlighted "COMBO BOX" link */
@@ -1325,7 +1325,7 @@ article.product-card a {
   background: #ffffff;
   padding: 12px 16px 20px;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
-  z-index: 1050;
+  z-index: 1030;
   margin-bottom: 0 !important;
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
@@ -1460,3 +1460,819 @@ input::-ms-clear {
 .ratio-shop-banner {
   aspect-ratio: 1920 / 300;
 }
+
+/* =======================================================
+   SWEETTREE MOBILE HOME REDESIGN
+   All rules are scoped to max-width: 767px
+   Desktop styles are NOT modified.
+   ======================================================= */
+
+/* ── Mobile CSS Variables ────────────────────────────── */
+:root {
+  --st-primary:  #1E3F20;
+  --st-primary-light: #2E6F40;
+  --st-bg-page: #f5f7f4;
+  --st-card-radius: 18px;
+  --st-btn-radius: 12px;
+  --st-page-pad: 16px;
+  --st-section-gap: 24px;
+}
+
+/* ── Hide existing desktop header hamburger on mobile already done by d-lg-none ─ */
+
+/* ─────────────────────────────────────────────────────
+   MOBILE TOP NAVBAR
+───────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Make sure the existing desktop header is hidden on mobile */
+  .main-header {
+    display: none !important;
+  }
+
+  .mobile-topbar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9000;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(30, 63, 32, 0.08);
+    box-shadow: 0 2px 12px rgba(30, 63, 32, 0.06);
+  }
+
+  .mobile-topbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 58px;
+    padding: 0 var(--st-page-pad);
+  }
+
+  .mobile-topbar-logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+
+  .mobile-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .mobile-topbar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: var(--st-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s ease;
+    text-decoration: none;
+  }
+
+  .mobile-topbar-btn:hover,
+  .mobile-topbar-btn:focus {
+    background: rgba(30, 63, 32, 0.07);
+    color: var(--st-primary);
+  }
+
+  .mobile-topbar-cart {
+    position: relative;
+  }
+
+  .mobile-topbar-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 17px;
+    height: 17px;
+    background: #ef4444;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 9px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0 2px;
+    border: 1.5px solid #fff;
+  }
+
+  /* Search bar that drops below topbar */
+  .mobile-topbar-search-bar {
+    display: flex;
+    gap: 8px;
+    padding: 10px var(--st-page-pad);
+    border-top: 1px solid rgba(30, 63, 32, 0.07);
+    background: #fff;
+    animation: slideDown 0.2s ease;
+  }
+
+  .mobile-topbar-search-input {
+    flex: 1;
+    height: 38px;
+    border: 1.5px solid rgba(30, 63, 32, 0.2);
+    border-radius: 10px;
+    padding: 0 14px;
+    font-size: 14px;
+    color: var(--st-primary);
+    background: #f5f7f4;
+    outline: none;
+  }
+
+  .mobile-topbar-search-input:focus {
+    border-color: var(--st-primary-light);
+    background: #fff;
+  }
+
+  .mobile-topbar-search-submit {
+    height: 38px;
+    padding: 0 16px;
+    background: var(--st-primary);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* ─────────────────────────────────────────────────────
+   MOBILE BOTTOM NAVIGATION
+───────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .mobile-bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 64px;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(30, 63, 32, 0.08);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    align-items: stretch;
+    z-index: 1030;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -4px 20px rgba(30, 63, 32, 0.06);
+  }
+
+  .mobile-bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: #9ca3af;
+    text-decoration: none !important;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    min-height: 56px;
+    transition: color 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-bottom-nav-item.active {
+    color: var(--st-primary);
+    font-weight: 700;
+  }
+
+  .mobile-bottom-nav-item.active .mobile-bottom-nav-icon-wrap svg {
+    stroke: var(--st-primary);
+  }
+
+  .mobile-bottom-nav-icon-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+  }
+
+  .mobile-bottom-nav-badge {
+    position: absolute;
+    top: -5px;
+    right: -7px;
+    min-width: 16px;
+    height: 16px;
+    background: #ef4444;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 8.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2px;
+    border: 1.5px solid #fff;
+  }
+
+  .mobile-bottom-nav-label {
+    font-size: 10px;
+    line-height: 1;
+  }
+}
+
+/* ─────────────────────────────────────────────────────
+   MOBILE HOME PAGE WRAPPER
+───────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .home-page-main {
+    background: var(--st-bg-page);
+  }
+
+  .mobile-home-wrapper {
+    padding-bottom: 0;
+    background: var(--st-bg-page);
+    overflow-x: hidden;
+  }
+
+  /* Hero Section */
+  .mobile-hero-section {
+    padding: 0 var(--st-page-pad);
+    margin-bottom: var(--st-section-gap);
+  }
+
+  .mobile-hero-section .hero-slider-wrapper {
+    margin: 0;
+  }
+
+  .mobile-hero-section .container-fluid {
+    padding: 0 !important;
+    margin-top: 12px !important;
+  }
+
+  .mobile-hero-section .hero-slider {
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .mobile-hero-section .banner-img-container {
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .mobile-hero-section .banner-img-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* SlidingTicker — hide on mobile to keep it clean */
+  .mobile-hero-section .sliding-ticker {
+    display: none;
+  }
+
+  .mobile-section-gap {
+    margin-top: var(--st-section-gap);
+  }
+
+  /* Push footer away from bottom nav */
+  footer, .mobile-footer-pad {
+    padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* FAQ section mobile clean-up */
+  .faq-section {
+    padding: 20px var(--st-page-pad) 16px !important;
+  }
+
+  .faq-section .container-fluid {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Tags section */
+  .tags-section {
+    padding: 12px var(--st-page-pad) 16px !important;
+  }
+
+  .tags-section .container-fluid {
+    padding: 0 !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────
+   MOBILE CATEGORY SECTION
+───────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .mcs-wrapper {
+    padding: 0 var(--st-page-pad);
+    margin-bottom: var(--st-section-gap);
+  }
+
+  .mcs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .mcs-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--st-primary);
+    margin: 0;
+  }
+
+  .mcs-view-all {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--st-primary-light);
+    text-decoration: none;
+  }
+
+  .mcs-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .mcs-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mcs-squircle {
+    width: 100%;
+    max-width: 70px;
+    height: 70px;
+    background-color: #fff;
+    border-radius: 20px;
+    border: 1px solid;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mcs-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    text-decoration: none;
+    min-width: 60px;
+  }
+
+  .mcs-icon-circle-live {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid #d1d5db; /* Thin grey border */
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+    color: #1a1a1a; /* Dark icons */
+  }
+  
+  .mcs-icon-circle-live i {
+    font-size: 16px;
+  }
+
+  .mcs-card-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
+    text-align: center;
+  }
+}
+
+/* ─────────────────────────────────────────────────────
+   MOBILE PRODUCT GRID
+───────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .shop-by-purpose-section .container-fluid {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+  .shop-by-purpose-section .row {
+    margin-left: -6px !important;
+    margin-right: -6px !important;
+  }
+  .shop-by-purpose-section .col-6 {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+  .wholesale-banner-section {
+    padding-top: 10px !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  .wholesale-banner-section .mb-3,
+  .wholesale-banner-section a {
+    margin-bottom: 0 !important;
+  }
+  .faq-section {
+    padding-top: 10px !important;
+  }
+  .faq-section .main-title {
+    margin-bottom: 16px !important;
+    font-size: 24px !important;
+  }
+
+  .mpg-wrapper {
+    padding: 0 14px;
+    margin-bottom: var(--st-section-gap);
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .mpg-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding: 0 2px;
+  }
+
+  .mpg-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--st-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mpg-title-icon {
+    font-size: 16px;
+  }
+
+  .mpg-view-all {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--st-primary-light);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .mpg-slider-container {
+    margin: 0;
+    padding: 2px 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .mpg-swiper {
+    padding: 4px 0 12px 0;
+    width: 100%;
+  }
+
+  /* ── Product Card ── */
+  .mpc-card {
+    background: #ffffff;
+    border-radius: var(--st-card-radius);
+    overflow: hidden;
+    border: 1px solid rgba(30, 63, 32, 0.06);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .mpc-card:active {
+    transform: scale(0.98);
+  }
+
+  /* Image */
+  .mpc-img-link {
+    display: block;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+
+  .mpc-img-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: #f0f4f1;
+  }
+
+  .mpc-img {
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .mpc-card:hover .mpc-img {
+    transform: scale(1.04);
+  }
+
+  /* Badges */
+  .mpc-discount-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: var(--st-primary);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    padding: 3px 7px;
+    border-radius: 6px;
+    z-index: 2;
+    line-height: 1;
+  }
+
+  .mpc-featured-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: #e65100;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    padding: 3px 7px;
+    border-radius: 6px;
+    z-index: 2;
+    line-height: 1;
+  }
+
+  /* Wishlist button */
+  .mpc-wishlist-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 0;
+    transition: transform 0.2s ease;
+  }
+
+  .mpc-wishlist-btn:active {
+    transform: scale(0.88);
+  }
+
+  /* OOS overlay */
+  .mpc-oos-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(248, 250, 252, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+  }
+
+  .mpc-oos-overlay span {
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 50px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Content */
+  .mpc-content {
+    padding: 10px 10px 12px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 4px;
+  }
+
+  .mpc-brand {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    color: var(--st-primary-light);
+    text-transform: uppercase;
+  }
+
+  .mpc-name-link {
+    text-decoration: none;
+  }
+
+  .mpc-name {
+    font-size: 13px;
+    line-height: 1.35;
+    font-weight: 600;
+    margin: 0;
+    color: #1f2937;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-family: var(--font-inter), sans-serif;
+  }
+
+  .mpc-rating {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .mpc-rating-count {
+    font-weight: 400;
+    color: #9ca3af;
+    font-size: 10px;
+  }
+
+  .mpc-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    margin-top: 2px;
+  }
+
+  .mpc-price {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--st-primary);
+    line-height: 1;
+  }
+
+  .mpc-mrp {
+    font-size: 11px;
+    color: #9ca3af;
+    text-decoration: line-through;
+    font-weight: 400;
+  }
+
+  /* Add to cart button */
+  .mpc-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: 100%;
+    min-height: 36px;
+    margin-top: 8px;
+    border: none;
+    border-radius: var(--st-btn-radius);
+    background: var(--st-primary);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    text-decoration: none;
+  }
+
+  .mpc-add-btn:active {
+    transform: scale(0.96);
+    opacity: 0.9;
+    color: #fff;
+  }
+
+  .mpc-add-btn:hover {
+    background: var(--st-primary-light);
+    color: #fff;
+  }
+
+  .mpc-add-btn--oos {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1.5px solid #e2e8f0;
+  }
+
+  .mpc-add-btn--oos:hover {
+    background: #e2e8f0;
+    color: #64748b;
+  }
+}
+
+/* ─────────────────────────────────────────────────────
+   MOBILE: HERO SLIDER TWEAKS
+───────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Keep swiper pagination dots visible */
+  .mobile-hero-section .swiper-pagination {
+    bottom: 8px !important;
+  }
+
+  .mobile-hero-section .swiper-pagination-bullet {
+    width: 7px !important;
+    height: 7px !important;
+    background: rgba(30, 63, 32, 0.4) !important;
+    opacity: 1 !important;
+  }
+
+  .mobile-hero-section .swiper-pagination-bullet-active {
+    background: var(--st-primary) !important;
+    width: 20px !important;
+    border-radius: 4px !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────
+   PREVENT HORIZONTAL OVERFLOW ON MOBILE
+───────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .mobile-home-wrapper,
+  .mobile-home-wrapper * {
+    max-width: 100%;
+  }
+
+  .mobile-home-wrapper {
+    overflow-x: hidden;
+  }
+
+
+  /* Make sliding ticker span full width on mobile */
+  .mobile-hero-section .marquee-wrapper {
+    margin-left: calc(-1 * var(--st-page-pad));
+    margin-right: calc(-1 * var(--st-page-pad));
+    margin-bottom: 12px;
+    width: auto !important;
+    max-width: none !important;
+  }
+
+  /* Fix mcs-scroll so it doesn't overflow the viewport */
+  .mcs-scroll {
+    max-width: 100%;
+  }
+}
+
+/* ─────────────────────────────────────────────────────
+   MOBILE COLLECTION SLIDER WRAPPER
+   Wraps the existing CollectionSlider on mobile so it
+   matches the live site style without overflowing.
+───────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .mobile-collection-wrapper {
+    overflow: hidden;
+    margin-bottom: var(--st-section-gap);
+    background: #fff;
+  }
+
+  /* Remove extra section padding CollectionSlider adds on desktop */
+  .mobile-collection-wrapper .section-wrapper {
+    padding-top: 16px !important;
+    padding-bottom: 8px !important;
+    margin-top: 0 !important;
+  }
+
+  /* Remove the bg-white / collection-bg-section top margin */
+  .mobile-collection-wrapper .collection-bg-section {
+    margin-top: 0 !important;
+  }
+
+  /* Inner container: use full width padding */
+  .mobile-collection-wrapper .container-fluid {
+    padding-left: var(--st-page-pad) !important;
+    padding-right: var(--st-page-pad) !important;
+  }
+
+  /* The swiper itself — show 2 slides and a peek of the 3rd */
+  .mobile-collection-wrapper .collection-slider.swiper {
+    padding-top: 52px !important;
+    padding-bottom: 16px !important;
+    margin-top: -52px !important;
+  }
+
+  /* Hide prev/next arrow buttons on mobile — swipe is enough */
+  .mobile-collection-wrapper .swiper-button-next,
+  .mobile-collection-wrapper .swiper-button-prev {
+    display: none !important;
+  }
+}
+

@@ -10,6 +10,14 @@ const bannerSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  subtitle: {
+    type: String,
+    default: ''
+  },
+  description: {
+    type: String,
+    default: ''
+  },
   placement: {
     type: String,
     required: true,

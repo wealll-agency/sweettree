@@ -30,6 +30,7 @@ import comboRoutes from './routes/comboRoutes.js';
 import customSectionRoutes from './routes/customSectionRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
+import promotionalPopupRoutes from './routes/promotionalPopupRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -91,6 +92,7 @@ app.use('/api/combos', comboRoutes);
 app.use('/api/custom-sections', customSectionRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/promotional-popups', promotionalPopupRoutes);
 
 // Legacy Health Endpoint (keep for backwards compatibility)
 app.get('/health', (req, res) => {

@@ -26,13 +26,26 @@ export default function CartPage() {
     dispatch(recalculateCart());
   }, [dispatch, items]);
 
-  const handleQuantityChange = (product, size, qty, maxStock) => {
-    const parsedQty = Math.max(1, Math.min(maxStock, qty));
-    dispatch(updateCartQuantity({ product, size, quantity: parsedQty }));
+  const handleQuantityChange = (item, qty) => {
+    if (qty < 1 || qty > item.maxStock) return;
+    const parsedQty = Math.max(1, Math.min(item.maxStock, qty));
+    const payload = { size: item.size, quantity: parsedQty, itemType: item.itemType };
+    if (item.itemType === 'Combo') {
+      payload.combo = item.combo;
+    } else {
+      payload.product = item.product;
+    }
+    dispatch(updateCartQuantity(payload));
   };
 
-  const handleRemove = (product, size) => {
-    dispatch(removeFromCart({ product, size }));
+  const handleRemove = (item) => {
+    const payload = { size: item.size, itemType: item.itemType };
+    if (item.itemType === 'Combo') {
+      payload.combo = item.combo;
+    } else {
+      payload.product = item.product;
+    }
+    dispatch(removeFromCart(payload));
   };
 
   const handleApplyCoupon = async (e) => {
@@ -119,7 +132,7 @@ export default function CartPage() {
               </thead>
               <tbody>
                 {items.map((item) => (
-                  <tr key={`${item.product}-${item.size}`} className="border-bottom">
+                  <tr key={`${item.product || item.combo}-${item.size}`} className="border-bottom">
                     <td className="py-3">
                       <div className="d-flex align-items-center gap-3">
                         <Image
@@ -143,14 +156,14 @@ export default function CartPage() {
                     <td className="text-center">
                       <div className="d-inline-flex align-items-center border rounded bg-white p-1">
                         <button
-                          onClick={() => handleQuantityChange(item.product, item.size, item.quantity - 1, item.maxStock)}
+                          onClick={() => handleQuantityChange(item, item.quantity - 1)}
                           className="btn btn-sm border-0 px-1 py-0"
                         >
                           <Minus size={14} />
                         </button>
                         <span className="px-2 fw-semibold fs-7" style={{ minWidth: '24px' }}>{item.quantity}</span>
                         <button
-                          onClick={() => handleQuantityChange(item.product, item.size, item.quantity + 1, item.maxStock)}
+                          onClick={() => handleQuantityChange(item, item.quantity + 1)}
                           className="btn btn-sm border-0 px-1 py-0"
                           disabled={item.quantity >= item.maxStock}
                         >
@@ -162,9 +175,9 @@ export default function CartPage() {
                     <td className="text-center fw-bold">₹{item.price * item.quantity}</td>
                     
                     <td className="text-center">
-                      <button
-                        onClick={() => handleRemove(item.product, item.size)}
-                        className="btn btn-sm btn-link text-danger border-0 p-0"
+                      <button 
+                        onClick={() => handleRemove(item)} 
+                        className="btn btn-sm btn-light text-danger rounded-circle p-2"
                       >
                         <Trash2 size={18} />
                       </button>

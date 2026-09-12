@@ -1,6 +1,7 @@
 import fs from 'fs';
 import https from 'https';
 import mongoose from 'mongoose';
+import killPort from 'kill-port';
 
 // Config imports
 import config from './config/env.js';
@@ -36,11 +37,20 @@ let server;
 // Start Server Lifecycle
 const startServer = async () => {
   try {
+    const PORT = config.PORT;
+
+    // Attempt to kill any existing process on the port before starting
+    try {
+      await killPort(PORT, 'tcp');
+      console.log(`[KillPort] Successfully freed port ${PORT}`);
+    } catch (err) {
+      // Ignore errors if no process was running
+    }
+
     // 1. Connect to Database first
     await connectDB();
 
     // 2. Start HTTP(S) Server
-    const PORT = config.PORT;
 
     if (config.SSL_KEY_PATH && config.SSL_CERT_PATH) {
       try {
