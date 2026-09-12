@@ -105,7 +105,8 @@ const authSlice = createSlice({
       state.loading = false; // Hydration complete
       if (typeof window !== 'undefined') {
         if (action.payload) {
-          localStorage.setItem('sweettree_user', JSON.stringify(action.payload));
+          const safeUser = { _id: action.payload._id, name: action.payload.name, role: action.payload.role };
+          localStorage.setItem('sweettree_user', JSON.stringify(safeUser));
         } else {
           localStorage.removeItem('sweettree_user');
         }
@@ -123,7 +124,10 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = action.payload;
         if (typeof window !== 'undefined') {
-          localStorage.setItem('sweettree_user', JSON.stringify(action.payload));
+          if (action.payload) {
+            const safeUser = { _id: action.payload._id, name: action.payload.name, role: action.payload.role };
+            localStorage.setItem('sweettree_user', JSON.stringify(safeUser));
+          }
         }
       })
       .addCase(registerUser.rejected, (state, action) => {
@@ -139,7 +143,10 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = action.payload;
         if (typeof window !== 'undefined') {
-          localStorage.setItem('sweettree_user', JSON.stringify(action.payload));
+          if (action.payload) {
+            const safeUser = { _id: action.payload._id, name: action.payload.name, role: action.payload.role };
+            localStorage.setItem('sweettree_user', JSON.stringify(safeUser));
+          }
         }
       })
       .addCase(loginUser.rejected, (state, action) => {

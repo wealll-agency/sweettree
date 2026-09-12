@@ -363,7 +363,7 @@ export default function ProfilePage() {
               </form>
             )}
 
-            {user.addresses.length === 0 ? (
+            {(!user.addresses || user.addresses.length === 0) ? (
               <p className="text-muted m-0 fs-7">No saved shipping addresses found. Add one to speed up checkouts.</p>
             ) : (
               <div className="d-flex flex-column gap-3">

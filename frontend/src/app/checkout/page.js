@@ -208,7 +208,7 @@ export default function CheckoutPage() {
     dispatch(addAddress({ 
       name: addrName, phone: addrPhone, pincode, locality, address, 
       city, state: stateName, landmark, alternatePhone: altPhone, addressType,
-      isDefault: user.addresses.length === 0 
+      isDefault: (!user.addresses || user.addresses.length === 0) 
     }))
       .unwrap()
       .then((addresses) => {
