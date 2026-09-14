@@ -5,8 +5,8 @@ export default async function sitemap() {
 
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://www.sweettreeon.com/api';
-    const response = await axios.get(`${apiUrl}/products/public?limit=1000`);
-    const products = response.data?.data || [];
+    const response = await axios.get(`${apiUrl}/products?limit=1000`);
+    const products = response.data?.products || response.data?.data || [];
 
     const slugify = (text) => text ? text.toString().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-') : '';
     const productUrls = products.map((product) => ({

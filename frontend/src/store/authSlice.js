@@ -10,6 +10,9 @@ export const registerUser = createAsyncThunk(
   async ({ name, email, password, phone }, { rejectWithValue }) => {
     try {
       const response = await api.post(`/auth/register`, { name, email, password, phone });
+      if (response.data.token && typeof window !== 'undefined') {
+        localStorage.setItem('sweettree_token', response.data.token);
+      }
       return response.data.user;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Registration failed');
@@ -22,6 +25,9 @@ export const loginUser = createAsyncThunk(
   async ({ email, password, rememberMe }, { rejectWithValue }) => {
     try {
       const response = await api.post(`/auth/login`, { email, password, rememberMe });
+      if (response.data.token && typeof window !== 'undefined') {
+        localStorage.setItem('sweettree_token', response.data.token);
+      }
       return response.data.user;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Login failed');

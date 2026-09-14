@@ -9,9 +9,10 @@ export default function SlidingTicker() {
   useEffect(() => {
     let isMounted = true;
 
+    // Load from cache post-hydration to avoid SSR hydration mismatch
     try {
       const cached = localStorage.getItem('sweettree_sliding_ticker');
-      if (cached) {
+      if (cached && isMounted) {
         setTickerConfig(JSON.parse(cached));
       }
     } catch {}
@@ -35,25 +36,17 @@ export default function SlidingTicker() {
     return () => { isMounted = false; };
   }, []);
 
-  const defaultConfig = {
-    enabled: true,
-    text: '📢 Sweettree Whole Jumbo Nuts - Extra Fresh & Crunchy | Free Shipping On Orders Above ₹1499',
-    speed: 5
-  };
-
-  const activeConfig = (tickerConfig && tickerConfig.enabled !== false && tickerConfig.text)
-    ? tickerConfig
-    : defaultConfig;
+  const activeConfig = tickerConfig;
 
   if (!activeConfig || activeConfig.enabled === false || !activeConfig.text) {
-    return null;
+    return <div className="marquee-wrapper-placeholder" style={{ height: '26px', background: 'transparent' }}></div>;
   }
 
   return (
     <div
       className="marquee-wrapper"
       style={{
-        background: activeConfig.backgroundColor || '#162C18',
+        background: activeConfig.backgroundColor || 'transparent',
         color: activeConfig.textColor || '#FAF9F6',
         fontSize: '12px',
         fontWeight: '600',

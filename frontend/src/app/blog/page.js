@@ -20,7 +20,7 @@ export default function BlogPage() {
                 {/* Blog 1 */}
                 <div className="col-md-6">
                   <div className="blog-card mb-0">
-                    <Image src="/blog_image3.png" alt="Blog 1" width={800} height={400} style={{ width: '100%', height: 'auto' }} className="blog-img" />
+                    <Image src="/latest_collection1.png" alt="Blog 1" width={800} height={400} style={{ width: '100%', height: 'auto' }} className="blog-img" />
                     <div className="blog-content-box">
                       <div className="d-flex justify-content-between align-items-center mb-0">
                         <div className="d-flex align-items-center">
@@ -51,7 +51,7 @@ export default function BlogPage() {
                 {/* Blog 2 */}
                 <div className="col-md-6">
                   <div className="blog-card mb-0">
-                    <Image src="/blog_image2.png" alt="Blog 2" width={800} height={400} style={{ width: '100%', height: 'auto' }} className="blog-img" />
+                    <Image src="/latest_collection2.png" alt="Blog 2" width={800} height={400} style={{ width: '100%', height: 'auto' }} className="blog-img" />
                     <div className="blog-content-box">
                       <div className="d-flex justify-content-between align-items-center mb-0">
                         <div className="d-flex align-items-center">
@@ -82,7 +82,7 @@ export default function BlogPage() {
                 {/* Blog 3 */}
                 <div className="col-md-6">
                   <div className="blog-card mb-0">
-                    <Image src="/blog_image3.png" alt="Blog 3" width={800} height={400} style={{ width: '100%', height: 'auto' }} className="blog-img" />
+                    <Image src="/latest_collection3.png" alt="Blog 3" width={800} height={400} style={{ width: '100%', height: 'auto' }} className="blog-img" />
                     <div className="blog-content-box">
                       <div className="d-flex justify-content-between align-items-center mb-0">
                         <div className="d-flex align-items-center">
@@ -113,7 +113,7 @@ export default function BlogPage() {
                 {/* Blog 4 */}
                 <div className="col-md-6">
                   <div className="blog-card mb-0">
-                    <Image src="/blog_image1.png" alt="Blog 4" width={800} height={400} style={{ width: '100%', height: 'auto' }} className="blog-img" />
+                    <Image src="/store.jpg" alt="Blog 4" width={800} height={400} style={{ width: '100%', height: 'auto' }} className="blog-img" />
                     <div className="blog-content-box">
                       <div className="d-flex justify-content-between align-items-center mb-0">
                         <div className="d-flex align-items-center">
@@ -158,14 +158,14 @@ export default function BlogPage() {
             {/* Dedicated Right Sidebar Region */}
             <div className="col-lg-4">
               <div className="d-flex flex-column gap-4">
-                {/* Promo Banner 1 (Black Banner) */}
+                {/* Promo Banner 1 */}
                 <div className="blog-promo-banner w-100">
-                  <Image src="/banner_slider_image1.jpeg" alt="Special Offer" width={400} height={400} style={{ width: '100%', height: 'auto' }} className="img-fluid w-100" />
+                  <Image src="/cta_banner.png" alt="Special Offer" width={400} height={400} style={{ width: '100%', height: 'auto' }} className="img-fluid w-100" />
                 </div>
 
-                {/* Promo Banner 2 (Red Banner) */}
+                {/* Promo Banner 2 */}
                 <div className="blog-promo-banner w-100">
-                  <Image src="/top_product4.png" alt="Special Offer 2" width={400} height={400} style={{ width: '100%', height: 'auto' }} className="img-fluid w-100" />
+                  <Image src="/shop_banner.jpg" alt="Special Offer 2" width={400} height={400} style={{ width: '100%', height: 'auto' }} className="img-fluid w-100" />
                 </div>
 
                 {/* Follow Us Section */}

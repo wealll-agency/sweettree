@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addToCart, removeFromCart } from '../store/cartSlice';
 import Link from 'next/link';
@@ -14,6 +14,20 @@ const CartOffcanvas = () => {
   const searchParams = useSearchParams();
   const { items, subtotal, discount, tax, shippingFee, total } = useSelector((state) => state.cart);
   const dbProducts = useSelector((state) => state.products?.items || []);
+
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (window.__isReduxSyncHydrated) {
+        setIsHydrated(true);
+      } else {
+        const handleHydration = () => setIsHydrated(true);
+        window.addEventListener('redux-sync-hydrated', handleHydration);
+        return () => window.removeEventListener('redux-sync-hydrated', handleHydration);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.bootstrap) {
@@ -112,18 +126,31 @@ const CartOffcanvas = () => {
       <div className="offcanvas-body p-0 d-flex flex-column bg-light">
         {/* Free Shipping Progress */}
         <div className="bg-white p-3 mb-2 shadow-sm text-center">
-          {remainingForFreeShipping > 0 ? (
-            <small className="fw-bold mb-2 d-block text-dark">
-              Add <span className="text-danger">₹{remainingForFreeShipping.toFixed(2)}</span> More To Unlock <span className="text-danger">Free Shipping</span>
-            </small>
+          {isHydrated ? (
+            <>
+              {remainingForFreeShipping > 0 ? (
+                <small className="fw-bold mb-2 d-block text-dark">
+                  Add <span className="text-danger">₹{remainingForFreeShipping.toFixed(2)}</span> More To Unlock <span className="text-danger">Free Shipping</span>
+                </small>
+              ) : (
+                <small className="fw-bold mb-2 d-block text-success">
+                  You have unlocked FREE SHIPPING!
+                </small>
+              )}
+              <div className="progress mx-auto" style={{ height: '6px', width: '80%' }}>
+                <div className="progress-bar bg-danger" role="progressbar" style={{ width: `${progressPercent}%` }} aria-valuenow={progressPercent} aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </>
           ) : (
-            <small className="fw-bold mb-2 d-block text-success">
-              You have unlocked FREE SHIPPING!
-            </small>
+            <>
+              <small className="fw-bold mb-2 d-block text-muted">
+                Calculating Shipping...
+              </small>
+              <div className="progress mx-auto" style={{ height: '6px', width: '80%' }}>
+                <div className="progress-bar bg-secondary" role="progressbar" style={{ width: `0%` }} aria-valuenow={0} aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </>
           )}
-          <div className="progress mx-auto" style={{ height: '6px', width: '80%' }}>
-            <div className="progress-bar bg-danger" role="progressbar" style={{ width: `${progressPercent}%` }} aria-valuenow={progressPercent} aria-valuemin="0" aria-valuemax="100"></div>
-          </div>
         </div>
 
         <div className="bg-dark text-white text-center py-2" style={{ fontSize: '11px', fontWeight: 'bold' }}>
@@ -132,7 +159,12 @@ const CartOffcanvas = () => {
 
         {/* Cart Items */}
         <div className="flex-grow-1 overflow-auto p-3">
-          {items.length === 0 ? (
+          {!isHydrated ? (
+            <div className="text-center py-5 text-muted">
+              <div className="spinner-border text-secondary mb-3" role="status" style={{ width: '40px', height: '40px', opacity: 0.5 }}></div>
+              <p>Loading cart...</p>
+            </div>
+          ) : items.length === 0 ? (
             <div className="text-center py-5 text-muted">
               <ShoppingCart size={40} className="mb-3 opacity-50" />
               <p>Your cart is empty.</p>

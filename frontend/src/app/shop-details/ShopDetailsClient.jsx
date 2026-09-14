@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -81,6 +81,8 @@ export default function ShopDetailsClient({ initialProduct }) {
   const [reviewSuccess, setReviewSuccess] = useState('');
   const [notifyLoading, setNotifyLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const lastFetchedReviewsForIdRef = useRef(null);
+  const hasFetchedProductsRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
@@ -116,11 +118,15 @@ export default function ShopDetailsClient({ initialProduct }) {
       if (!selectedProduct || selectedProduct._id !== targetId) {
         dispatch(fetchProductDetails(targetId));
       }
-      dispatch(fetchProductReviews(targetId));
+      if (lastFetchedReviewsForIdRef.current !== targetId) {
+        lastFetchedReviewsForIdRef.current = targetId;
+        dispatch(fetchProductReviews(targetId));
+      }
     }
     
     // Always fetch products list if it's empty, so we can calculate related products
-    if (!products || products.length === 0) {
+    if ((!products || products.length === 0) && !hasFetchedProductsRef.current) {
+      hasFetchedProductsRef.current = true;
       dispatch(fetchProducts());
     }
   }, [dispatch, query, products, realProduct, selectedProduct]);
@@ -219,7 +225,7 @@ export default function ShopDetailsClient({ initialProduct }) {
       name: realProduct.name,
       price: finalPrice,
       discount: 0,
-      image: realProduct.images?.[0] || '/top_product1.png',
+      image: realProduct.images?.[0] || '/logo.png',
       stock: realProduct.stock || 100
     };
     
@@ -304,7 +310,7 @@ export default function ShopDetailsClient({ initialProduct }) {
   };
 
   const isInWishlist = mounted && wishlistItems.some(item => item._id === realProduct._id);
-  const images = realProduct.images && realProduct.images.length > 0 ? realProduct.images : ['/top_product1.png'];
+  const images = realProduct.images && realProduct.images.length > 0 ? realProduct.images : ['/logo.png'];
 
   const getImageUrl = (url) => {
     if (!url) return '';

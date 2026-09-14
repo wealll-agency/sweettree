@@ -68,7 +68,7 @@ export const loginUser = async (req, res, next) => {
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
-      const token = generateToken(res, user._id, rememberMe !== false);
+      const token = generateToken(res, user._id, rememberMe !== false, req);
       await logActivity(user._id, 'LOGIN', `User logged in`, req);
 
       res.json({
@@ -100,11 +100,13 @@ export const logoutUser = async (req, res, next) => {
     if (req.user) {
       await logActivity(req.user._id, 'LOGOUT', `User logged out`, req);
     }
+    const host = req ? (req.headers?.host || (typeof req.get === 'function' ? req.get('host') : '') || '') : '';
+    const isProductionDomain = process.env.NODE_ENV === 'production' && host.includes('sweettreeon.com');
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production' && isProductionDomain,
       sameSite: 'lax',
-      ...(process.env.NODE_ENV === 'production' && { domain: '.sweettreeon.com' }),
+      ...(isProductionDomain && { domain: '.sweettreeon.com' }),
       expires: new Date(0)
     };
     res.cookie('token', '', cookieOptions);
@@ -139,10 +141,13 @@ export const refreshTokenUser = async (req, res, next) => {
       { expiresIn: '7d' }
     );
 
+    const host = req ? (req.headers?.host || (typeof req.get === 'function' ? req.get('host') : '') || '') : '';
+    const isProductionDomain = process.env.NODE_ENV === 'production' && host.includes('sweettreeon.com');
     res.cookie('token', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production' && isProductionDomain,
       sameSite: 'lax',
+      ...(isProductionDomain && { domain: '.sweettreeon.com' }),
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
@@ -150,12 +155,14 @@ export const refreshTokenUser = async (req, res, next) => {
   } catch (error) {
     console.error(`Refresh token error: ${error.message}`);
     
+    const host = req ? (req.headers?.host || (typeof req.get === 'function' ? req.get('host') : '') || '') : '';
+    const isProductionDomain = process.env.NODE_ENV === 'production' && host.includes('sweettreeon.com');
     // Clear cookies to prevent infinite reload loops
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production' && isProductionDomain,
       sameSite: 'lax',
-      ...(process.env.NODE_ENV === 'production' && { domain: '.sweettreeon.com' }),
+      ...(isProductionDomain && { domain: '.sweettreeon.com' }),
       expires: new Date(0)
     };
     res.cookie('token', '', cookieOptions);

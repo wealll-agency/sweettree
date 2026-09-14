@@ -12,7 +12,8 @@ import {
   getShipmentByWaybill,
   mockICICIGateway,
   mockICICIProcess,
-  markOrderRead
+  markOrderRead,
+  deleteOrder
 } from '../controllers/orderController.js';
 import { protect, authorizeRoles } from '../middleware/auth.js';
 import { auditRoute } from '../middleware/logger.js';
@@ -39,7 +40,8 @@ router.post('/mock-icici-process', mockICICIProcess);
 router.get('/my-orders', protect, getMyOrders);
 
 router.route('/:id')
-  .get(protect, getOrderById);
+  .get(protect, getOrderById)
+  .delete(protect, authorizeRoles('Super Admin', 'Manager'), auditRoute('DELETE_ORDER'), deleteOrder);
 
 router.put('/:id/status', protect, authorizeRoles('Super Admin', 'Manager', 'Staff'), auditRoute('UPDATE_ORDER_STATUS'), updateOrderStatus);
 router.patch('/:id/read', protect, authorizeRoles('Super Admin', 'Manager', 'Staff'), markOrderRead);

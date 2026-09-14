@@ -108,7 +108,7 @@ export const deleteReview = createAsyncThunk(
   'admin/deleteReview',
   async (id, { rejectWithValue }) => {
     try {
-      await axios.delete(`/api/reviews/${id}`);
+      await axios.delete(`/reviews/${id}`);
       return id;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete review');
@@ -630,9 +630,23 @@ const adminSlice = createSlice({
         if (index !== -1) {
           state.categories[index] = action.payload;
         }
+      })
+      .addCase(deleteAdminOrder.fulfilled, (state, action) => {
+        state.orders = state.orders.filter(order => order._id !== action.payload);
       });
   }
 });
 
 export const { clearAdminError } = adminSlice.actions;
 export default adminSlice.reducer;
+export const deleteAdminOrder = createAsyncThunk(
+  'admin/deleteAdminOrder',
+  async (orderId, { rejectWithValue }) => {
+    try {
+      await axios.delete(ORDERS_URL + '/' + orderId);
+      return orderId;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete order');
+    }
+  }
+);

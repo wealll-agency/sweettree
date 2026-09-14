@@ -646,7 +646,6 @@ export default function PromotionManagerPage() {
                         className="form-control" 
                         value={tickerConfig.backgroundColor || '#162C18'} 
                         onChange={(e) => setTickerConfig({ ...tickerConfig, backgroundColor: e.target.value })}
-                        placeholder="#162C18"
                       />
                     </div>
                   </div>
@@ -665,7 +664,6 @@ export default function PromotionManagerPage() {
                         className="form-control" 
                         value={tickerConfig.textColor || '#FAF9F6'} 
                         onChange={(e) => setTickerConfig({ ...tickerConfig, textColor: e.target.value })}
-                        placeholder="#FAF9F6"
                       />
                     </div>
                   </div>

@@ -2,8 +2,8 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAdminOrders, updateOrderStatus, refundOrder, createDelhiveryShipment, cancelDelhiveryShipment, getDelhiveryLabel, fetchWarehouses, markOrderAsRead } from '../../../store/adminSlice.js';
-import { ShoppingBag, Eye, MapPin, Check, Filter, Clock, Search, X, Printer, Package, Truck, CheckCircle, CreditCard, RotateCcw, AlertTriangle } from 'lucide-react';
+import { fetchAdminOrders, updateOrderStatus, refundOrder, createDelhiveryShipment, cancelDelhiveryShipment, getDelhiveryLabel, fetchWarehouses, markOrderAsRead, deleteAdminOrder } from '../../../store/adminSlice.js';
+import { ShoppingBag, Eye, MapPin, Check, Filter, Clock, Search, X, Printer, Package, Truck, CheckCircle, CreditCard, RotateCcw, AlertTriangle, Trash2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -151,6 +151,24 @@ function AdminOrdersContent() {
       .catch((err) => {
         showAlert(err || 'Failed to update order status', 'error');
       });
+  };
+
+  const handleDeleteOrder = async (id) => {
+    const confirmed = await showConfirm('Are you sure you want to completely delete this order history? This cannot be undone.');
+    if (confirmed) {
+      dispatch(deleteAdminOrder(id))
+        .unwrap()
+        .then(() => {
+          showAlert('Order deleted successfully', 'success');
+          if (selectedOrder && selectedOrder._id === id) {
+            setSelectedOrder(null);
+          }
+          dispatch(fetchAdminOrders());
+        })
+        .catch((err) => {
+          showAlert(err || 'Failed to delete order', 'error');
+        });
+    }
   };
 
   const handleRefund = async (id) => {
@@ -427,9 +445,12 @@ function AdminOrdersContent() {
                     <td>{new Date(ord.createdAt).toLocaleDateString()}</td>
                     <td className="fw-bold">₹{ord.totalAmount}</td>
                     <td>
-                      <span className={ord.paymentStatus === 'Paid' ? 'badge bg-success bg-opacity-10 text-success' : 'badge bg-warning bg-opacity-10 text-warning'}>
-                        {ord.paymentStatus}
-                      </span>
+                      <div className="d-flex flex-column align-items-start gap-1">
+                        <span className="fw-bold fs-8 text-muted text-uppercase">{ord.paymentMode === 'COD' ? 'COD' : 'Online'}</span>
+                        <span className={ord.paymentStatus === 'Paid' ? 'badge bg-success bg-opacity-10 text-success' : 'badge bg-warning bg-opacity-10 text-warning'}>
+                          {ord.paymentStatus}
+                        </span>
+                      </div>
                     </td>
                     <td>
                       <span className={ord.orderStatus === 'Delivered' ? 'badge-status-green' : ord.orderStatus === 'Cancelled' ? 'badge-status-red' : 'badge-status-orange'}>
@@ -437,17 +458,26 @@ function AdminOrdersContent() {
                       </span>
                     </td>
                     <td className="text-center">
-                      <button 
-                        onClick={() => {
-                          setSelectedOrder(ord);
-                          if (ord.adminRead === false) {
-                            dispatch(markOrderAsRead(ord._id));
-                          }
-                        }} 
-                        className="btn btn-brand-secondary btn-sm py-1 px-3 d-inline-flex align-items-center gap-1"
-                      >
-                        <Eye size={14} /> Process
-                      </button>
+                      <div className="d-inline-flex gap-2">
+                        <button 
+                          onClick={() => {
+                            setSelectedOrder(ord);
+                            if (ord.adminRead === false) {
+                              dispatch(markOrderAsRead(ord._id));
+                            }
+                          }} 
+                          className="btn btn-brand-secondary btn-sm py-1 px-3 d-inline-flex align-items-center gap-1"
+                        >
+                          <Eye size={14} /> Process
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteOrder(ord._id)} 
+                          className="btn btn-outline-danger btn-sm py-1 px-2 d-inline-flex align-items-center"
+                          title="Delete Order"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

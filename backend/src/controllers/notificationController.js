@@ -9,8 +9,13 @@ export const getNotifications = async (req, res) => {
   try {
     const last7Days = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    // New orders (Placed in last 7 days)
-    const newOrders = await Order.find({ createdAt: { $gte: last7Days } })
+    const newOrders = await Order.find({ 
+      createdAt: { $gte: last7Days },
+      $or: [
+        { paymentStatus: 'Paid' },
+        { paymentMode: 'COD' }
+      ]
+    })
       .populate('user', 'name email')
       .sort({ createdAt: -1 })
       .limit(20)

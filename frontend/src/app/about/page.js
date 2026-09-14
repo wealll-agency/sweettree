@@ -109,7 +109,7 @@ export default function AboutPage() {
           <div className="row align-items-center gy-5">
             <div className="col-lg-6 position-relative">
               <div className="position-relative about-story-img-wrap">
-                <Image src={banners.AboutStory || "/banner_slider_image3.jpeg"} alt="Sweettree Store" width={800} height={600} style={{ width: '100%', height: 'auto' }} className="img-fluid rounded-4 shadow-lg w-100 about-story-img" unoptimized={!!banners.AboutStory} />
+                <Image src={banners.AboutStory || "/store.jpg"} alt="Sweettree Store" width={800} height={600} style={{ width: '100%', height: 'auto' }} className="img-fluid rounded-4 shadow-lg w-100 about-story-img" unoptimized={!!banners.AboutStory} />
               </div>
               <div className="position-absolute rounded-4 d-none d-lg-block about-story-bg-shape"></div>
             </div>
@@ -216,7 +216,7 @@ export default function AboutPage() {
           <div className="row align-items-center mb-5 pb-lg-4">
             <div className="col-lg-6 order-lg-2 position-relative mb-4 mb-lg-0">
               <div className="about-mission-img-wrap">
-                <Image src={banners.AboutMission || "/banner_slider_image1.jpeg"} alt="Our Mission" width={800} height={600} style={{ width: '100%', height: 'auto' }} className="img-fluid w-100 about-mission-img" unoptimized={!!banners.AboutMission} />
+                <Image src={banners.AboutMission || "/store.jpg"} alt="Our Mission" width={800} height={600} style={{ width: '100%', height: 'auto' }} className="img-fluid w-100 about-mission-img" unoptimized={!!banners.AboutMission} />
               </div>
             </div>
             <div className="col-lg-6 order-lg-1 pe-lg-5 text-center text-lg-start">
@@ -242,7 +242,7 @@ export default function AboutPage() {
           <div className="row align-items-center">
             <div className="col-lg-6 position-relative mb-4 mb-lg-0">
               <div className="about-vision-img-wrap">
-                <Image src={banners.AboutVision || "/banner_slider_image2.jpeg"} alt="Our Vision" width={800} height={600} style={{ width: '100%', height: 'auto' }} className="img-fluid w-100 about-vision-img" unoptimized={!!banners.AboutVision} />
+                <Image src={banners.AboutVision || "/store.jpg"} alt="Our Vision" width={800} height={600} style={{ width: '100%', height: 'auto' }} className="img-fluid w-100 about-vision-img" unoptimized={!!banners.AboutVision} />
               </div>
             </div>
             <div className="col-lg-6 ps-lg-5 text-center text-lg-start">
@@ -273,7 +273,7 @@ export default function AboutPage() {
         <div className="container-fluid px-4 px-lg-5">
           <div className="position-relative overflow-hidden rounded-4 shadow-sm text-center text-md-start about-cta-container">
             <Image 
-              src={banners.AboutCta ? getImageUrl(banners.AboutCta) : "/wholesale-banner.jpg"} 
+              src={banners.AboutCta ? getImageUrl(banners.AboutCta) : "/cta_banner.png"} 
               alt="Wholesale" 
               fill 
               style={{ objectFit: 'cover' }} 
@@ -375,7 +375,6 @@ export default function AboutPage() {
                   <input 
                     type="text" 
                     className="form-control py-2.5 bg-light border-light shadow-none" 
-                    placeholder="Enter your name"
                     value={catalogLead.name}
                     onChange={(e) => setCatalogLead({ ...catalogLead, name: e.target.value })}
                     required
@@ -387,7 +386,6 @@ export default function AboutPage() {
                   <input 
                     type="tel" 
                     className="form-control py-2.5 bg-light border-light shadow-none" 
-                    placeholder="Enter your mobile number"
                     value={catalogLead.phone}
                     onChange={(e) => setCatalogLead({ ...catalogLead, phone: e.target.value })}
                     required

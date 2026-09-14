@@ -39,6 +39,33 @@ const Header = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
+  const [isSyncHydrated, setIsSyncHydrated] = useState(false);
+  const [isAuthHydrated, setIsAuthHydrated] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handleSyncHydration = () => setIsSyncHydrated(true);
+      const handleAuthHydration = () => setIsAuthHydrated(true);
+
+      if (window.__isReduxSyncHydrated) {
+        setIsSyncHydrated(true);
+      } else {
+        window.addEventListener('redux-sync-hydrated', handleSyncHydration);
+      }
+
+      if (window.__isReduxAuthHydrated) {
+        setIsAuthHydrated(true);
+      } else {
+        window.addEventListener('redux-auth-hydrated', handleAuthHydration);
+      }
+
+      return () => {
+        window.removeEventListener('redux-sync-hydrated', handleSyncHydration);
+        window.removeEventListener('redux-auth-hydrated', handleAuthHydration);
+      };
+    }
+  }, []);
+
   const handleLogout = (e) => {
     e.preventDefault();
     dispatch(logoutUser());
@@ -60,10 +87,6 @@ const Header = () => {
       document.removeEventListener("pointerdown", handleClickOutside);
     };
   }, []);
-
-
-
-
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -174,50 +197,59 @@ const Header = () => {
                   transform: 'none'
                 }}
               >
-                {user ? (
-                  <>
-                    <li className="dropdown-header-item">
-                      <span className="d-block fw-bold text-dark" style={{ fontSize: '13px' }}>Hi, {user.name?.split(' ')[0] || 'User'}</span>
-                      <span className="text-muted" style={{ fontSize: '11px' }}>{user.email}</span>
-                    </li>
-                    <li><hr className="dropdown-divider my-1" /></li>
-                    {(user?.role === 'Super Admin' || user?.role === 'Manager' || user?.role === 'Staff') && (
+                {isAuthHydrated ? (
+                  user ? (
+                    <>
+                      <li className="dropdown-header-item">
+                        <span className="d-block fw-bold text-dark" style={{ fontSize: '13px' }}>Hi, {user.name?.split(' ')[0] || 'User'}</span>
+                        <span className="text-muted" style={{ fontSize: '11px' }}>{user.email}</span>
+                      </li>
+                      <li><hr className="dropdown-divider my-1" /></li>
+                      {(user?.role === 'Super Admin' || user?.role === 'Manager' || user?.role === 'Staff') && (
+                        <li>
+                          <Link href="/admin/dashboard" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
+                            <LayoutDashboard size={16} className="me-2 text-success" /> Admin Panel
+                          </Link>
+                        </li>
+                      )}
                       <li>
-                        <Link href="/admin/dashboard" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
-                          <LayoutDashboard size={16} className="me-2 text-success" /> Admin Panel
+                        <Link href="/user/profile" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
+                          <User size={16} className="me-2 text-primary" /> My Profile
                         </Link>
                       </li>
-                    )}
-                    <li>
-                      <Link href="/user/profile" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
-                        <User size={16} className="me-2 text-primary" /> My Profile
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/user/orders" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
-                        <Package size={16} className="me-2 text-warning" /> My Orders
-                      </Link>
-                    </li>
-                    <li><hr className="dropdown-divider my-1" /></li>
-                    <li>
-                      <button onClick={handleLogout} className="dropdown-item premium-dropdown-item text-danger">
-                        <LogOut size={16} className="me-2" /> Log Out
-                      </button>
-                    </li>
-                  </>
+                      <li>
+                        <Link href="/user/orders" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
+                          <Package size={16} className="me-2 text-warning" /> My Orders
+                        </Link>
+                      </li>
+                      <li><hr className="dropdown-divider my-1" /></li>
+                      <li>
+                        <button onClick={handleLogout} className="dropdown-item premium-dropdown-item text-danger">
+                          <LogOut size={16} className="me-2" /> Log Out
+                        </button>
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li>
+                        <Link href="/login" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
+                          <LogIn size={16} className="me-2 text-success" /> Sign In
+                        </Link>
+                      </li>
+                      <li>
+                        <Link href="/register" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
+                          <User size={16} className="me-2 text-primary" /> Sign Up
+                        </Link>
+                      </li>
+                    </>
+                  )
                 ) : (
-                  <>
-                    <li>
-                      <Link href="/login" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
-                        <LogIn size={16} className="me-2 text-success" /> Sign In
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/register" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
-                        <User size={16} className="me-2 text-primary" /> Sign Up
-                      </Link>
-                    </li>
-                  </>
+                  <li>
+                    <span className="dropdown-item premium-dropdown-item text-muted" style={{ fontSize: '13px' }}>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '12px', height: '12px' }}></span>
+                      Loading...
+                    </span>
+                  </li>
                 )}
               </ul>
             </details>
@@ -225,7 +257,7 @@ const Header = () => {
             {/* Wishlist */}
             <Link href="/wishlist" className="header-action-btn d-flex text-decoration-none position-relative" title="Wishlist">
               <Heart size={18} />
-              {wishlistCount > 0 && (
+              {isSyncHydrated && wishlistCount > 0 && (
                 <span className="header-badge">{wishlistCount}</span>
               )}
             </Link>
@@ -240,7 +272,9 @@ const Header = () => {
               title="Cart"
             >
               <ShoppingBag size={18} />
-              <span className="header-badge">{cartCount}</span>
+              {isSyncHydrated && cartCount > 0 && (
+                <span className="header-badge">{cartCount}</span>
+              )}
             </a>
 
             {/* Mobile Hamburger */}

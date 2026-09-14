@@ -6,7 +6,6 @@ import { Star, Heart, ShoppingCart, Leaf, ShieldCheck, Zap, Droplet, Flame, Awar
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../store/cartSlice';
 import { toggleWishlist } from '../store/wishlistSlice';
-import { fetchProducts } from '../store/productsSlice';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, EffectFade } from 'swiper/modules';
 import 'swiper/css';
@@ -17,13 +16,6 @@ const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
   const wishlistItems = useSelector((state) => state.wishlist?.items || []);
   const dbProducts = useSelector((state) => state.products?.items || []);
-
-  useEffect(() => {
-    const isValidId = product._id && /^[0-9a-fA-F]{24}$/.test(product._id);
-    if (!isValidId && dbProducts.length === 0) {
-      dispatch(fetchProducts({ limit: 100 }));
-    }
-  }, [dispatch, product._id, dbProducts.length]);
 
   const resolvedProduct = product._id && /^[0-9a-fA-F]{24}$/.test(product._id)
     ? product

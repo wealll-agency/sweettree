@@ -620,7 +620,6 @@ export default function ThemeManagerPage() {
                                         <input 
                                           type="text" 
                                           className="form-control form-control-sm shadow-none border-secondary-subtle" 
-                                          placeholder="Badge / Subtitle (e.g., OUR STORY)"
                                           value={banner.subtitle || ''}
                                           onChange={(e) => setBanners(prev => prev.map(b => b._id === banner._id ? { ...b, subtitle: e.target.value, isDirty: true } : b))}
                                         />
@@ -629,7 +628,6 @@ export default function ThemeManagerPage() {
                                         <input 
                                           type="text" 
                                           className="form-control form-control-sm shadow-none border-secondary-subtle fw-semibold" 
-                                          placeholder="Main Title (e.g., A Legacy of Premium Quality...)"
                                           value={banner.title || ''}
                                           onChange={(e) => setBanners(prev => prev.map(b => b._id === banner._id ? { ...b, title: e.target.value, isDirty: true } : b))}
                                         />
@@ -638,7 +636,6 @@ export default function ThemeManagerPage() {
                                         <textarea 
                                           className="form-control form-control-sm shadow-none border-secondary-subtle" 
                                           rows="5"
-                                          placeholder="Story Description Paragraphs..."
                                           value={banner.description || ''}
                                           onChange={(e) => setBanners(prev => prev.map(b => b._id === banner._id ? { ...b, description: e.target.value, isDirty: true } : b))}
                                         ></textarea>

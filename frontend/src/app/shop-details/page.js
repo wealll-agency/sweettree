@@ -69,7 +69,7 @@ const getProduct = cache(async (query) => {
 });
 
 function formatImageUrl(url) {
-  if (!url) return 'https://www.sweettreeon.com/top_product1.png';
+  if (!url) return 'https://www.sweettreeon.com/logo.png';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   const cleanedUrl = url.startsWith('/') ? url : `/${url}`;
   return `https://www.sweettreeon.com${cleanedUrl}`;
@@ -103,7 +103,7 @@ export async function generateMetadata({ searchParams }) {
   const canonicalUrl = `https://www.sweettreeon.com/shop-details?${productSlug}`;
   const images = (product.images && product.images.length > 0)
     ? product.images.map(img => formatImageUrl(img))
-    : ['https://www.sweettreeon.com/top_product1.png'];
+    : ['https://www.sweettreeon.com/logo.png'];
 
   return {
     title,
@@ -151,7 +151,7 @@ export default async function ShopDetailsPage({ searchParams }) {
 
     const publicImages = (product.images && product.images.length > 0)
       ? product.images.map(img => formatImageUrl(img))
-      : ['https://www.sweettreeon.com/top_product1.png'];
+      : ['https://www.sweettreeon.com/logo.png'];
 
     const productSlug = slugify(product.name);
     const productUrl = `https://www.sweettreeon.com/shop-details?${productSlug}`;

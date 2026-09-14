@@ -6,7 +6,7 @@ import { useNotification } from '../../../context/NotificationContext';
 import Image from 'next/image';
 
 export default function CustomSectionsManager({ allProducts }) {
-  const { showAlert } = useNotification();
+  const { showAlert, showConfirm } = useNotification();
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newTitle, setNewTitle] = useState('');
@@ -61,7 +61,8 @@ export default function CustomSectionsManager({ allProducts }) {
   };
 
   const handleDeleteSection = async (id) => {
-    if (!confirm('Are you sure you want to delete this section?')) return;
+    const confirmed = await showConfirm('Are you sure you want to delete this section?');
+    if (!confirmed) return;
     try {
       const res = await api.delete(`/custom-sections/${id}`);
       if (res.data.success) {

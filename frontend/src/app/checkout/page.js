@@ -48,11 +48,11 @@ export default function CheckoutPage() {
   const [altPhone, setAltPhone] = useState('');
   const [addressType, setAddressType] = useState('Home');
   const [paymentMode, setPaymentMode] = useState('ICICI');
-  const [hasCodPermission, setHasCodPermission] = useState(true);
+  const [hasCodPermission, setHasCodPermission] = useState(null);
   const [hasOnlinePaymentPermission, setHasOnlinePaymentPermission] = useState(true);
 
   useEffect(() => {
-    if (!hasCodPermission && paymentMode === 'COD') {
+    if (hasCodPermission === false && paymentMode === 'COD') {
       setPaymentMode('ICICI');
     } else if (!hasOnlinePaymentPermission && paymentMode === 'ICICI') {
       setPaymentMode('COD');
@@ -626,7 +626,15 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               )}
-              {hasCodPermission && (
+              {hasCodPermission === null && (
+                <div className="p-3 rounded border d-flex align-items-center gap-3 opacity-50">
+                  <div className="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                  <div>
+                    <h6 className="m-0 fw-bold text-muted">Checking Cash on Delivery...</h6>
+                  </div>
+                </div>
+              )}
+              {hasCodPermission === true && (
                 <div 
                   className={`p-3 rounded border cursor-pointer d-flex align-items-center gap-3 ${paymentMode === 'COD' ? 'border-success bg-light' : ''}`}
                   onClick={() => setPaymentMode('COD')}

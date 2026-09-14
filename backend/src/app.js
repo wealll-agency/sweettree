@@ -74,6 +74,14 @@ app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 // Sanitize NoSQL injections
 app.use(mongoSanitize());
 
+// Ensure dynamic API responses are never cached by browsers, Nginx, or CDNs
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);

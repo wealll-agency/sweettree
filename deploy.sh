@@ -56,12 +56,14 @@ cp "$BACKEND_ENV_FILE" "$RELEASE_BACKEND_ENV"
 
 echo "--> ✅ Backend environment configured."
 
-npm ci --omit=dev || { echo "--> ❌ Backend npm ci failed! Aborting."; exit 1; }
+# 5. Install All Production Dependencies (Workspace Root)
+echo "--> Installing production dependencies for all workspaces..."
+cd "$RELEASE_DIR"
+npm ci --omit=dev || { echo "--> ❌ Root npm ci failed! Aborting."; exit 1; }
 
-# 5. Setup Frontend & Build
+# 6. Setup Frontend & Build
 echo "--> Setting up Frontend in new release..."
 cd "$RELEASE_DIR/frontend"
-npm ci --omit=dev || { echo "--> ❌ Frontend npm ci failed! Aborting."; exit 1; }
 
 echo "--> Verifying and securely injecting public environment variables..."
 

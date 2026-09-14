@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 
-import api from '../utils/axiosConfig';
+import { fetchBannersCached } from '../utils/bannerService';
 
 export const NuttyDelightOffers = () => {
   const [banners, setBanners] = useState([]);
@@ -15,9 +15,9 @@ export const NuttyDelightOffers = () => {
   useEffect(() => {
     const fetchBanners = async () => {
       try {
-        const res = await api.get('/banners');
-        if (res.data.success) {
-          const promoBanners = res.data.banners.filter(b => b.placement === 'Promotional');
+        const allBanners = await fetchBannersCached();
+        if (allBanners && allBanners.length > 0) {
+          const promoBanners = allBanners.filter(b => b.placement === 'Promotional');
           if (promoBanners.length > 0) {
             setBanners(promoBanners);
           }
@@ -31,13 +31,7 @@ export const NuttyDelightOffers = () => {
     fetchBanners();
   }, []);
 
-  const displayBanners = banners.length > 0 ? banners : [
-    { _id: '1', image: '/offer1.jpg', title: 'Payday Sale' },
-    { _id: '2', image: '/offer3.jpg', title: 'Tiny Seeds' },
-    { _id: '3', image: '/offer2.jpg', title: 'Rare Crop' },
-    { _id: '4', image: '/offer1.jpg', title: 'Payday Sale' },
-    { _id: '5', image: '/offer3.jpg', title: 'Tiny Seeds' }
-  ];
+  const displayBanners = banners;
 
   const getImageUrl = (url) => {
     if (!url) return '';
@@ -297,7 +291,7 @@ export const RecentBlogs = () => {
           {/* Blog 1 */}
           <SwiperSlide>
             <div className="blog-card text-start">
-              <Image src="/blog_image1.png" className="blog-img" alt="Blog 1" width={400} height={250} style={{ width: '100%', height: 'auto' }} />
+              <Image src="/latest_collection1.png" className="blog-img" alt="Blog 1" width={400} height={250} style={{ width: '100%', height: 'auto' }} />
               <div className="blog-content-box">
                 <div className="d-flex justify-content-between align-items-center mb-0">
                   <div className="d-flex align-items-center">
@@ -328,7 +322,7 @@ export const RecentBlogs = () => {
           {/* Blog 2 */}
           <SwiperSlide>
             <div className="blog-card text-start">
-              <Image src="/blog_image2.png" className="blog-img" alt="Blog 2" width={400} height={250} style={{ width: '100%', height: 'auto' }} />
+              <Image src="/latest_collection2.png" className="blog-img" alt="Blog 2" width={400} height={250} style={{ width: '100%', height: 'auto' }} />
               <div className="blog-content-box">
                 <div className="d-flex justify-content-between align-items-center mb-0">
                   <div className="d-flex align-items-center">
@@ -358,7 +352,7 @@ export const RecentBlogs = () => {
           {/* Blog 3 */}
           <SwiperSlide>
             <div className="blog-card text-start">
-              <Image src="/blog_image3.png" className="blog-img" alt="Blog 3" width={400} height={250} style={{ width: '100%', height: 'auto' }} />
+              <Image src="/latest_collection3.png" className="blog-img" alt="Blog 3" width={400} height={250} style={{ width: '100%', height: 'auto' }} />
               <div className="blog-content-box">
                 <div className="d-flex justify-content-between align-items-center mb-0">
                   <div className="d-flex align-items-center">
@@ -543,7 +537,7 @@ export const StoreLocator = () => {
       <div className="container-fluid px-4 px-lg-5 position-relative">
         <div className="row">
           <div className="col-lg-5 mt-lg-4">
-            <Image src="/banner_slider_image3.jpeg" alt="Sweettree Store Locations" width={600} height={600} className="img-fluid store-img mb-4 mb-lg-0" style={{ width: '100%', height: 'auto' }} />
+            <Image src="/store.jpg" alt="Sweettree Store Locations" width={600} height={600} className="img-fluid store-img mb-4 mb-lg-0" style={{ width: '100%', height: 'auto' }} />
           </div>
           <div className="col-lg-6 d-flex flex-column py-lg-5">
             <div className="store-text-box ps-lg-5 mt-lg-4">

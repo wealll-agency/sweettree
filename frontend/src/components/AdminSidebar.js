@@ -22,24 +22,26 @@ export default function AdminSidebar() {
   const { user } = useSelector((state) => state.auth);
   const { sidebarStats } = useSelector((state) => state.admin);
 
-  // Poll for new enquiries and refund requests every 30 seconds
+  // Poll for new enquiries and refund requests every 60 seconds
   useEffect(() => {
+    let isMounted = true;
+
     const fetchUnread = async () => {
       try {
         const res = await api.get(`/enquiries`);
-        if (res.data.success) setUnreadEnquiries(res.data.unreadCount);
+        if (res.data.success && isMounted) setUnreadEnquiries(res.data.unreadCount);
       } catch {}
     };
 
     const fetchPendingRefunds = async () => {
       try {
         const res = await api.get(`/refunds?status=Pending`);
-        if (res.data.success) setPendingRefunds(res.data.refunds.length);
+        if (res.data.success && isMounted) setPendingRefunds(res.data.refunds.length);
       } catch {}
     };
 
     const fetchSidebarStats = () => {
-      dispatch(fetchSidebarStatsAction());
+      if (isMounted) dispatch(fetchSidebarStatsAction());
     };
 
     fetchUnread();
@@ -49,9 +51,12 @@ export default function AdminSidebar() {
       fetchUnread();
       fetchPendingRefunds();
       fetchSidebarStats();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    }, 60000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [dispatch]);
 
   const handleLogout = () => {
     dispatch(logoutUser());

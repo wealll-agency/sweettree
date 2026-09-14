@@ -66,10 +66,14 @@ function StateHydrator() {
       }
     }
 
+    // Signal that synchronous optimistic localStorage hydration is complete (Cart & Wishlist)
+    if (typeof window !== 'undefined') {
+      window.__isReduxSyncHydrated = true;
+      window.dispatchEvent(new Event('redux-sync-hydrated'));
+    }
+
     // Session Restoration on Startup
     const initAuth = async () => {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:7050/api' : 'https://www.sweettreeon.com/api');
-      
       // Optimistic session restoration from localStorage
       const localUser = localStorage.getItem('sweettree_user');
       if (localUser) {
@@ -83,7 +87,7 @@ function StateHydrator() {
       }
 
       try {
-        const profileRes = await axios.get(`${apiUrl}/auth/profile`, { withCredentials: true });
+        const profileRes = await api.get('/auth/profile');
         dispatch(setCredentials(profileRes.data.user));
       } catch (e) {
         // Only clear session if server explicitly says unauthorized (401/403)
@@ -91,6 +95,12 @@ function StateHydrator() {
         if (e.response && (e.response.status === 401 || e.response.status === 403)) {
           dispatch(setCredentials(null));
         }
+      }
+
+      // Signal that asynchronous user profile API is complete
+      if (typeof window !== 'undefined') {
+        window.__isReduxAuthHydrated = true;
+        window.dispatchEvent(new Event('redux-auth-hydrated'));
       }
     };
     initAuth();
@@ -104,7 +114,9 @@ function StateHydrator() {
       async (error) => {
         const originalRequest = error.config;
         if (error.response && error.response.status === 401 && !originalRequest._retry) {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:7050/api' : 'https://www.sweettreeon.com/api');
+          const apiUrl = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+            ? 'http://localhost:7050/api'
+            : (process.env.NEXT_PUBLIC_API_URL || 'https://www.sweettreeon.com/api');
           // Don't retry if it's the login or refresh endpoint itself
           if (originalRequest.url && (originalRequest.url.includes('/login') || originalRequest.url.includes('/refresh'))) {
             return Promise.reject(error);
@@ -129,7 +141,7 @@ function StateHydrator() {
           isRefreshing = true;
 
           try {
-             await axios.post(`${apiUrl}/auth/refresh`, {}, { withCredentials: true });
+             await api.post('/auth/refresh', {});
              isRefreshing = false;
              processQueue(null, 'success');
              // The backend set a new HttpOnly access token cookie, so retry the original request

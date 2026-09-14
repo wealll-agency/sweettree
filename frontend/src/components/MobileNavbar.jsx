@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Search, ShoppingBag, User, LogOut, LayoutDashboard, Package, LogIn } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { logoutUser } from '../store/authSlice';
 
 const MobileNavbar = () => {
@@ -17,6 +17,46 @@ const MobileNavbar = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = useRef(null);
+
+  const [isSyncHydrated, setIsSyncHydrated] = useState(false);
+  const [isAuthHydrated, setIsAuthHydrated] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handleSyncHydration = () => setIsSyncHydrated(true);
+      const handleAuthHydration = () => setIsAuthHydrated(true);
+
+      if (window.__isReduxSyncHydrated) {
+        setIsSyncHydrated(true);
+      } else {
+        window.addEventListener('redux-sync-hydrated', handleSyncHydration);
+      }
+
+      if (window.__isReduxAuthHydrated) {
+        setIsAuthHydrated(true);
+      } else {
+        window.addEventListener('redux-auth-hydrated', handleAuthHydration);
+      }
+
+      return () => {
+        window.removeEventListener('redux-sync-hydrated', handleSyncHydration);
+        window.removeEventListener('redux-auth-hydrated', handleAuthHydration);
+      };
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const closestDropdown = event.target.closest('.dropdown');
+      if (closestDropdown !== dropdownRef.current && dropdownRef.current) {
+        dropdownRef.current.removeAttribute('open');
+      }
+    };
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => {
+      document.removeEventListener("pointerdown", handleClickOutside);
+    };
+  }, []);
 
   const handleLogout = () => {
     dispatch(logoutUser());
@@ -44,7 +84,7 @@ const MobileNavbar = () => {
               width={130}
               height={36}
               priority
-              style={{ objectFit: 'contain', height: '36px', width: 'auto' }}
+              style={{ objectFit: 'contain' }}
             />
           </Link>
 
@@ -66,7 +106,7 @@ const MobileNavbar = () => {
               aria-label={`Cart, ${cartCount} items`}
             >
               <ShoppingBag size={20} strokeWidth={1.8} />
-              {cartCount > 0 && (
+              {isSyncHydrated && cartCount > 0 && (
                 <span className="mobile-topbar-badge">{cartCount > 9 ? '9+' : cartCount}</span>
               )}
             </a>
@@ -95,50 +135,59 @@ const MobileNavbar = () => {
                   boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                 }}
               >
-                {user ? (
-                  <>
-                    <li className="dropdown-header-item">
-                      <span className="d-block fw-bold text-dark" style={{ fontSize: '13px' }}>Hi, {user.name?.split(' ')[0] || 'User'}</span>
-                      <span className="text-muted" style={{ fontSize: '11px' }}>{user.email}</span>
-                    </li>
-                    <li><hr className="dropdown-divider my-1" /></li>
-                    {(user?.role === 'Super Admin' || user?.role === 'Manager' || user?.role === 'Staff') && (
+                {isAuthHydrated ? (
+                  user ? (
+                    <>
+                      <li className="dropdown-header-item">
+                        <span className="d-block fw-bold text-dark" style={{ fontSize: '13px' }}>Hi, {user.name?.split(' ')[0] || 'User'}</span>
+                        <span className="text-muted" style={{ fontSize: '11px' }}>{user.email}</span>
+                      </li>
+                      <li><hr className="dropdown-divider my-1" /></li>
+                      {(user?.role === 'Super Admin' || user?.role === 'Manager' || user?.role === 'Staff') && (
+                        <li>
+                          <Link href="/admin/dashboard" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
+                            <LayoutDashboard size={16} className="me-2 text-success" /> Admin Panel
+                          </Link>
+                        </li>
+                      )}
                       <li>
-                        <Link href="/admin/dashboard" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
-                          <LayoutDashboard size={16} className="me-2 text-success" /> Admin Panel
+                        <Link href="/user/profile" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
+                          <User size={16} className="me-2 text-primary" /> My Profile
                         </Link>
                       </li>
-                    )}
-                    <li>
-                      <Link href="/user/profile" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
-                        <User size={16} className="me-2 text-primary" /> My Profile
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/user/orders" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
-                        <Package size={16} className="me-2 text-warning" /> My Orders
-                      </Link>
-                    </li>
-                    <li><hr className="dropdown-divider my-1" /></li>
-                    <li>
-                      <button onClick={handleLogout} className="dropdown-item premium-dropdown-item text-danger" style={{ background: 'transparent', border: 'none', width: '100%', textAlign: 'left' }}>
-                        <LogOut size={16} className="me-2" /> Log Out
-                      </button>
-                    </li>
-                  </>
+                      <li>
+                        <Link href="/user/orders" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
+                          <Package size={16} className="me-2 text-warning" /> My Orders
+                        </Link>
+                      </li>
+                      <li><hr className="dropdown-divider my-1" /></li>
+                      <li>
+                        <button onClick={handleLogout} className="dropdown-item premium-dropdown-item text-danger" style={{ background: 'transparent', border: 'none', width: '100%', textAlign: 'left' }}>
+                          <LogOut size={16} className="me-2" /> Log Out
+                        </button>
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li>
+                        <Link href="/login" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
+                          <LogIn size={16} className="me-2 text-success" /> Sign In
+                        </Link>
+                      </li>
+                      <li>
+                        <Link href="/register" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
+                          <User size={16} className="me-2 text-primary" /> Sign Up
+                        </Link>
+                      </li>
+                    </>
+                  )
                 ) : (
-                  <>
-                    <li>
-                      <Link href="/login" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
-                        <LogIn size={16} className="me-2 text-success" /> Sign In
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/register" className="dropdown-item premium-dropdown-item" onClick={() => dropdownRef.current?.removeAttribute('open')}>
-                        <User size={16} className="me-2 text-primary" /> Sign Up
-                      </Link>
-                    </li>
-                  </>
+                  <li>
+                    <span className="dropdown-item premium-dropdown-item text-muted" style={{ fontSize: '13px' }}>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style={{ width: '12px', height: '12px' }}></span>
+                      Loading...
+                    </span>
+                  </li>
                 )}
               </ul>
             </details>

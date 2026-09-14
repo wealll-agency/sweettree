@@ -2,7 +2,7 @@
 import React, { memo, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import api from '../utils/axiosConfig';
+import { fetchBannersCached, getCachedBannersSync } from '../utils/bannerService';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Pagination, Navigation } from 'swiper/modules';
 
@@ -18,13 +18,23 @@ const HeroSlider = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Populate cached banners post-hydration instantly if available
+    const cached = getCachedBannersSync();
+    if (cached && cached.length > 0) {
+      const hero = cached.filter(b => b.placement === 'Hero');
+      if (hero.length > 0) setDesktopBanners(hero);
+      const bot = cached.filter(b => b.placement === 'Bottom');
+      if (bot.length > 0) setMobileBanners(bot);
+      setIsLoading(false);
+    }
+
     const fetchBanners = async () => {
       try {
-        const res = await api.get('/banners');
-        if (res?.data?.success) {
-          const heroBanners = res.data.banners.filter(b => b.placement === 'Hero');
+        const banners = await fetchBannersCached();
+        if (banners && banners.length > 0) {
+          const heroBanners = banners.filter(b => b.placement === 'Hero');
           if (heroBanners.length > 0) setDesktopBanners(heroBanners);
-          const botBanners = res.data.banners.filter(b => b.placement === 'Bottom');
+          const botBanners = banners.filter(b => b.placement === 'Bottom');
           if (botBanners.length > 0) setMobileBanners(botBanners);
         }
       } catch (error) {
@@ -36,13 +46,8 @@ const HeroSlider = () => {
     fetchBanners();
   }, []);
 
-  // Fallback static banners if none are active
-  const displayDesktopBanners = desktopBanners.length > 0 ? desktopBanners : [
-    { _id: '1', image: '/banner_slider_image1.jpeg', title: 'Banner 1', targetLink: '' },
-    { _id: '2', image: '/banner_slider_image2.jpeg', title: 'Banner 2', targetLink: '' }
-  ];
-
-  const displayMobileBanners = mobileBanners.length > 0 ? mobileBanners : displayDesktopBanners;
+  const displayDesktopBanners = desktopBanners;
+  const displayMobileBanners = mobileBanners.length > 0 ? mobileBanners : desktopBanners;
 
   const getImageUrl = (url) => {
     if (!url) return '';
@@ -56,16 +61,16 @@ const HeroSlider = () => {
     <section className="hero-slider-wrapper">
       <SlidingTicker />
       <div className="container-fluid px-4 px-lg-5 mt-3">
-        {isLoading ? (
+        {isLoading && displayDesktopBanners.length === 0 ? (
           <>
             <div className="d-none d-md-block">
-               <div className="item banner-img-container ratio-hero placeholder-glow" style={{ borderRadius: '16px', overflow: 'hidden' }}>
-                  <div className="placeholder w-100 h-100 bg-secondary" style={{ opacity: 0.1 }}></div>
+               <div className="item banner-img-container ratio-hero placeholder-glow" style={{ borderRadius: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, #f9f6f0 0%, #eef4ed 100%)' }}>
+                  <div className="placeholder w-100 h-100" style={{ opacity: 0.05, background: '#162C18' }}></div>
                </div>
             </div>
             <div className="d-block d-md-none">
-               <div className="item banner-img-container ratio-4x3 placeholder-glow" style={{ borderRadius: '16px', overflow: 'hidden' }}>
-                  <div className="placeholder w-100 h-100 bg-secondary" style={{ opacity: 0.1 }}></div>
+               <div className="item banner-img-container ratio-4x3 placeholder-glow" style={{ borderRadius: '16px', overflow: 'hidden', background: 'linear-gradient(135deg, #f9f6f0 0%, #eef4ed 100%)' }}>
+                  <div className="placeholder w-100 h-100" style={{ opacity: 0.05, background: '#162C18' }}></div>
                </div>
             </div>
           </>

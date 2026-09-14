@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import api from '../utils/axiosConfig';
+import { fetchBannersCached } from '../utils/bannerService';
 
 const CashewsBanner = () => {
   const [banners, setBanners] = useState([]);
@@ -10,9 +10,9 @@ const CashewsBanner = () => {
   useEffect(() => {
     const fetchBanners = async () => {
       try {
-        const res = await api.get('/banners');
-        if (res.data.success) {
-          const middleBanners = res.data.banners.filter(b => b.placement === 'Middle');
+        const allBanners = await fetchBannersCached();
+        if (allBanners && allBanners.length > 0) {
+          const middleBanners = allBanners.filter(b => b.placement === 'Middle');
           if (middleBanners.length > 0) {
             setBanners(middleBanners);
           }
@@ -24,9 +24,7 @@ const CashewsBanner = () => {
     fetchBanners();
   }, []);
 
-  const displayBanners = banners.length > 0 ? banners : [
-    { _id: '1', image: '/wholesale-banner.png', title: 'Wholesale Banner', targetLink: '#' }
-  ];
+  const displayBanners = banners;
 
   const getImageUrl = (url) => {
     if (!url) return '';

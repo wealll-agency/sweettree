@@ -728,8 +728,15 @@ export const getAllOrders = async (req, res, next) => {
     const limitNum = Number(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    const total = await Order.countDocuments({});
-    const orders = await Order.find({})
+    const query = {
+      $or: [
+        { paymentStatus: 'Paid', orderStatus: { $ne: 'Cancelled' } },
+        { paymentMode: 'COD', orderStatus: { $ne: 'Cancelled' } }
+      ]
+    };
+
+    const total = await Order.countDocuments(query);
+    const orders = await Order.find(query)
       .populate('user', 'name email')
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -1063,6 +1070,23 @@ export const getShipmentByWaybill = async (req, res, next) => {
       },
       shipment
     });
+  } catch (error) {
+    next(error);
+  }
+};
+// @desc    Delete order (hard delete)
+// @route   DELETE /api/orders/:id
+// @access  Private/Admin/Manager
+export const deleteOrder = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+    
+    await Order.findByIdAndDelete(req.params.id);
+    
+    res.json({ success: true, message: 'Order deleted successfully' });
   } catch (error) {
     next(error);
   }

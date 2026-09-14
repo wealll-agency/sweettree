@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const generateToken = (res, userId, rememberMe = true) => {
+const generateToken = (res, userId, rememberMe = true, req = null) => {
   const accessToken = jwt.sign(
     { id: userId },
     process.env.JWT_SECRET,
@@ -13,11 +13,14 @@ const generateToken = (res, userId, rememberMe = true) => {
     { expiresIn: rememberMe ? '30d' : '1d' }
   );
 
+  const host = req ? (req.headers?.host || (typeof req.get === 'function' ? req.get('host') : '') || '') : '';
+  const isProductionDomain = process.env.NODE_ENV === 'production' && host.includes('sweettreeon.com');
+
   const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === 'production' && isProductionDomain,
     sameSite: 'lax',
-    ...(process.env.NODE_ENV === 'production' && { domain: '.sweettreeon.com' })
+    ...(isProductionDomain && { domain: '.sweettreeon.com' })
   };
 
   if (rememberMe) {

@@ -11,8 +11,10 @@ import {
   NuttyDelightOffers, 
   ShopByCategory, 
   Faqs, 
-  TagsSection, 
+  TagsSection 
 } from '../components/HomeSections';
+import MobileProductGrid from '../components/MobileProductGrid';
+import MobileCategorySection from '../components/MobileCategorySection';
 
 export default function Home() {
   const [topSellingProducts, setTopSellingProducts] = useState([]);
@@ -57,12 +59,14 @@ export default function Home() {
       <div className="d-none d-md-block">
         <HeroSlider />
         <CollectionSlider />
-        {topSellingProducts.length > 0 && <ProductCarouselSection title="Top Selling Products" products={topSellingProducts} />}
+        {(loading || topSellingProducts.length > 0) && (
+          <ProductCarouselSection title="Top Selling Products" products={topSellingProducts} loading={loading} />
+        )}
         <NuttyDelightOffers />
         <ShopByCategory />
-        {healthyProducts.length > 0 && (
+        {(loading || healthyProducts.length > 0) && (
           <div className="healthy-snacks-section py-5">
-             <ProductCarouselSection title="Healthy Section" products={healthyProducts} />
+             <ProductCarouselSection title="Healthy Section" products={healthyProducts} loading={loading} />
           </div>
         )}
         <ShopByPurpose />
@@ -87,17 +91,18 @@ export default function Home() {
           <HeroSlider />
         </div>
 
-        {/* Mobile Category Slider — same auto-sliding collection as live site */}
+        {/* Mobile Category Slider */}
         <div className="mobile-collection-wrapper">
           <CollectionSlider />
         </div>
 
         {/* Mobile Top Selling Products */}
-        {topSellingProducts.length > 0 && (
-          <MobileProductGridLazy
+        {(loading || topSellingProducts.length > 0) && (
+          <MobileProductGrid
             products={topSellingProducts}
             title="Top Selling Products"
             viewAllHref="/shop"
+            loading={loading}
           />
         )}
 
@@ -105,21 +110,22 @@ export default function Home() {
         <NuttyDelightOffers />
 
         {/* Mobile Category Section */}
-        <MobileCategorySectionLazy />
+        <MobileCategorySection />
 
         {/* Mobile Healthy Products */}
-        {healthyProducts.length > 0 && (
-          <MobileProductGridLazy
+        {(loading || healthyProducts.length > 0) && (
+          <MobileProductGrid
             products={healthyProducts}
             title="Healthy Picks"
             viewAllHref="/shop?healthyProduct=true"
+            loading={loading}
           />
         )}
 
         {/* Mobile Custom Sections */}
         {customSections.map(section =>
           section.products && section.products.length > 0 ? (
-            <MobileProductGridLazy
+            <MobileProductGrid
               key={section._id}
               products={section.products}
               title={section.title}
@@ -142,24 +148,4 @@ export default function Home() {
       </div>
     </main>
   );
-}
-
-// Lazy-loaded MobileProductGrid to avoid SSR issues
-function MobileProductGridLazy(props) {
-  const [MobileProductGrid, setMobileProductGrid] = React.useState(null);
-  React.useEffect(() => {
-    import('../components/MobileProductGrid').then(m => setMobileProductGrid(() => m.default));
-  }, []);
-  if (!MobileProductGrid) return null;
-  return <MobileProductGrid {...props} />;
-}
-
-// Lazy-loaded MobileCategorySection
-function MobileCategorySectionLazy() {
-  const [MobileCategorySection, setMobileCategorySection] = React.useState(null);
-  React.useEffect(() => {
-    import('../components/MobileCategorySection').then(m => setMobileCategorySection(() => m.default));
-  }, []);
-  if (!MobileCategorySection) return null;
-  return <MobileCategorySection />;
 }

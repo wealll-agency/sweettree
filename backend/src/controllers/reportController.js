@@ -482,7 +482,13 @@ export const exportSalesReportExcel = async (req, res, next) => {
 // @access  Private/Admin/Manager/Staff
 export const getSidebarStats = async (req, res, next) => {
   try {
-    const pendingOrders = await Order.countDocuments({ adminRead: false });
+    const pendingOrders = await Order.countDocuments({
+      adminRead: false,
+      $or: [
+        { paymentStatus: 'Paid', orderStatus: { $ne: 'Cancelled' } },
+        { paymentMode: 'COD', orderStatus: { $ne: 'Cancelled' } }
+      ]
+    });
     const lowStockItems = await Inventory.countDocuments({
       adminRead: false,
       $expr: { $lte: ['$stockQuantity', '$lowStockThreshold'] }
