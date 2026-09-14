@@ -58,10 +58,10 @@ const MobileNavbar = () => {
     };
   }, []);
 
-  const handleLogout = () => {
-    dispatch(logoutUser());
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
     dropdownRef.current?.removeAttribute('open');
-    router.push('/');
+    router.push('/login');
   };
 
   const handleSearch = (e) => {

@@ -120,11 +120,11 @@ function LoginContent() {
           {/* Email */}
           <div>
             <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.73rem', fontWeight: 500, marginBottom: '4px' }}>
-              Email Address
+              Email Address / Mobile Number
             </label>
             <div style={{ position: 'relative' }}>
               <input
-                type="email"
+                type="text"
                 required
                 className="glass-input"
                 value={email}

@@ -58,10 +58,10 @@ export default function AdminSidebar() {
     };
   }, [dispatch]);
 
-  const handleLogout = () => {
-    dispatch(logoutUser());
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
     dispatch(clearCart());
-    router.push('/');
+    router.push('/login');
   };
 
   if (!user) return null;

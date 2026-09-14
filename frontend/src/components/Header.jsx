@@ -66,9 +66,9 @@ const Header = () => {
     }
   }, []);
 
-  const handleLogout = (e) => {
+  const handleLogout = async (e) => {
     e.preventDefault();
-    dispatch(logoutUser());
+    await dispatch(logoutUser());
     if (dropdownRef.current) {
       dropdownRef.current.removeAttribute('open');
     }

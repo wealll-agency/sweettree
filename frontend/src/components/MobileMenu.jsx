@@ -23,9 +23,9 @@ const MobileMenu = () => {
     }
   };
 
-  const handleLogout = (e) => {
+  const handleLogout = async (e) => {
     e.preventDefault();
-    dispatch(logoutUser());
+    await dispatch(logoutUser());
     closeMenu();
     router.push('/login');
   };

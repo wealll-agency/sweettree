@@ -70,10 +70,10 @@ export default function AdminHeader() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleLogout = () => {
-    dispatch(logoutUser());
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
     dispatch(clearCart());
-    router.push('/');
+    router.push('/login');
   };
 
   const handleNotificationClick = (n) => {
