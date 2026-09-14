@@ -18,7 +18,7 @@ import SlidingTicker from '../../components/SlidingTicker';
 function ShopContent() {
   const dispatch = useDispatch();
   const searchParams = useSearchParams();
-  
+
   const { items: products, loading } = useSelector((state) => state.products);
 
   const keywordQuery = searchParams.get('keyword') || '';
@@ -88,7 +88,7 @@ function ShopContent() {
     // Brand filter
     if (selectedBrand) {
       const matchBrand = (product.brand || '').toLowerCase().trim() === selectedBrand.toLowerCase().trim() ||
-                         product.name.toLowerCase().includes(selectedBrand.toLowerCase());
+        product.name.toLowerCase().includes(selectedBrand.toLowerCase());
       if (!matchBrand) return false;
     }
 
@@ -129,8 +129,8 @@ function ShopContent() {
     // Keyword filter (search query)
     if (keywordQuery) {
       const matchKeyword = product.name.toLowerCase().includes(keywordQuery.toLowerCase()) ||
-                           (product.category || '').toLowerCase().includes(keywordQuery.toLowerCase()) ||
-                           (product.brand || '').toLowerCase().includes(keywordQuery.toLowerCase());
+        (product.category || '').toLowerCase().includes(keywordQuery.toLowerCase()) ||
+        (product.brand || '').toLowerCase().includes(keywordQuery.toLowerCase());
       if (!matchKeyword) return false;
     }
 
@@ -161,7 +161,7 @@ function ShopContent() {
       <div className="filter-header d-flex justify-content-between align-items-center mb-1">
         <h5 className="fw-bold m-0 text-dark" style={{ fontSize: '16px' }}>Filter By</h5>
         {(priceFrom || priceTo || selectedStock || selectedBrand || selectedDiscount || selectedCategory) && (
-          <button 
+          <button
             onClick={() => {
               setPriceFrom('');
               setPriceTo('');
@@ -188,18 +188,18 @@ function ShopContent() {
           <div className="from-to-inputs d-flex align-items-center gap-2">
             <div className="input-group input-group-sm border rounded">
               <span className="input-group-text bg-white border-0 text-muted">₹</span>
-              <input 
-                type="number" 
-                className="form-control border-0 px-1" 
+              <input
+                type="number"
+                className="form-control border-0 px-1"
                 value={priceFrom}
                 onChange={(e) => setPriceFrom(e.target.value)}
               />
             </div>
             <div className="input-group input-group-sm border rounded">
               <span className="input-group-text bg-white border-0 text-muted">₹</span>
-              <input 
-                type="number" 
-                className="form-control border-0 px-1" 
+              <input
+                type="number"
+                className="form-control border-0 px-1"
                 value={priceTo}
                 onChange={(e) => setPriceTo(e.target.value)}
               />
@@ -216,13 +216,13 @@ function ShopContent() {
         </div>
         <div id={`${prefix}stockFilter`} className="collapse show mt-3">
           <div className="d-flex flex-wrap gap-2">
-            <button 
+            <button
               onClick={() => setSelectedStock(selectedStock === 'In Stock' ? null : 'In Stock')}
               className={`filter-pill-btn ${selectedStock === 'In Stock' ? 'active' : ''}`}
             >
               In Stock
             </button>
-            <button 
+            <button
               onClick={() => setSelectedStock(selectedStock === 'Out Of Stock' ? null : 'Out Of Stock')}
               className={`filter-pill-btn ${selectedStock === 'Out Of Stock' ? 'active' : ''}`}
             >
@@ -307,13 +307,13 @@ function ShopContent() {
                 {promotionalBanners.map((banner, index) => (
                   <SwiperSlide key={banner._id}>
                     <a href={banner.targetLink || '#'}>
-                      <Image 
-                        src={banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : ''}${banner.image}`} 
-                        alt={banner.title || "Shop Banner"} 
-                        width={2172} 
-                        height={724} 
-                        priority={index === 0} 
-                        style={{ width: '100%', height: 'auto', aspectRatio: '2172/724', display: 'block' }} 
+                      <Image
+                        src={banner.image.startsWith('http') || banner.image.startsWith('/') ? banner.image : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : ''}${banner.image}`}
+                        alt={banner.title || "Shop Banner"}
+                        width={2172}
+                        height={724}
+                        priority={index === 0}
+                        style={{ width: '100%', height: 'auto', aspectRatio: '2172/724', display: 'block' }}
                       />
                     </a>
                   </SwiperSlide>
@@ -321,13 +321,13 @@ function ShopContent() {
               </Swiper>
             ) : promotionalBanners.length === 1 ? (
               <a href={promotionalBanners[0].targetLink || '#'}>
-                <Image 
-                  src={promotionalBanners[0].image.startsWith('http') || promotionalBanners[0].image.startsWith('/') ? promotionalBanners[0].image : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : ''}${promotionalBanners[0].image}`} 
-                  alt={promotionalBanners[0].title || "Shop Banner"} 
-                  width={2172} 
-                  height={724} 
-                  priority={true} 
-                  style={{ width: '100%', height: 'auto', aspectRatio: '2172/724', display: 'block', marginBottom: '15px', borderRadius: '15px' }} 
+                <Image
+                  src={promotionalBanners[0].image.startsWith('http') || promotionalBanners[0].image.startsWith('/') ? promotionalBanners[0].image : `${process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : ''}${promotionalBanners[0].image}`}
+                  alt={promotionalBanners[0].title || "Shop Banner"}
+                  width={2172}
+                  height={724}
+                  priority={true}
+                  style={{ width: '100%', height: 'auto', aspectRatio: '2172/724', display: 'block', marginBottom: '15px', borderRadius: '15px' }}
                 />
               </a>
             ) : (
@@ -345,9 +345,7 @@ function ShopContent() {
             <li className="breadcrumb-item active text-dark fw-bold" aria-current="page">Shop</li>
           </ol>
         </nav>
-        <p className="mb-4" style={{ fontSize: '14px', color: '#555' }}>
-          Nutraj <strong>PAYDAY SALE is Live!</strong> ✨ Get up to <strong>60% Off + Extra 15% Off</strong> on premium Nuts & Dry Fruits. Shop now for healthy savings!
-        </p>
+
       </div>
 
       <div className="container-fluid px-1 px-md-4 px-lg-5 pb-5">
@@ -381,14 +379,14 @@ function ShopContent() {
             {/* Minimal View Bar */}
             <div className="view-tools-bar mb-4">
               <div className="d-none d-lg-flex align-items-center">
-                <button 
+                <button
                   onClick={() => setViewType('grid')}
                   className={`view-btn ${viewType === 'grid' ? 'active' : ''}`}
                 >
                   <i className="fas fa-th-large me-1"></i> Grid View
                 </button>
                 <div className="vr mx-3" style={{ height: '20px', opacity: 0.2 }}></div>
-                <button 
+                <button
                   onClick={() => setViewType('list')}
                   className={`view-btn ${viewType === 'list' ? 'active' : ''}`}
                 >
@@ -397,10 +395,10 @@ function ShopContent() {
               </div>
 
               <div className="sort-select-wrapper d-none d-lg-block">
-                <select 
+                <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="form-select form-select-sm border-dark rounded-pill px-3" 
+                  className="form-select form-select-sm border-dark rounded-pill px-3"
                   style={{ width: '175px' }}
                 >
                   <option>Best Selling</option>
@@ -435,13 +433,13 @@ function ShopContent() {
                       <div className="card border-0 shadow-sm p-3 rounded-3" style={{ border: '1px solid #eee' }}>
                         <div className="row g-0 align-items-center">
                           <div className="col-4 col-md-3 text-center position-relative" style={{ height: '130px' }}>
-                            <Image 
-                              src={product.images?.[0] || product.image || '/placeholder.png'} 
-                              className="img-fluid rounded" 
-                              alt={product.name} 
+                            <Image
+                              src={product.images?.[0] || product.image || '/placeholder.png'}
+                              className="img-fluid rounded"
+                              alt={product.name}
                               fill
                               sizes="(max-width: 768px) 33vw, 25vw"
-                              style={{ objectFit: 'cover', objectPosition: 'center' }} 
+                              style={{ objectFit: 'cover', objectPosition: 'center' }}
                             />
                           </div>
                           <div className="col-8 col-md-9 ps-3 ps-md-4">
@@ -475,7 +473,7 @@ function ShopContent() {
                 </div>
               )}
             </div>
-            
+
             {/* Pagination */}
             <div className="pagination-wrapper d-flex justify-content-center mt-5 mb-5">
               <nav>
@@ -488,7 +486,7 @@ function ShopContent() {
           </div>
         </div>
       </div>
-      
+
       {/* People Are Also Looking For Section */}
       <TagsSection />
     </>
