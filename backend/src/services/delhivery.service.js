@@ -4,8 +4,9 @@ class DelhiveryService {
   /**
    * Format order and create a shipment in Delhivery
    * @param {Object} order - The Sweettree order document
+   * @param {Object} config - Configuration including weight and dimensions
    */
-  async createShipment(order) {
+  async createShipment(order, config = {}) {
     // 1. Map business logic (Order model) to Delhivery-specific payload
     const payload = {
       shipments: [
@@ -35,7 +36,10 @@ class DelhiveryService {
           seller_inv: '',
           quantity: order.items.reduce((acc, item) => acc + item.quantity, 0).toString(),
           tax_value: order.tax ? order.tax.toString() : '0',
-          shipment_weight: (order.items.reduce((acc, item) => acc + ((item.product?.weight || 1000) * item.quantity), 0)).toString() // Grams
+          shipment_weight: config.weight ? config.weight.toString() : (order.items.reduce((acc, item) => acc + ((item.product?.weight || 1000) * item.quantity), 0)).toString(), // Grams
+          shipment_length: config.length ? config.length.toString() : '10',
+          shipment_width: config.breadth ? config.breadth.toString() : '10',
+          shipment_height: config.height ? config.height.toString() : '10'
         }
       ],
       pickup_location: {
@@ -62,12 +66,32 @@ class DelhiveryService {
     // 2. Call the provider to execute API request
     const response = await delhiveryProvider.createShipment(payload);
 
-    // 3. Return standardized result to the shipping orchestration service
+    // 3. Optional: Trigger Pickup Request if configured
+    let pickupResponse = null;
+    let pickupError = null;
+    if (config.pickupDate && config.pickupTime) {
+      try {
+        pickupResponse = await delhiveryProvider.requestPickup({
+          pickup_time: config.pickupTime,
+          pickup_date: config.pickupDate,
+          pickup_location: payload.pickup_location.name,
+          expected_package_count: 1
+        });
+      } catch (err) {
+        console.error('Pickup scheduling failed:', err);
+        pickupError = err.message || 'Pickup scheduling failed';
+        // Continue anyway since shipment was created
+      }
+    }
+
+    // 4. Return standardized result to the shipping orchestration service
     return {
       success: true,
       waybill: response.waybill,
       provider: 'delhivery',
-      rawResponse: response.raw
+      rawResponse: response.raw,
+      pickupScheduled: !!pickupResponse,
+      pickupError: pickupError
     };
   }
 
@@ -117,7 +141,7 @@ class DelhiveryService {
     const response = await delhiveryProvider.generateLabel(waybill);
     return {
       success: response.success,
-      labelUrl: response.labelUrl,
+      labelData: response.labelData,
       rawResponse: response.raw
     };
   }

@@ -43,7 +43,7 @@ export const verifyICICISecureHash = (responseParams) => {
 /**
  * Initiates an ICICI Refund Request
  */
-export const processICICIRefund = async (merchantTranId, refundAmount, originalTxnId) => {
+export const processICICIRefund = async (merchantTranId, refundAmount, originalTxnId, originalMerchantTranId) => {
   const merchantId = config.ICICI.MERCHANT_ID;
   const refundUrl = config.ICICI.REFUND_URL;
   if (!refundUrl) throw new Error('ICICI_REFUND_URL is missing from environment variables');
@@ -51,8 +51,8 @@ export const processICICIRefund = async (merchantTranId, refundAmount, originalT
   // Construct Refund Payload based on typical ICICI Server-to-Server Refund API specs
   const refundPayload = {
     merchantId,
-    merchantTranId, // Often a new unique ID for the refund transaction itself, but sometimes original
-    originalMerchantTranId: merchantTranId, 
+    merchantTranId, // New unique ID for the refund transaction itself
+    originalMerchantTranId: originalMerchantTranId || merchantTranId, 
     originalTxnId,
     amount: Number(refundAmount).toFixed(2),
     transactionType: 'REFUND'

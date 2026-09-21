@@ -7,6 +7,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { logoutUser } from '../store/authSlice';
+import api from '../utils/axiosConfig';
 
 const MobileNavbar = () => {
   const { items: cartItems } = useSelector((state) => state.cart);
@@ -16,10 +17,53 @@ const MobileNavbar = () => {
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Typeahead state
+  const [suggestions, setSuggestions] = useState([]);
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+  const searchTimeoutRef = useRef(null);
+  const searchContainerRef = useRef(null);
+
   const dropdownRef = useRef(null);
 
   const [isSyncHydrated, setIsSyncHydrated] = useState(false);
   const [isAuthHydrated, setIsAuthHydrated] = useState(false);
+
+  useEffect(() => {
+    // Handle outside clicks to close dropdown
+    const handleClickOutside = (event) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setSuggestions([]);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    
+    if (!searchQuery.trim()) {
+      setSuggestions([]);
+      setIsSuggestionsLoading(false);
+      return;
+    }
+
+    setIsSuggestionsLoading(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const res = await api.get(`/products?keyword=${encodeURIComponent(searchQuery.trim())}&limit=5`);
+        const data = res.data;
+        if (data.success) {
+          setSuggestions(data.products || []);
+        }
+      } catch (err) {
+        console.error('Error fetching search suggestions:', err);
+      } finally {
+        setIsSuggestionsLoading(false);
+      }
+    }, 300);
+  }, [searchQuery]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -196,16 +240,103 @@ const MobileNavbar = () => {
 
         {/* Slide-down search bar */}
         {searchOpen && (
-          <form onSubmit={handleSearch} className="mobile-topbar-search-bar">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="mobile-topbar-search-input"
-              autoFocus
-            />
-            <button type="submit" className="mobile-topbar-search-submit">Search</button>
-          </form>
+          <div style={{ position: 'relative' }} ref={searchContainerRef}>
+            <form onSubmit={handleSearch} className="mobile-topbar-search-bar">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="mobile-topbar-search-input"
+                autoFocus
+                placeholder="Search products..."
+              />
+              <button type="submit" className="mobile-topbar-search-submit">Search</button>
+            </form>
+            
+            {/* Mobile Autocomplete Dropdown */}
+            {(suggestions.length > 0 || isSuggestionsLoading) && searchQuery.trim() && (
+              <div 
+                className="search-suggestions-dropdown" 
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  backgroundColor: '#fff',
+                  borderRadius: '0 0 8px 8px',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                  zIndex: 1000,
+                  overflow: 'hidden',
+                  border: '1px solid #eee',
+                  borderTop: 'none',
+                  maxHeight: '60vh',
+                  overflowY: 'auto'
+                }}
+              >
+                {isSuggestionsLoading ? (
+                  <div className="p-3 text-center text-muted" style={{ fontSize: '13px' }}>
+                    <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+                    Searching...
+                  </div>
+                ) : (
+                  <ul className="m-0 p-0" style={{ listStyle: 'none' }}>
+                    {suggestions.map((product) => (
+                      <li key={product._id} className="border-bottom">
+                        <Link 
+                          href={`/shop-details?${product.name.replace(/\s+/g, '-').replace(/[^\w\-]+/g, '')}`}
+                          className="d-flex align-items-center p-2 text-decoration-none hover-bg-light"
+                          style={{ transition: 'background-color 0.2s' }}
+                          onClick={() => {
+                            setSearchOpen(false);
+                            setSearchQuery('');
+                            setSuggestions([]);
+                          }}
+                        >
+                          <div style={{ width: '40px', height: '40px', position: 'relative', flexShrink: 0, borderRadius: '4px', overflow: 'hidden' }}>
+                            <Image 
+                              src={product.images && product.images[0] ? product.images[0] : '/placeholder.jpg'} 
+                              alt={product.name}
+                              fill
+                              style={{ objectFit: 'cover' }}
+                            />
+                          </div>
+                          <div className="ms-3 flex-grow-1 overflow-hidden">
+                            <h6 className="m-0 text-dark text-truncate" style={{ fontSize: '13px', fontWeight: '600' }}>
+                              {product.name}
+                            </h6>
+                            <div className="d-flex align-items-center mt-1">
+                              <span className="fw-bold me-2" style={{ color: '#005b6e', fontSize: '12px' }}>
+                                ₹{product.price - (product.discount || 0)}
+                              </span>
+                              {product.discount > 0 && (
+                                <span className="text-muted text-decoration-line-through" style={{ fontSize: '11px' }}>
+                                  ₹{product.price}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="p-2 text-center" style={{ backgroundColor: '#f8f9fa' }}>
+                  <Link 
+                    href={`/shop?keyword=${encodeURIComponent(searchQuery)}`} 
+                    className="text-decoration-none fw-bold"
+                    style={{ fontSize: '12px', color: '#005b6e' }}
+                    onClick={() => {
+                      setSearchOpen(false);
+                      setSearchQuery('');
+                      setSuggestions([]);
+                    }}
+                  >
+                    View all results for "{searchQuery}"
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </header>
     </>

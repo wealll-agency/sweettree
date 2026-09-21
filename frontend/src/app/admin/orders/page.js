@@ -98,6 +98,15 @@ function AdminOrdersContent() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [trackingNumber, setTrackingNumber] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
+  const [showShipmentConfig, setShowShipmentConfig] = useState(false);
+  const [shipmentConfig, setShipmentConfig] = useState({
+    weight: 1000,
+    length: 10,
+    breadth: 10,
+    height: 10,
+    pickupDate: new Date().toISOString().split('T')[0],
+    pickupTime: '12:00:00'
+  });
 
   let totalQty = 0;
   let totalTaxable = 0;
@@ -188,21 +197,39 @@ function AdminOrdersContent() {
     }
   };
 
-  const handleCreateDelhiveryShipment = async (orderId) => {
-    const confirmed = await showConfirm('Are you sure you want to create shipments for this order based on warehouses?');
-    if(confirmed) {
-      setActionSuccess('');
-      dispatch(createDelhiveryShipment(orderId))
-        .unwrap()
-        .then((res) => {
-          setActionSuccess('Shipments created successfully!');
-          dispatch(fetchAdminOrders());
-          // Update local selectedOrder with new shipments
-          const updated = {...selectedOrder, shipments: res.shipments, orderStatus: 'Shipped'};
-          setSelectedOrder(updated);
-        })
-        .catch(err => showAlert(err || 'Failed to create shipments', 'error'));
-    }
+  const handleOpenShipmentConfig = (order) => {
+    const totalWeight = order.items.reduce((acc, item) => {
+      const w = item.product?.weight || 1000;
+      return acc + (w * item.quantity);
+    }, 0);
+    setShipmentConfig(prev => ({
+      ...prev,
+      weight: totalWeight
+    }));
+    setShowShipmentConfig(true);
+  };
+
+  const confirmCreateShipment = async () => {
+    setShowShipmentConfig(false);
+    setActionSuccess('');
+    dispatch(createDelhiveryShipment({ orderId: selectedOrder._id, config: shipmentConfig }))
+      .unwrap()
+      .then((res) => {
+        const rawResults = res.result?.rawResults || [];
+        const isAnyPickupScheduled = rawResults.some(r => r.pickupScheduled);
+        let msg = `Shipments created successfully! ${isAnyPickupScheduled ? 'Pickup Scheduled.' : 'Pickup Not Scheduled.'}`;
+        
+        const errors = rawResults.map(r => r.pickupError).filter(Boolean).join(', ');
+        if (errors) {
+          msg += ` (Reason: ${errors})`;
+        }
+        
+        setActionSuccess(msg);
+        dispatch(fetchAdminOrders());
+        const updated = {...selectedOrder, shipments: res.shipments, orderStatus: 'Shipped'};
+        setSelectedOrder(updated);
+      })
+      .catch(err => showAlert(err || 'Failed to create shipments', 'error'));
   };
 
   const handleCancelDelhiveryShipment = async (waybill) => {
@@ -230,7 +257,7 @@ function AdminOrdersContent() {
     dispatch(getDelhiveryLabel(waybill))
       .unwrap()
       .then((res) => {
-        const pkg = res.label?.packages?.[0];
+        const pkg = res.label?.packages ? res.label.packages[0] : res.label;
         if (pkg && pkg.pdf_download_link) {
           window.open(pkg.pdf_download_link, '_blank');
         } else if (pkg) {
@@ -271,10 +298,10 @@ function AdminOrdersContent() {
 
                   <div class="section">
                     <div class="fw-bold">Deliver To:</div>
-                    <div>${pkg.consignee_name || ''}</div>
-                    <div>${pkg.radd}</div>
-                    <div>${pkg.rcty}, ${pkg.rst} - <span class="fw-bold fs-lg">${pkg.rpin}</span></div>
-                    <div>Ph: ${pkg.rph || ''}</div>
+                    <div>${selectedOrder.user?.name || selectedOrder.deliveryAddress?.name || pkg.consignee_name || 'Guest'}</div>
+                    <div>${selectedOrder.deliveryAddress?.street || selectedOrder.deliveryAddress?.address || selectedOrder.deliveryAddress?.locality || ''}</div>
+                    <div>${selectedOrder.deliveryAddress?.city || ''}, ${selectedOrder.deliveryAddress?.state || ''} - <span class="fw-bold fs-lg">${selectedOrder.deliveryAddress?.zipCode || selectedOrder.deliveryAddress?.pincode || ''}</span></div>
+                    <div>Ph: ${selectedOrder.deliveryAddress?.phone || selectedOrder.user?.phone || pkg.rph || ''}</div>
                   </div>
 
                   <div class="section">
@@ -581,7 +608,7 @@ function AdminOrdersContent() {
                   <div>
                     <p className="fs-7 text-muted m-0 mb-2">No active shipments for this order.</p>
                     {(selectedOrder.orderStatus === 'Packed' || selectedOrder.orderStatus === 'Confirmed' || selectedOrder.orderStatus === 'Placed') && (
-                      <button onClick={() => handleCreateDelhiveryShipment(selectedOrder._id)} className="btn btn-sm btn-dark d-flex align-items-center gap-2">
+                      <button onClick={() => handleOpenShipmentConfig(selectedOrder)} className="btn btn-sm btn-dark d-flex align-items-center gap-2">
                         <Truck size={14} /> {warehouses && warehouses.length > 1 ? 'Generate Split Shipments' : 'Generate Shipment'}
                       </button>
                     )}
@@ -675,6 +702,71 @@ function AdminOrdersContent() {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Shipment Configuration Modal */}
+      {showShipmentConfig && selectedOrder && typeof document !== 'undefined' && createPortal(
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1060, backdropFilter: 'blur(4px)' }} onClick={() => setShowShipmentConfig(false)}>
+          <div className="card shadow-lg border-0 rounded-4" style={{ width: '500px', maxWidth: '95vw' }} onClick={(e) => e.stopPropagation()}>
+            <div className="card-header bg-white d-flex justify-content-between align-items-center pt-4 px-4 border-0">
+              <h5 className="fw-bold m-0 text-dark d-flex align-items-center gap-2"><Package size={20} /> Configure Shipment</h5>
+              <button className="btn btn-sm btn-light rounded-circle p-2" onClick={() => setShowShipmentConfig(false)}>
+                <X size={18} className="text-muted" />
+              </button>
+            </div>
+            <div className="card-body px-4 pb-4">
+              <div className="alert alert-info p-3 mb-4 fs-8">
+                <strong>Important:</strong> Ensure dimensions and weight are accurate. We auto-fetched the total weight from the items, but you can override it if you added extra packing material.
+              </div>
+              <div className="mb-3">
+                <label className="form-label fs-7 fw-bold">Package Weight (in Grams)</label>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  value={shipmentConfig.weight} 
+                  onChange={e => setShipmentConfig({...shipmentConfig, weight: e.target.value})} 
+                />
+              </div>
+              <div className="row g-3 mb-3">
+                <div className="col-4">
+                  <label className="form-label fs-7 fw-bold">Length (cm)</label>
+                  <input type="number" className="form-control" value={shipmentConfig.length} onChange={e => setShipmentConfig({...shipmentConfig, length: e.target.value})} />
+                </div>
+                <div className="col-4">
+                  <label className="form-label fs-7 fw-bold">Breadth (cm)</label>
+                  <input type="number" className="form-control" value={shipmentConfig.breadth} onChange={e => setShipmentConfig({...shipmentConfig, breadth: e.target.value})} />
+                </div>
+                <div className="col-4">
+                  <label className="form-label fs-7 fw-bold">Height (cm)</label>
+                  <input type="number" className="form-control" value={shipmentConfig.height} onChange={e => setShipmentConfig({...shipmentConfig, height: e.target.value})} />
+                </div>
+              </div>
+              <hr />
+              <h6 className="fw-bold mb-3 fs-7 text-uppercase text-muted">Schedule Pickup</h6>
+              <div className="row g-3 mb-4">
+                <div className="col-6">
+                  <label className="form-label fs-7 fw-bold">Pickup Date</label>
+                  <input type="date" className="form-control" value={shipmentConfig.pickupDate} onChange={e => setShipmentConfig({...shipmentConfig, pickupDate: e.target.value})} />
+                </div>
+                <div className="col-6">
+                  <label className="form-label fs-7 fw-bold">Pickup Time Slot</label>
+                  <select className="form-select" value={shipmentConfig.pickupTime} onChange={e => setShipmentConfig({...shipmentConfig, pickupTime: e.target.value})}>
+                    <option value="12:00:00">Before 12:00 PM</option>
+                    <option value="15:00:00">Before 03:00 PM</option>
+                    <option value="18:00:00">Before 06:00 PM</option>
+                  </select>
+                </div>
+              </div>
+              <div className="d-flex justify-content-end gap-2">
+                <button className="btn btn-light px-4" onClick={() => setShowShipmentConfig(false)}>Cancel</button>
+                <button className="btn btn-brand px-4 d-flex align-items-center gap-2" onClick={confirmCreateShipment}>
+                  <Truck size={16} /> Ship & Schedule Pickup
+                </button>
               </div>
             </div>
           </div>
@@ -989,16 +1081,17 @@ function AdminOrdersContent() {
                     
                     <div style={{ marginTop: '15px' }} className="fw-bold">Company's Bank Details:</div>
                     <div>Bank Name: <strong>ICICI Bank</strong></div>
-                    <div>A/c Holder's Name: <strong>Sweettree Enterprises</strong></div>
-                    <div>A/c No.: <strong>339505000253</strong></div>
-                    <div>Branch & IFS Code: <strong>POSTA BRANCH & ICIC0003395</strong></div>
+                    <div>A/c Holder's Name: <strong>V.J.ENTERPRICE</strong></div>
+                    <div>A/c No.: <strong>39980500293</strong></div>
+                    <div>Branch & IFS Code: <strong>POSTA BRANCH & ICIC0003998</strong></div>
+                    <div style={{ fontSize: '9px' }}>Address: <strong>34F MAHERSI DEVENDRA ROAD, NEAR DALPATTI KOL -700006, WEST BENGAL</strong></div>
                     
                     <div style={{ borderTop: '1px solid #000', marginTop: '40px', paddingTop: '5px', width: '150px' }} className="text-center">
                       Customer's Seal and Signature
                     </div>
                   </td>
                   <td style={{ width: '45%', border: 'none', verticalAlign: 'top', padding: '10px', textAlign: 'right' }}>
-                    <div className="fw-bold text-end">for Sweettree Enterprises</div>
+                    <div className="fw-bold text-end">for V.J.ENTERPRICE</div>
                     <div style={{ marginTop: '140px', borderTop: '1px solid #000', paddingTop: '5px', width: '180px', display: 'inline-block' }} className="text-center fw-bold">
                       Authorised Signatory
                     </div>

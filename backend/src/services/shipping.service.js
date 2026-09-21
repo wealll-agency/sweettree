@@ -18,8 +18,9 @@ class ShippingService {
   /**
    * Orchestrate shipment creation with multi-warehouse support
    * @param {Object} order The Mongoose order document
+   * @param {Object} config The shipment configuration
    */
-  async createShipment(order) {
+  async createShipment(order, config = {}) {
     if (order.shipments && order.shipments.length > 0) {
       throw new Error(`Shipments already created for order ${order._id}`);
     }
@@ -77,7 +78,7 @@ class ShippingService {
 
       // Call the provider service
       try {
-        const result = await service.createShipment(shipmentSubset);
+        const result = await service.createShipment(shipmentSubset, config);
         results.push(result);
 
         // Store shipment tracking info

@@ -4,13 +4,14 @@ import shippingService from '../services/shipping.service.js';
 export const createShipment = async (req, res) => {
   try {
     const { orderId } = req.params;
+    const config = req.body;
     const order = await Order.findById(orderId).populate('user', 'name email');
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    const result = await shippingService.createShipment(order);
+    const result = await shippingService.createShipment(order, config);
     
     res.status(200).json({ 
       success: true, 
@@ -59,7 +60,10 @@ export const generateLabel = async (req, res) => {
     }
 
     const result = await shippingService.getLabel(waybill);
-    res.status(200).json({ success: true, label: result.raw }); 
+    if (!result.success) {
+      return res.status(404).json({ success: false, message: 'Label not found for this waybill' });
+    }
+    res.status(200).json({ success: true, label: result.labelData, raw: result.raw }); 
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

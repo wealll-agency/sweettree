@@ -45,23 +45,13 @@ const getProduct = cache(async (query) => {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://www.sweettreeon.com/api';
     
-    // Check if query is 24-character hex Mongo ObjectId
-    if (/^[0-9a-fA-F]{24}$/.test(query)) {
-      const res = await fetch(`${apiUrl}/products/${query}`, { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.product) return data.product;
-      }
+    const res = await fetch(`${apiUrl}/products/${encodeURIComponent(query)}`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.product) return data.product;
     }
 
-    // Otherwise, fetch public products and match by name/slug
-    const res = await fetch(`${apiUrl}/products`, { cache: 'no-store' });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const products = data.products || data.data || [];
-
-    const matched = products.find(p => matchesProduct(p, query));
-    return matched || null;
+    return null;
   } catch (err) {
     console.error('Error fetching product for SEO metadata:', err);
     return null;

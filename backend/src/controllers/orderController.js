@@ -123,13 +123,27 @@ const calculateOrderTotals = async (items, couponCode) => {
   const taxableAmount = subtotal - discount;
   const tax = Math.round(taxableAmount * 0.05);
   
+  // Fetch dynamic shipping tiers
+  let shippingTiers = [
+    { min: 0, max: 1000, fee: 150 },
+    { min: 1001, max: 1999, fee: 100 },
+    { min: 2000, max: 9999999, fee: 0 }
+  ];
+  try {
+    const shippingTiersSetting = await SystemSetting.findOne({ key: 'shippingTiers' });
+    if (shippingTiersSetting && shippingTiersSetting.value) {
+      shippingTiers = shippingTiersSetting.value;
+    }
+  } catch (err) {
+    console.error("Error fetching shipping tiers:", err);
+  }
+
   // Tiered Shipping Logic
   let shippingFee = 0;
   if (items.length > 0) {
-    if (subtotal <= 1000) {
-      shippingFee = 150;
-    } else if (subtotal <= 1999) {
-      shippingFee = 100;
+    const matchedTier = shippingTiers.find(tier => subtotal >= tier.min && subtotal <= tier.max);
+    if (matchedTier) {
+      shippingFee = Number(matchedTier.fee) || 0;
     } else {
       shippingFee = 0;
     }
@@ -843,7 +857,8 @@ export const processRefund = async (req, res, next) => {
     const refundResult = await processICICIRefund(
       'REF' + Date.now().toString(), 
       order.totalAmount, 
-      payment.gatewayTxnId || payment.merchantTranId
+      payment.gatewayTxnId || payment.merchantTranId,
+      payment.merchantTranId
     );
 
     if (!refundResult.success) {

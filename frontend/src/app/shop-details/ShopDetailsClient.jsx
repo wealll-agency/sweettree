@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart, clearCart } from '../../store/cartSlice';
 import { fetchProducts, fetchProductDetails, fetchProductReviews, submitProductReview } from '../../store/productsSlice';
-import { Star, MessageCircle, Heart, Plus, Minus } from 'lucide-react';
+import { Star, MessageCircle, Heart, Plus, Minus, Trash2 } from 'lucide-react';
 import { toggleWishlist } from '../../store/wishlistSlice';
 import api from '../../utils/axiosConfig';
 import { useNotification } from '../../context/NotificationContext';
@@ -64,9 +64,9 @@ export default function ShopDetailsClient({ initialProduct }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const dispatch = useDispatch();
-  const { showAlert } = useNotification();
+  const { showAlert, showConfirm } = useNotification();
 
-  const { items: products, selectedProduct, reviews, reviewsLoading } = useSelector((state) => state.products);
+  const { items: products, selectedProduct, reviews, reviewsLoading, loading: productsLoading, detailsLoading } = useSelector((state) => state.products);
   const wishlistItems = useSelector((state) => state.wishlist?.items || []);
   const { user } = useSelector((state) => state.auth);
   
@@ -104,25 +104,25 @@ export default function ShopDetailsClient({ initialProduct }) {
   useEffect(() => {
     if (!query) return;
 
-    let targetId = null;
-    if (/^[0-9a-fA-F]{24}$/.test(query)) {
-      targetId = query;
-    } else if (realProduct && realProduct._id) {
-      targetId = realProduct._id;
-    } else if (products && products.length > 0) {
-      const matched = products.find(p => matchesProduct(p, query));
-      if (matched) targetId = matched._id;
-    }
+    // Use query directly as targetId, because backend getProductById now supports slugs!
+    let targetId = query;
+    
+    // If we already have realProduct, use its _id for reviews fetching specifically to avoid slug-based review queries if not supported
+    const productIdForReviews = (realProduct && realProduct._id) ? realProduct._id : null;
 
     if (targetId) {
-      if (!selectedProduct || selectedProduct._id !== targetId) {
+      if (!selectedProduct || (selectedProduct._id !== targetId && slugify(selectedProduct.name).toLowerCase() !== slugify(decodeURIComponent(targetId)).toLowerCase())) {
         dispatch(fetchProductDetails(targetId));
       }
-      if (lastFetchedReviewsForIdRef.current !== targetId) {
-        lastFetchedReviewsForIdRef.current = targetId;
-        dispatch(fetchProductReviews(targetId));
+    }
+    
+    if (productIdForReviews) {
+      if (lastFetchedReviewsForIdRef.current !== productIdForReviews) {
+        lastFetchedReviewsForIdRef.current = productIdForReviews;
+        dispatch(fetchProductReviews(productIdForReviews));
       }
     }
+
     
     // Always fetch products list if it's empty, so we can calculate related products
     if ((!products || products.length === 0) && !hasFetchedProductsRef.current) {
@@ -169,14 +169,31 @@ export default function ShopDetailsClient({ initialProduct }) {
   }
 
   if (!realProduct) {
-    return (
-      <div className="container-fluid px-4 px-lg-5 py-5 text-center d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
-        <div className="spinner-border text-success mb-3" role="status">
-          <span className="visually-hidden">Loading product details...</span>
+    const isStillLoading = productsLoading || detailsLoading || (!hasFetchedProductsRef.current);
+    
+    if (isStillLoading) {
+      return (
+        <div className="container-fluid px-4 px-lg-5 py-5 text-center d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
+          <div className="spinner-border text-success mb-3" role="status">
+            <span className="visually-hidden">Loading product details...</span>
+          </div>
+          <p className="text-muted">Loading product details...</p>
         </div>
-        <p className="text-muted">Loading product details...</p>
-      </div>
-    );
+      );
+    } else {
+      return (
+        <div className="container-fluid px-4 px-lg-5 py-5 text-center d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '60vh' }}>
+          <div className="mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-muted opacity-50"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          </div>
+          <h2 className="fw-bold mb-3" style={{ color: '#333' }}>Product Not Found</h2>
+          <p className="text-muted mb-4">We're sorry, but the product you're looking for doesn't exist or is currently unavailable.</p>
+          <button onClick={() => router.push('/shop')} className="btn px-4 py-2 fw-bold" style={{ backgroundColor: '#005B6E', color: 'white', borderRadius: '8px' }}>
+            Browse All Products
+          </button>
+        </div>
+      );
+    }
   }
 
   // Calculate Related Products
@@ -272,6 +289,26 @@ export default function ShopDetailsClient({ initialProduct }) {
       });
   };
 
+  const handleDeleteReview = async (reviewId) => {
+    const isConfirmed = await showConfirm(
+      'Are you sure you want to delete this review? This action cannot be undone.',
+      'Delete Review'
+    );
+    
+    if (isConfirmed) {
+      try {
+        const response = await api.delete(`/reviews/${reviewId}`);
+        if (response.data.success) {
+          dispatch(fetchProductReviews(realProduct._id));
+          showAlert('Review deleted successfully', 'success', 'Success');
+        }
+      } catch (err) {
+        console.error('Failed to delete review:', err);
+        showAlert('Failed to delete review', 'error', 'Error');
+      }
+    }
+  };
+
   const handleNotifyMe = async () => {
     if (!user) {
       router.push(`/login?redirect=/shop-details?id=${realProduct._id}`);
@@ -357,22 +394,22 @@ export default function ShopDetailsClient({ initialProduct }) {
             ))}
           </div>
 
-          <div className="d-flex justify-content-between text-center px-3 border-top pt-4">
-             <div>
+          <div className="d-flex justify-content-between text-center px-1 px-md-3 border-top pt-4 gap-2 gap-md-0" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
+             <div style={{ flex: '1 1 0' }}>
                 <Image src="/icon_heart.png" alt="Healthy" width={30} height={30} className="mb-2" />
-                <p style={{ fontSize: '11px', color: '#666' }}>100% Healthy</p>
+                <p style={{ fontSize: '10px', color: '#666', lineHeight: '1.2' }}>100% Healthy</p>
              </div>
-             <div>
+             <div style={{ flex: '1 1 0' }}>
                 <Image src="/icon_gluten.png" alt="Gluten Free" width={30} height={30} className="mb-2" />
-                <p style={{ fontSize: '11px', color: '#666' }}>Gluten Free</p>
+                <p style={{ fontSize: '10px', color: '#666', lineHeight: '1.2' }}>Gluten Free</p>
              </div>
-             <div>
+             <div style={{ flex: '1 1 0' }}>
                 <Image src="/icon_nutrition.png" alt="Nutrition" width={30} height={30} className="mb-2" />
-                <p style={{ fontSize: '11px', color: '#666' }}>Powerful Nutrition</p>
+                <p style={{ fontSize: '10px', color: '#666', lineHeight: '1.2' }}>Powerful Nutrition</p>
              </div>
-             <div>
+             <div style={{ flex: '1 1 0' }}>
                 <Image src="/icon_cholesterol.png" alt="Cholesterol" width={30} height={30} className="mb-2" />
-                <p style={{ fontSize: '11px', color: '#666' }}>Cholesterol Free</p>
+                <p style={{ fontSize: '10px', color: '#666', lineHeight: '1.2' }}>Cholesterol Free</p>
              </div>
           </div>
         </div>
@@ -640,14 +677,27 @@ export default function ShopDetailsClient({ initialProduct }) {
             ) : (
               <div className="d-flex flex-column gap-4">
                 {reviews.map((rev) => (
-                  <div key={rev._id} className="pb-4 border-bottom">
-                    <div className="d-flex align-items-center gap-2 mb-2">
-                      <div className="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style={{ width: '36px', height: '36px', fontSize: '14px', fontWeight: 'bold' }}>
-                        {(rev.user?.name || 'A')[0].toUpperCase()}
+                  <div key={rev._id} className="pb-4 border-bottom position-relative">
+                    <div className="d-flex align-items-center justify-content-between mb-2">
+                      <div className="d-flex align-items-center gap-2">
+                        <div className="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style={{ width: '36px', height: '36px', fontSize: '14px', fontWeight: 'bold' }}>
+                          {(rev.user?.name || 'A')[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <h6 className="fw-bold m-0" style={{ fontSize: '15px' }}>{rev.user?.name || 'Amazon Customer'}</h6>
+                        </div>
                       </div>
-                      <div>
-                        <h6 className="fw-bold m-0" style={{ fontSize: '15px' }}>{rev.user?.name || 'Amazon Customer'}</h6>
-                      </div>
+                      
+                      {(user?.role === 'Super Admin' || user?.role === 'Manager' || user?.role === 'Admin') && (
+                        <button 
+                          onClick={() => handleDeleteReview(rev._id)} 
+                          className="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
+                          style={{ padding: '0.2rem 0.5rem', fontSize: '12px' }}
+                          title="Delete Review as Admin"
+                        >
+                          <Trash2 size={12} /> Delete
+                        </button>
+                      )}
                     </div>
                     
                     <div className="d-flex align-items-center gap-2 mb-2">

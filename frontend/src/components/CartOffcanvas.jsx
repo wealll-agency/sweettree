@@ -12,7 +12,7 @@ const CartOffcanvas = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { items, subtotal, discount, tax, shippingFee, total } = useSelector((state) => state.cart);
+  const { items, subtotal, discount, tax, shippingFee, total, shippingTiers } = useSelector((state) => state.cart);
   const dbProducts = useSelector((state) => state.products?.items || []);
 
   const [isHydrated, setIsHydrated] = useState(false);
@@ -105,8 +105,14 @@ const CartOffcanvas = () => {
     router.push(`/shop-details?${slug}`);
   };
 
-  // Sweettree free shipping threshold is 2000
-  const freeShippingThreshold = 2000;
+  let freeShippingThreshold = 2000;
+  if (shippingTiers && shippingTiers.length > 0) {
+    const freeTiers = shippingTiers.filter(tier => Number(tier.fee) === 0);
+    if (freeTiers.length > 0) {
+      freeShippingThreshold = Math.min(...freeTiers.map(tier => Number(tier.min)));
+    }
+  }
+
   const remainingForFreeShipping = freeShippingThreshold - subtotal;
   const progressPercent = Math.min((subtotal / freeShippingThreshold) * 100, 100);
 

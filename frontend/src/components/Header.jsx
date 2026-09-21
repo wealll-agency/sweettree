@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { logoutUser } from '../store/authSlice';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import api from '../utils/axiosConfig';
 import { 
   Home, 
   Store, 
@@ -41,6 +42,48 @@ const Header = () => {
 
   const [isSyncHydrated, setIsSyncHydrated] = useState(false);
   const [isAuthHydrated, setIsAuthHydrated] = useState(false);
+
+  // Typeahead state
+  const [suggestions, setSuggestions] = useState([]);
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+  const searchTimeoutRef = useRef(null);
+  const searchContainerRef = useRef(null);
+
+  useEffect(() => {
+    // Handle outside clicks to close dropdown
+    const handleClickOutside = (event) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setSuggestions([]);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    
+    if (!searchQuery.trim()) {
+      setSuggestions([]);
+      setIsSuggestionsLoading(false);
+      return;
+    }
+
+    setIsSuggestionsLoading(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const res = await api.get(`/products?keyword=${encodeURIComponent(searchQuery.trim())}&limit=5`);
+        const data = res.data;
+        if (data.success) {
+          setSuggestions(data.products || []);
+        }
+      } catch (err) {
+        console.error('Error fetching search suggestions:', err);
+      } finally {
+        setIsSuggestionsLoading(false);
+      }
+    }, 300);
+  }, [searchQuery]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -154,13 +197,14 @@ const Header = () => {
           {/* Right Action Icons */}
           <div className="col-lg-3 col-7 d-flex justify-content-end align-items-center gap-3 gap-md-2">
             {/* Search */}
-            <div className={`sliding-search-container d-none d-md-flex ${isSearchOpen ? 'open' : ''}`}>
+            <div className={`sliding-search-container d-none d-md-flex ${isSearchOpen ? 'open' : ''}`} ref={searchContainerRef} style={{ position: 'relative' }}>
               <form onSubmit={handleSearch} className="sliding-search-form mb-0">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="sliding-search-input"
+                  placeholder="Search products..."
                 />
                 <button
                   type="button"
@@ -171,6 +215,88 @@ const Header = () => {
                   {isSearchOpen ? <X size={18} /> : <Search size={18} />}
                 </button>
               </form>
+
+              {/* Autocomplete Dropdown */}
+              {(suggestions.length > 0 || isSuggestionsLoading) && isSearchOpen && searchQuery.trim() && (
+                <div 
+                  className="search-suggestions-dropdown" 
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    width: '350px',
+                    backgroundColor: '#fff',
+                    borderRadius: '8px',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                    marginTop: '8px',
+                    zIndex: 1000,
+                    overflow: 'hidden',
+                    border: '1px solid #eee'
+                  }}
+                >
+                  {isSuggestionsLoading ? (
+                    <div className="p-3 text-center text-muted" style={{ fontSize: '13px' }}>
+                      <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+                      Searching...
+                    </div>
+                  ) : (
+                    <ul className="m-0 p-0" style={{ listStyle: 'none' }}>
+                      {suggestions.map((product) => (
+                        <li key={product._id} className="border-bottom">
+                          <Link 
+                            href={`/shop-details?${product.name.replace(/\s+/g, '-').replace(/[^\w\-]+/g, '')}`}
+                            className="d-flex align-items-center p-2 text-decoration-none hover-bg-light"
+                            style={{ transition: 'background-color 0.2s' }}
+                            onClick={() => {
+                              setIsSearchOpen(false);
+                              setSearchQuery('');
+                              setSuggestions([]);
+                            }}
+                          >
+                            <div style={{ width: '40px', height: '40px', position: 'relative', flexShrink: 0, borderRadius: '4px', overflow: 'hidden' }}>
+                              <Image 
+                                src={product.images && product.images[0] ? product.images[0] : '/placeholder.jpg'} 
+                                alt={product.name}
+                                fill
+                                style={{ objectFit: 'cover' }}
+                              />
+                            </div>
+                            <div className="ms-3 flex-grow-1 overflow-hidden">
+                              <h6 className="m-0 text-dark text-truncate" style={{ fontSize: '13px', fontWeight: '600' }}>
+                                {product.name}
+                              </h6>
+                              <div className="d-flex align-items-center mt-1">
+                                <span className="fw-bold me-2" style={{ color: '#005b6e', fontSize: '12px' }}>
+                                  ₹{product.price - (product.discount || 0)}
+                                </span>
+                                {product.discount > 0 && (
+                                  <span className="text-muted text-decoration-line-through" style={{ fontSize: '11px' }}>
+                                    ₹{product.price}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="p-2 text-center" style={{ backgroundColor: '#f8f9fa' }}>
+                    <Link 
+                      href={`/shop?keyword=${encodeURIComponent(searchQuery)}`} 
+                      className="text-decoration-none fw-bold"
+                      style={{ fontSize: '12px', color: '#005b6e' }}
+                      onClick={() => {
+                        setIsSearchOpen(false);
+                        setSearchQuery('');
+                        setSuggestions([]);
+                      }}
+                    >
+                      View all results for "{searchQuery}"
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* User Dropdown */}

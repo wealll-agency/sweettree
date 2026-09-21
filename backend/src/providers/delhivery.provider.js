@@ -46,10 +46,10 @@ class DelhiveryProvider extends ShippingProvider {
           raw: response.data
         };
       } else {
-        throw new Error(response.data?.error || 'Failed to create Delhivery shipment');
+        console.error('Delhivery API Rejected Remarks:', JSON.stringify(response.data.packages[0].remarks)); console.error('Delhivery API Rejected:', response.data); throw new Error(response.data?.error || 'Failed to create Delhivery shipment');
       }
     } catch (error) {
-      console.error('DelhiveryProvider - createShipment Error:', error.response?.data || error.message);
+      console.error('DelhiveryProvider - createShipment Error:', error.response?.data || error.message); console.log('Payload was:', payload);
       throw new Error(error.response?.data?.error || error.message);
     }
   }
@@ -107,11 +107,10 @@ class DelhiveryProvider extends ShippingProvider {
       });
       
       const pkg = response.data?.packages?.[0];
-      const labelUrl = pkg?.pdf_download_link || pkg?.html_link;
       
       return {
-        success: !!labelUrl,
-        labelUrl: labelUrl,
+        success: !!pkg,
+        labelData: pkg,
         raw: response.data
       };
     } catch (error) {
@@ -140,6 +139,26 @@ class DelhiveryProvider extends ShippingProvider {
     } catch (error) {
       console.error('DelhiveryProvider - generateManifest Error:', error.response?.data || error.message);
       throw new Error(error.response?.data?.error || error.message);
+    }
+  }
+
+  /**
+   * Request Pickup
+   * @param {Object} payload Pickup scheduling details
+   */
+  async requestPickup(payload) {
+    try {
+      const response = await axios.post(`${this.baseUrl}/fm/request/new/`, payload, {
+        headers: this.getHeaders(),
+        timeout: 10000
+      });
+      return {
+        success: true,
+        raw: response.data
+      };
+    } catch (error) {
+      console.error('DelhiveryProvider - requestPickup Error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.error?.message || error.response?.data?.error || error.message);
     }
   }
 

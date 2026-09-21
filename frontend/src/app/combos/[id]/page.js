@@ -165,22 +165,22 @@ export default function ComboDetailPage() {
             </div>
           </div>
 
-          <div className="d-flex justify-content-between text-center px-3 border-top pt-4">
-             <div>
+          <div className="d-flex justify-content-between text-center px-1 px-md-3 border-top pt-4 gap-2 gap-md-0" style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
+             <div style={{ flex: '1 1 0' }}>
                 <Image src="/icon_heart.png" alt="Healthy" width={30} height={30} className="mb-2" />
-                <p style={{ fontSize: '11px', color: '#666' }}>100% Healthy</p>
+                <p style={{ fontSize: '10px', color: '#666', lineHeight: '1.2' }}>100% Healthy</p>
              </div>
-             <div>
+             <div style={{ flex: '1 1 0' }}>
                 <Image src="/icon_gluten.png" alt="Gluten Free" width={30} height={30} className="mb-2" />
-                <p style={{ fontSize: '11px', color: '#666' }}>Gluten Free</p>
+                <p style={{ fontSize: '10px', color: '#666', lineHeight: '1.2' }}>Gluten Free</p>
              </div>
-             <div>
+             <div style={{ flex: '1 1 0' }}>
                 <Image src="/icon_nutrition.png" alt="Nutrition" width={30} height={30} className="mb-2" />
-                <p style={{ fontSize: '11px', color: '#666' }}>Powerful Nutrition</p>
+                <p style={{ fontSize: '10px', color: '#666', lineHeight: '1.2' }}>Powerful Nutrition</p>
              </div>
-             <div>
+             <div style={{ flex: '1 1 0' }}>
                 <Image src="/icon_cholesterol.png" alt="Cholesterol" width={30} height={30} className="mb-2" />
-                <p style={{ fontSize: '11px', color: '#666' }}>Cholesterol Free</p>
+                <p style={{ fontSize: '10px', color: '#666', lineHeight: '1.2' }}>Cholesterol Free</p>
              </div>
           </div>
         </div>

@@ -97,6 +97,16 @@ function StateHydrator() {
         }
       }
 
+      // Fetch Global Settings (like shippingTiers)
+      try {
+        const settingsRes = await api.get('/auth/settings');
+        if (settingsRes.data && settingsRes.data.settings && settingsRes.data.settings.shippingTiers) {
+          dispatch({ type: 'cart/setShippingTiers', payload: settingsRes.data.settings.shippingTiers });
+        }
+      } catch (e) {
+        console.error("Failed to fetch global settings on app load", e);
+      }
+
       // Signal that asynchronous user profile API is complete
       if (typeof window !== 'undefined') {
         window.__isReduxAuthHydrated = true;

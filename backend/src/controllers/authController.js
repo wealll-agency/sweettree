@@ -373,12 +373,19 @@ export const getSystemSettings = async (req, res, next) => {
     const onlinePaymentSetting = await SystemSetting.findOne({ key: 'onlinePayment' });
     const slidingNotificationSetting = await SystemSetting.findOne({ key: 'slidingNotification' });
     const catalogPdfSetting = await SystemSetting.findOne({ key: 'catalogPdf' });
+    const shippingTiersSetting = await SystemSetting.findOne({ key: 'shippingTiers' });
 
     const defaultSliding = {
       enabled: true,
       text: '|| 🥜 Sweettree Anmol Jumbo Nuts - Extra 10% OFF! 🥜 || 🎁 Nuts For Savings 🎁 || 🔥 PayDay Sale Is LIVE - Extra 15% OFF Sitewide! 🔥 ||',
       speed: 5
     };
+    
+    const defaultShippingTiers = [
+      { min: 0, max: 1000, fee: 150 },
+      { min: 1001, max: 1999, fee: 100 },
+      { min: 2000, max: 9999999, fee: 0 }
+    ];
 
     res.json({
       success: true,
@@ -388,7 +395,8 @@ export const getSystemSettings = async (req, res, next) => {
         topSellingSource: topSellingSetting ? topSellingSetting.value : 'automatic',
         onlinePayment: onlinePaymentSetting ? onlinePaymentSetting.value : true,
         slidingNotification: slidingNotificationSetting ? slidingNotificationSetting.value : defaultSliding,
-        catalogPdf: catalogPdfSetting ? catalogPdfSetting.value : ''
+        catalogPdf: catalogPdfSetting ? catalogPdfSetting.value : '',
+        shippingTiers: shippingTiersSetting ? shippingTiersSetting.value : defaultShippingTiers
       }
     });
   } catch (error) {
@@ -447,6 +455,13 @@ export const updateSystemSettings = async (req, res, next) => {
           { upsert: true, new: true }
         );
       }
+      if (settings.shippingTiers !== undefined) {
+        await SystemSetting.findOneAndUpdate(
+          { key: 'shippingTiers' },
+          { value: settings.shippingTiers },
+          { upsert: true, new: true }
+        );
+      }
     }
 
     await logActivity(req.user._id, 'UPDATE_SYSTEM_SETTINGS', `Updated global access settings`, req);
@@ -457,12 +472,19 @@ export const updateSystemSettings = async (req, res, next) => {
     const onlinePaymentSetting = await SystemSetting.findOne({ key: 'onlinePayment' });
     const slidingNotificationSetting = await SystemSetting.findOne({ key: 'slidingNotification' });
     const catalogPdfSetting = await SystemSetting.findOne({ key: 'catalogPdf' });
+    const shippingTiersSetting = await SystemSetting.findOne({ key: 'shippingTiers' });
 
     const defaultSliding = {
       enabled: true,
       text: '|| 🥜 Sweettree Anmol Jumbo Nuts - Extra 10% OFF! 🥜 || 🎁 Nuts For Savings 🎁 || 🔥 PayDay Sale Is LIVE - Extra 15% OFF Sitewide! 🔥 ||',
       speed: 5
     };
+    
+    const defaultShippingTiers = [
+      { min: 0, max: 1000, fee: 150 },
+      { min: 1001, max: 1999, fee: 100 },
+      { min: 2000, max: 9999999, fee: 0 }
+    ];
 
     res.json({
       success: true,
@@ -473,7 +495,8 @@ export const updateSystemSettings = async (req, res, next) => {
         topSellingSource: topSellingSetting ? topSellingSetting.value : 'automatic',
         onlinePayment: onlinePaymentSetting ? onlinePaymentSetting.value : true,
         slidingNotification: slidingNotificationSetting ? slidingNotificationSetting.value : defaultSliding,
-        catalogPdf: catalogPdfSetting ? catalogPdfSetting.value : ''
+        catalogPdf: catalogPdfSetting ? catalogPdfSetting.value : '',
+        shippingTiers: shippingTiersSetting ? shippingTiersSetting.value : defaultShippingTiers
       }
     });
   } catch (error) {

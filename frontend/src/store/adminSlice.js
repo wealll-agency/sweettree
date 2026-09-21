@@ -273,9 +273,9 @@ export const updateRefundRequestStatus = createAsyncThunk(
 // Delhivery Integrations
 export const createDelhiveryShipment = createAsyncThunk(
   'admin/createDelhiveryShipment',
-  async (orderId, { rejectWithValue }) => {
+  async ({ orderId, config }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${DELHIVERY_URL}/create/${orderId}`, {});
+      const response = await axios.post(`${DELHIVERY_URL}/create/${orderId}`, config || {});
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create Delhivery shipment');

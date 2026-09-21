@@ -1,14 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, Save, Check, RefreshCw, AlertCircle, ShoppingBag, RotateCcw, CreditCard } from 'lucide-react';
+import { Shield, Save, Check, RefreshCw, AlertCircle, ShoppingBag, RotateCcw, CreditCard, X } from 'lucide-react';
 import api from '../../../utils/axiosConfig.js';
+import { useNotification } from '../../../context/NotificationContext.js';
 
 export default function CustomerAccessPage() {
-  const [settings, setSettings] = useState({ cod: true, refund: true, onlinePayment: true });
+  const [settings, setSettings] = useState({ cod: true, refund: true, onlinePayment: true, shippingTiers: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [statusMessage, setStatusMessage] = useState(null); // { type: 'success' | 'danger', text: '' }
+  const { showAlert } = useNotification();
   const fetchSettings = async () => {
     setLoading(true);
     try {
@@ -18,10 +19,7 @@ export default function CustomerAccessPage() {
       }
     } catch (err) {
       console.error(err);
-      setStatusMessage({
-        type: 'danger',
-        text: err.response?.data?.message || 'Failed to fetch global access settings.'
-      });
+      showAlert(err.response?.data?.message || 'Failed to fetch global access settings.', 'danger', 'Error');
     } finally {
       setLoading(false);
     }
@@ -38,24 +36,35 @@ export default function CustomerAccessPage() {
     }));
   };
 
+  const handleTierChange = (index, field, value) => {
+    const updatedTiers = [...settings.shippingTiers];
+    updatedTiers[index] = { ...updatedTiers[index], [field]: Number(value) };
+    setSettings(prev => ({ ...prev, shippingTiers: updatedTiers }));
+  };
+
+  const addTier = () => {
+    setSettings(prev => ({
+      ...prev,
+      shippingTiers: [...(prev.shippingTiers || []), { min: 0, max: 0, fee: 0 }]
+    }));
+  };
+
+  const removeTier = (index) => {
+    const updatedTiers = [...settings.shippingTiers];
+    updatedTiers.splice(index, 1);
+    setSettings(prev => ({ ...prev, shippingTiers: updatedTiers }));
+  };
+
   const saveSettings = async () => {
     setSaving(true);
-    setStatusMessage(null);
     try {
       const res = await api.put(`/auth/settings`, { settings });
       if (res.data.success) {
-        setStatusMessage({
-          type: 'success',
-          text: 'Global access settings saved successfully.'
-        });
-        setTimeout(() => setStatusMessage(null), 4000);
+        showAlert('Global access settings saved successfully.', 'success', 'Settings Saved');
       }
     } catch (err) {
       console.error(err);
-      setStatusMessage({
-        type: 'danger',
-        text: err.response?.data?.message || 'Failed to save global settings.'
-      });
+      showAlert(err.response?.data?.message || 'Failed to save global settings.', 'danger', 'Error');
     } finally {
       setSaving(false);
     }
@@ -82,16 +91,6 @@ export default function CustomerAccessPage() {
           Reload Settings
         </button>
       </div>
-
-      {statusMessage && (
-        <div className={`alert alert-${statusMessage.type} alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4`} role="alert">
-          <div className="d-flex align-items-center gap-2">
-            {statusMessage.type === 'success' ? <Check size={18} /> : <AlertCircle size={18} />}
-            <span>{statusMessage.text}</span>
-          </div>
-          <button type="button" className="btn-close shadow-none" onClick={() => setStatusMessage(null)} aria-label="Close"></button>
-        </div>
-      )}
 
       <div className="row g-4">
         {/* COD Control Card */}
@@ -201,6 +200,55 @@ export default function CustomerAccessPage() {
                   onChange={() => handleToggle('onlinePayment')}
                 />
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Shipping Tiers Configuration */}
+      <div className="row g-4 mt-1">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div className="d-flex align-items-center gap-3 mb-3">
+                <div className="rounded-4 p-3 bg-info bg-opacity-10 text-info d-flex align-items-center justify-content-center">
+                  <ShoppingBag size={24} />
+                </div>
+                <div>
+                  <h5 className="fw-bold text-dark m-0">Dynamic Shipping Tiers</h5>
+                  <small className="text-muted">Configure shipping fees based on order subtotal</small>
+                </div>
+              </div>
+              <p className="text-muted fs-7 mb-4">
+                Define the shipping fee for different order value ranges. The system will automatically apply the fee based on the matching tier.
+              </p>
+            </div>
+
+            <div className="pt-3 border-top">
+              {settings.shippingTiers && settings.shippingTiers.map((tier, index) => (
+                <div key={index} className="d-flex flex-wrap gap-3 align-items-center mb-3">
+                  <div className="flex-grow-1">
+                    <label className="fs-7 fw-bold mb-1">Min Value (₹)</label>
+                    <input type="number" className="form-control" value={tier.min} onChange={(e) => handleTierChange(index, 'min', e.target.value)} />
+                  </div>
+                  <div className="flex-grow-1">
+                    <label className="fs-7 fw-bold mb-1">Max Value (₹)</label>
+                    <input type="number" className="form-control" value={tier.max} onChange={(e) => handleTierChange(index, 'max', e.target.value)} />
+                  </div>
+                  <div className="flex-grow-1">
+                    <label className="fs-7 fw-bold mb-1">Shipping Fee (₹)</label>
+                    <input type="number" className="form-control" value={tier.fee} onChange={(e) => handleTierChange(index, 'fee', e.target.value)} />
+                  </div>
+                  <div className="d-flex align-items-end mt-2 mt-md-0" style={{ paddingTop: '22px' }}>
+                    <button type="button" className="btn btn-outline-danger px-3 py-2" onClick={() => removeTier(index)}>
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <button type="button" className="btn btn-outline-primary btn-sm mt-2" onClick={addTier}>
+                + Add Shipping Tier
+              </button>
             </div>
           </div>
         </div>

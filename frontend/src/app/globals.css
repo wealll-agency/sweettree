@@ -768,6 +768,7 @@ summary:focus {
   background: #f1f5f9;
   width: 250px;
   border: 1px solid #e2e8f0;
+  overflow: visible;
 }
 
 .sliding-search-container:not(.open) {

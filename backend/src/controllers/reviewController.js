@@ -75,3 +75,36 @@ export const getProductReviews = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Delete a review
+// @route   DELETE /api/reviews/:reviewId
+// @access  Private/Admin
+export const deleteProductReview = async (req, res, next) => {
+  try {
+    const review = await Review.findById(req.params.reviewId);
+    if (!review) {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+
+    const productId = review.product;
+    await review.deleteOne();
+
+    // Update Product average rating and number of reviews
+    const reviews = await Review.find({ product: productId });
+    const numReviews = reviews.length;
+    const avgRating = numReviews > 0 
+      ? reviews.reduce((acc, item) => item.rating + acc, 0) / numReviews 
+      : 0;
+
+    await Product.findByIdAndUpdate(productId, {
+      averageRating: avgRating,
+      numReviews: numReviews
+    });
+
+    await logActivity(req.user._id, 'DELETE_REVIEW', `Deleted product review with ID: ${req.params.reviewId}`, req);
+
+    res.json({ success: true, message: 'Review deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};

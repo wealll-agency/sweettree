@@ -20,10 +20,10 @@ export const getProducts = async (req, res, next) => {
       query.stock = { $gt: 0 };
     }
 
-    // Keyword Search
-    if (keyword) {
-      query.$text = { $search: keyword };
-    }
+    // Keyword Search is now handled entirely at the end using Aggregation pipeline
+    // if (keyword) {
+    //   query.$text = { $search: keyword };
+    // }
 
     // Category Filter
     if (category && category !== 'All Categories') {
@@ -90,12 +90,68 @@ export const getProducts = async (req, res, next) => {
     const limitNum = Number(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    const total = await Product.countDocuments(query);
-    const products = await Product.find(query)
-      .sort(sortBy)
-      .skip(skip)
-      .limit(limitNum)
-      .lean();
+    let total = 0;
+    let products = [];
+
+    if (keyword) {
+      // Smart Keyword Search using Aggregation
+      const regex = new RegExp(keyword, 'i');
+      const exactRegex = new RegExp(`^${keyword}$`, 'i');
+      const startsWithRegex = new RegExp(`^${keyword}`, 'i');
+      
+      const matchStage = {
+        ...query,
+        $or: [
+          { name: regex },
+          { category: regex },
+          { searchTags: regex }
+        ]
+      };
+
+      const pipeline = [
+        { $match: matchStage },
+        {
+          $addFields: {
+            searchScore: {
+              $cond: {
+                if: { $regexMatch: { input: { $ifNull: ["$name", ""] }, regex: exactRegex } },
+                then: 10,
+                else: {
+                  $cond: {
+                    if: { $regexMatch: { input: { $ifNull: ["$name", ""] }, regex: startsWithRegex } },
+                    then: 8,
+                    else: {
+                      $cond: {
+                        if: { $regexMatch: { input: { $ifNull: ["$name", ""] }, regex: regex } },
+                        then: 5,
+                        else: 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        { $sort: { searchScore: -1, ...sortBy } }
+      ];
+
+      const totalPipeline = [...pipeline, { $count: "total" }];
+      const totalResult = await Product.aggregate(totalPipeline);
+      total = totalResult.length > 0 ? totalResult[0].total : 0;
+      
+      products = await Product.aggregate(pipeline)
+        .skip(skip)
+        .limit(limitNum);
+    } else {
+      // Standard fetch without keyword
+      total = await Product.countDocuments(query);
+      products = await Product.find(query)
+        .sort(sortBy)
+        .skip(skip)
+        .limit(limitNum)
+        .lean();
+    }
 
     res.json({
       success: true,
@@ -114,7 +170,46 @@ export const getProducts = async (req, res, next) => {
 // @access  Public
 export const getProductById = async (req, res, next) => {
   try {
-    const product = await Product.findById(req.params.id).lean();
+    const { id } = req.params;
+    let product = null;
+
+    if (mongoose.isValidObjectId(id)) {
+      product = await Product.findById(id).lean();
+    } else {
+      // It's a slug or a name. 
+      // Fetch all products (or use regex) to find the match.
+      // Since slugification removes special characters and spaces, we do a flexible match
+      const decodedQuery = decodeURIComponent(id).toLowerCase().trim();
+      
+      const slugify = (text) => {
+        if (!text) return '';
+        return text.toString().trim()
+          .replace(/\s+/g, '-')
+          .replace(/[^\w\-]+/g, '')
+          .replace(/\-\-+/g, '-');
+      };
+
+      const querySlug = slugify(decodedQuery).toLowerCase();
+      
+      // Get all products to find the exact match (efficient enough for most catalogs, but can be optimized with a 'slug' field in the DB in the future)
+      const allProducts = await Product.find({}, '_id name').lean();
+      
+      const matched = allProducts.find(p => {
+        const prodName = p.name ? p.name.toLowerCase().trim() : '';
+        const prodSlug = slugify(p.name).toLowerCase();
+        
+        return (
+          prodName === decodedQuery ||
+          prodSlug === querySlug ||
+          prodName.replace(/[^a-z0-9]/g, '') === decodedQuery.replace(/[^a-z0-9]/g, '')
+        );
+      });
+
+      if (matched) {
+        product = await Product.findById(matched._id).lean();
+      }
+    }
+
     if (product) {
       res.json({ success: true, product });
     } else {

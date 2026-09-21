@@ -49,7 +49,7 @@ const productSchema = new mongoose.Schema({
   batchNumber: { type: String, required: true },
   expiryDate: { type: Date, required: true },
   stock: { type: Number, required: true, default: 0, min: 0 },
-  warehouse: { type: mongoose.Schema.Types.ObjectId, ref: 'Warehouse' }
+  warehouse: { type: mongoose.Schema.Types.ObjectId, ref: 'Warehouse', default: '6a61cf5fdf3b9f089b5ce8f9' }
 }, {
   timestamps: true
 });

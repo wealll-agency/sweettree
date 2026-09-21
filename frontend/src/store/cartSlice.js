@@ -4,7 +4,7 @@ const getInitialCart = () => {
   return [];
 };
 
-const calculateTotals = (items, discountType = 'percentage', discountPercentage = 0, flatDiscountAmount = 0, applicableProducts = [], isCombo = false, minPurchaseAmount = 0) => {
+const calculateTotals = (items, discountType = 'percentage', discountPercentage = 0, flatDiscountAmount = 0, applicableProducts = [], isCombo = false, minPurchaseAmount = 0, shippingTiers = []) => {
   let subtotal = 0;
   let discountableSubtotal = 0;
 
@@ -47,12 +47,19 @@ const calculateTotals = (items, discountType = 'percentage', discountPercentage 
   
   let shippingFee = 0;
   if (items.length > 0) {
-    if (subtotal <= 1000) {
-      shippingFee = 150;
-    } else if (subtotal <= 1999) {
-      shippingFee = 100;
+    if (shippingTiers && shippingTiers.length > 0) {
+      const matchedTier = shippingTiers.find(tier => subtotal >= tier.min && subtotal <= tier.max);
+      if (matchedTier) {
+        shippingFee = Number(matchedTier.fee) || 0;
+      }
     } else {
-      shippingFee = 0;
+      if (subtotal <= 1000) {
+        shippingFee = 150;
+      } else if (subtotal <= 1999) {
+        shippingFee = 100;
+      } else {
+        shippingFee = 0;
+      }
     }
   }
 
@@ -76,9 +83,15 @@ const cartSlice = createSlice({
     discount: 0,
     tax: 0,
     shippingFee: 0,
-    total: 0
+    total: 0,
+    shippingTiers: []
   },
   reducers: {
+    setShippingTiers: (state, action) => {
+      state.shippingTiers = action.payload;
+      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount, state.shippingTiers);
+      Object.assign(state, totals);
+    },
     addToCart: (state, action) => {
       const { product, combo, itemType = 'Product', quantity, size } = action.payload;
       
@@ -118,7 +131,7 @@ const cartSlice = createSlice({
         localStorage.setItem('sweettree_cart', JSON.stringify(state.items));
       }
 
-      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount);
+      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount, state.shippingTiers);
       Object.assign(state, totals);
     },
     removeFromCart: (state, action) => {
@@ -132,7 +145,7 @@ const cartSlice = createSlice({
         localStorage.setItem('sweettree_cart', JSON.stringify(state.items));
       }
 
-      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount);
+      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount, state.shippingTiers);
       Object.assign(state, totals);
     },
     updateCartQuantity: (state, action) => {
@@ -149,7 +162,7 @@ const cartSlice = createSlice({
         localStorage.setItem('sweettree_cart', JSON.stringify(state.items));
       }
 
-      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount);
+      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount, state.shippingTiers);
       Object.assign(state, totals);
     },
     applyCouponCode: (state, action) => {
@@ -162,7 +175,7 @@ const cartSlice = createSlice({
       state.isCombo = isCombo || false;
       state.minPurchaseAmount = minPurchaseAmount || 0;
 
-      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount);
+      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount, state.shippingTiers);
       Object.assign(state, totals);
     },
     clearCart: (state) => {
@@ -177,20 +190,20 @@ const cartSlice = createSlice({
       if (typeof window !== 'undefined') {
         localStorage.removeItem('sweettree_cart');
       }
-      const totals = calculateTotals([], 'percentage', 0, 0, [], false, 0);
+      const totals = calculateTotals([], 'percentage', 0, 0, [], false, 0, state.shippingTiers);
       Object.assign(state, totals);
     },
     recalculateCart: (state) => {
-      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount);
+      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount, state.shippingTiers);
       Object.assign(state, totals);
     },
     hydrateCart: (state, action) => {
       state.items = action.payload;
-      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount);
+      const totals = calculateTotals(state.items, state.discountType, state.discountPercentage, state.flatDiscountAmount, state.applicableProducts, state.isCombo, state.minPurchaseAmount, state.shippingTiers);
       Object.assign(state, totals);
     }
   }
 });
 
-export const { addToCart, removeFromCart, updateCartQuantity, applyCouponCode, clearCart, recalculateCart, hydrateCart } = cartSlice.actions;
+export const { addToCart, removeFromCart, updateCartQuantity, applyCouponCode, clearCart, recalculateCart, hydrateCart, setShippingTiers } = cartSlice.actions;
 export default cartSlice.reducer;
