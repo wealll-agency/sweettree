@@ -34,7 +34,16 @@ function StateHydrator() {
     hasInitialized.current = true;
     
     // Cart Hydration
-    const cart = localStorage.getItem('sweettree_cart');
+    let cart = localStorage.getItem('sweettree_cart');
+    
+    // STRICT RULE: Forcefully clear the cart once for brand new visitors to the live site
+    // This fixes the issue of phantom carts persisting from previous development sessions
+    if (!localStorage.getItem('sweettree_first_visit_cleared_v1')) {
+      localStorage.removeItem('sweettree_cart');
+      localStorage.setItem('sweettree_first_visit_cleared_v1', 'true');
+      cart = null; // Cart is now empty
+    }
+
     if (cart) {
       try {
         const parsedCart = JSON.parse(cart);

@@ -10,6 +10,8 @@ import { ShieldCheck, MapPin, Truck, Check, Calendar, ArrowLeft, ShoppingBag } f
 import Image from 'next/image';
 import { useNotification } from '../../../../context/NotificationContext';
 
+import confetti from 'canvas-confetti';
+
 export default function OrderTrackingPage() {
   const { id } = useParams();
   const dispatch = useDispatch();
@@ -34,6 +36,11 @@ export default function OrderTrackingPage() {
   useEffect(() => {
     if (isNewSuccess) {
       dispatch(clearCart());
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
     }
   }, [isNewSuccess, dispatch]);
 
