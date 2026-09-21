@@ -51,8 +51,8 @@ export const processICICIRefund = async (merchantTranId, refundAmount, originalT
   // Construct Refund Payload based on typical ICICI Server-to-Server Refund API specs
   const refundPayload = {
     merchantId,
-    merchantTranId, // New unique ID for the refund transaction itself
-    originalMerchantTranId: originalMerchantTranId || merchantTranId, 
+    merchantTxnNo: merchantTranId,
+    originalMerchantTxnNo: originalMerchantTranId || merchantTranId, 
     originalTxnId,
     amount: Number(refundAmount).toFixed(2),
     transactionType: 'REFUND'
