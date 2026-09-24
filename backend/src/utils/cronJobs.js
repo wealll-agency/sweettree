@@ -31,8 +31,10 @@ export const cleanupAbandonedOrders = async () => {
         await payment.save();
       }
 
-      // Restore stock
-      await restoreOrderStock(order, 'Abandoned Order Timeout Stock Restoral');
+      // Restore stock (Only if COD, as ICICI pending orders never deducted stock)
+      if (order.paymentMode === 'COD') {
+        await restoreOrderStock(order, 'Abandoned Order Timeout Stock Restoral');
+      }
     }
   } catch (error) {
     console.error('[Cron] Error cleaning up abandoned orders:', error);

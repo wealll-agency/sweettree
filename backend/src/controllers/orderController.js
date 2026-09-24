@@ -13,6 +13,58 @@ import { generateICICISecureHash, verifyICICISecureHash, processICICIRefund } fr
 import config from '../config/env.js';
 import { restoreOrderStock } from '../utils/stockRestoral.js';
 
+// Helper: Deduct order stock
+const deductOrderStock = async (order, userId, session) => {
+  for (const item of order.items) {
+    if (item.itemType === 'Combo') {
+      for (const comp of item.comboComponentsSnapshot) {
+        const deductQty = comp.quantity * item.quantity;
+        await Product.findByIdAndUpdate(comp.product, { $inc: { stock: -deductQty, totalSold: deductQty } }, { runValidators: true, session });
+        const updatedInv = await Inventory.findOneAndUpdate(
+          { product: comp.product },
+          { 
+            $inc: { stockQuantity: -deductQty },
+            $push: {
+              adjustments: {
+                quantityChanged: -deductQty,
+                type: 'Sale',
+                reason: `Combo Order Placement (Local ID: ${order._id}, Combo: ${item.name})`,
+                adjustedBy: userId
+              }
+            }
+          },
+          { new: true, runValidators: true, session }
+        );
+        if (updatedInv && updatedInv.stockQuantity <= updatedInv.lowStockThreshold) {
+          updatedInv.adminRead = false;
+          await updatedInv.save({ session });
+        }
+      }
+    } else {
+      await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity, totalSold: item.quantity } }, { runValidators: true, session });
+      const updatedInv = await Inventory.findOneAndUpdate(
+        { product: item.product },
+        { 
+          $inc: { stockQuantity: -item.quantity },
+          $push: {
+            adjustments: {
+              quantityChanged: -item.quantity,
+              type: 'Sale',
+              reason: `Order Placement (Local ID: ${order._id})`,
+              adjustedBy: userId
+            }
+          }
+        },
+        { new: true, runValidators: true, session }
+      );
+      if (updatedInv && updatedInv.stockQuantity <= updatedInv.lowStockThreshold) {
+        updatedInv.adminRead = false;
+        await updatedInv.save({ session });
+      }
+    }
+  }
+};
+
 // Helper: Calculate order totals
 const calculateOrderTotals = async (items, couponCode) => {
   let subtotal = 0;
@@ -214,6 +266,7 @@ export const createOrder = async (req, res, next) => {
     const savedOrder = await order.save({ session });
 
     // 2. Reduce Stock in Inventory & Product Collections
+    if (paymentMode === 'COD') {
     for (const item of validatedItems) {
       if (item.itemType === 'Combo') {
         for (const comp of item.comboComponentsSnapshot) {
@@ -261,6 +314,7 @@ export const createOrder = async (req, res, next) => {
           await updatedInv.save({ session });
         }
       }
+    }
     }
 
     // Increment Coupon usages if code was valid
@@ -490,7 +544,7 @@ export const iciciCallback = async (req, res, next) => {
         await lockedPayment.save({ session });
 
         // Restore stock
-        await restoreOrderStock(lockedOrder, 'Amount Mismatch Stock Restoral', session);
+        // await restoreOrderStock(lockedOrder, 'Amount Mismatch Stock Restoral', session);
 
         await session.commitTransaction();
         session.endSession();
@@ -505,6 +559,8 @@ export const iciciCallback = async (req, res, next) => {
       lockedOrder.bankRefNo = bankRefNo;
       lockedOrder.paymentMode = 'ICICI';
       await lockedOrder.save({ session });
+
+      await deductOrderStock(lockedOrder, lockedOrder.user, session);
 
       lockedPayment.status = 'Captured';
       lockedPayment.gatewayTxnId = txnId;
@@ -534,7 +590,7 @@ export const iciciCallback = async (req, res, next) => {
       await lockedPayment.save({ session });
 
       // Restore stock
-      await restoreOrderStock(lockedOrder, 'Payment Failure Stock Restoral', session);
+      // await restoreOrderStock(lockedOrder, 'Payment Failure Stock Restoral', session);
 
       await session.commitTransaction();
       session.endSession();
@@ -628,7 +684,8 @@ export const iciciAdvice = async (req, res, next) => {
         lockedPayment.encResponse = JSON.stringify(responseParams);
         await lockedPayment.save({ session });
 
-        await restoreOrderStock(lockedOrder, 'Amount Mismatch Stock Restoral', session);
+        // Stock was not deducted, no need to restore
+        // await restoreOrderStock(lockedOrder, 'Amount Mismatch Stock Restoral', session);
 
         await session.commitTransaction();
         session.endSession();
@@ -642,6 +699,8 @@ export const iciciAdvice = async (req, res, next) => {
       lockedOrder.bankRefNo = bankRefNo;
       lockedOrder.paymentMode = 'ICICI';
       await lockedOrder.save({ session });
+
+      await deductOrderStock(lockedOrder, lockedOrder.user, session);
 
       lockedPayment.status = 'Captured';
       lockedPayment.gatewayTxnId = txnId;
@@ -669,7 +728,8 @@ export const iciciAdvice = async (req, res, next) => {
       lockedPayment.encResponse = JSON.stringify(responseParams);
       await lockedPayment.save({ session });
 
-      await restoreOrderStock(lockedOrder, 'Payment Failure Stock Restoral', session);
+      // Stock was not deducted, no need to restore
+      // await restoreOrderStock(lockedOrder, 'Payment Failure Stock Restoral', session);
 
       await session.commitTransaction();
       session.endSession();
@@ -694,7 +754,13 @@ export const iciciAdvice = async (req, res, next) => {
 // @access  Private
 export const getMyOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find({ user: req.user._id })
+    const orders = await Order.find({ 
+      user: req.user._id,
+      $or: [
+        { paymentMode: 'ICICI', paymentStatus: 'Paid' },
+        { paymentMode: 'COD' }
+      ]
+    })
       .populate('items.product', 'images name')
       .populate('items.combo', 'image name')
       .sort({ createdAt: -1 })

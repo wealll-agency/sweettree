@@ -80,7 +80,7 @@ export default function OrderHistoryPage() {
         </div>
       ) : (
         <div className="d-flex flex-column gap-4">
-          {orders.map((order) => (
+          {orders.filter(o => o.paymentMode === 'COD' || o.paymentStatus === 'Paid').map((order) => (
             <Link 
               key={order._id} 
               href={`/user/orders/${order._id}`}
