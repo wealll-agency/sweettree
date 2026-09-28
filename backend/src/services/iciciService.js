@@ -48,12 +48,12 @@ export const processICICIRefund = async (merchantTranId, refundAmount, originalT
   const refundUrl = config.ICICI.REFUND_URL;
   if (!refundUrl) throw new Error('ICICI_REFUND_URL is missing from environment variables');
   
-  // Construct Refund Payload based on typical ICICI Server-to-Server Refund API specs
+  // Construct Refund Payload based on dummy ICICI Server-to-Server Refund API specs
   const refundPayload = {
     merchantId,
+    aggregatorID: config.ICICI.AGG_ID,
     merchantTxnNo: merchantTranId,
-    originalMerchantTxnNo: originalMerchantTranId || merchantTranId, 
-    originalTxnId,
+    originalTxnNo: originalMerchantTranId || originalTxnId, 
     amount: Number(refundAmount).toFixed(2),
     transactionType: 'REFUND'
   };
@@ -73,10 +73,10 @@ export const processICICIRefund = async (merchantTranId, refundAmount, originalT
       throw new Error('Invalid Secure Hash in ICICI Refund Response');
     }
 
-    if (data.ResponseCode === '0000' || data.ResponseCode === '0') {
-      return { success: true, refundId: data.refundId || data.txnId, data };
+    if (data.responseCode === 'R1000' || data.ResponseCode === 'R1000' || data.ResponseCode === '0000' || data.ResponseCode === '0') {
+      return { success: true, refundId: data.txnID || data.txnId || data.refundId, data };
     } else {
-      return { success: false, message: data.message || 'Refund rejected by ICICI', data };
+      return { success: false, message: data.respDescription || data.message || 'Refund rejected by ICICI', data };
     }
   } catch (error) {
     console.error('ICICI Refund Error:', error);
