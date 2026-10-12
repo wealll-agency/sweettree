@@ -84,7 +84,7 @@ export default function AdminSidebar() {
       isSubmenu: true,
       badge: pendingRefunds,
       subItems: [
-        { label: 'Pending', path: '/admin/refunds/pending' },
+        { label: 'Pending', path: '/admin/refunds/pending', badge: pendingRefunds },
         { label: 'Approved', path: '/admin/refunds/approved' },
         { label: 'Refunded', path: '/admin/refunds/refunded' },
         { label: 'Rejected', path: '/admin/refunds/rejected' }
@@ -215,6 +215,7 @@ export default function AdminSidebar() {
                             style={{
                               display: 'flex',
                               alignItems: 'center',
+                              justifyContent: 'space-between',
                               color: isActive ? '#FFFFFF' : 'rgba(250, 249, 246, 0.65)',
                               backgroundColor: isActive ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
                               textDecoration: 'none',
@@ -224,8 +225,15 @@ export default function AdminSidebar() {
                               whiteSpace: 'nowrap'
                             }}
                           >
-                            <span className="me-2" style={{ fontSize: '10px' }}>•</span>
-                            {subItem.label}
+                            <div className="d-flex align-items-center">
+                              <span className="me-2" style={{ fontSize: '10px' }}>•</span>
+                              {subItem.label}
+                            </div>
+                            {subItem.badge > 0 && (
+                              <span className="badge bg-danger rounded-pill" style={{ fontSize: '10px' }}>
+                                {subItem.badge}
+                              </span>
+                            )}
                           </Link>
                         );
                       })}

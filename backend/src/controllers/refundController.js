@@ -112,30 +112,40 @@ export const createCustomerRefundRequest = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    // Check if refund request already exists
-    const existingRequest = await RefundRequest.findOne({ order: orderId });
-    if (existingRequest) {
-      return res.status(400).json({ success: false, message: 'A request for this order already exists' });
+    if (order.orderStatus === 'Cancelled') {
+      return res.status(400).json({ success: false, message: 'Order is already cancelled' });
     }
 
-    // If order is not shipped, we can directly cancel it (and still create the refund request if paid)
-    // For simplicity, we just create a refund request and let admin handle the rest.
-    if (order.orderStatus === 'Placed' || order.orderStatus === 'Confirmed') {
+    if (order.orderStatus !== 'Delivered') {
+      // Cancellation Flow
+      if (['Pending', 'Placed', 'Confirmed'].includes(order.orderStatus)) {
         order.orderStatus = 'Cancelled';
         await order.save();
+        // Strict Rule: Do not automatically create a refund request for cancellations.
+        return res.status(200).json({ success: true, message: 'Order has been successfully cancelled.' });
+      } else {
+        // Strict Rule: Order cannot be cancelled once it is packed or shipped.
+        return res.status(400).json({ success: false, message: 'Order cannot be cancelled once it is packed or shipped.' });
+      }
+    } else {
+      // Refund Request Flow (Only after delivery)
+      const existingRequest = await RefundRequest.findOne({ order: orderId });
+      if (existingRequest) {
+        return res.status(400).json({ success: false, message: 'A refund request for this order already exists' });
+      }
+
+      const refund = new RefundRequest({
+        order: orderId,
+        user: req.user._id,
+        reason: reason || 'Customer Request',
+        customerComment,
+        amount: order.totalAmount,
+        status: 'Pending'
+      });
+
+      await refund.save();
+      return res.status(201).json({ success: true, refund, message: 'Refund request submitted successfully.' });
     }
-
-    const refund = new RefundRequest({
-      order: orderId,
-      user: req.user._id,
-      reason: reason || 'Customer Request',
-      customerComment,
-      amount: order.totalAmount,
-      status: 'Pending'
-    });
-
-    await refund.save();
-    res.status(201).json({ success: true, refund });
   } catch (error) {
     next(error);
   }

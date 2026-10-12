@@ -519,14 +519,14 @@ export const iciciCallback = async (req, res, next) => {
       session.endSession();
       return res.redirect(`${frontendUrl}/user/orders/${lockedOrder._id}?success=true`);
     }
-    if (lockedOrder.paymentStatus === 'Failed' && responseCode !== '0000' && responseCode !== '0') {
+    if (lockedOrder.paymentStatus === 'Failed' && responseCode !== '0000' && responseCode !== '0' && responseCode !== 'E000' && responseCode !== 'Success') {
       await session.commitTransaction();
       session.endSession();
       return res.redirect(`${frontendUrl}/checkout?error=${encodeURIComponent(message || 'Payment Failed')}`);
     }
 
-    // ICICI Success ResponseCode is typically '0000' (or '0' depending on exact spec). Assuming '0000'.
-    if (responseCode === '0000' || responseCode === '0') {
+    // ICICI Success ResponseCode is typically '0000', '0', 'E000' (Eazypay standard), or 'Success'.
+    if (responseCode === '0000' || responseCode === '0' || responseCode === 'E000' || responseCode === 'Success') {
       // Validate amount
       if (Number(amount) !== Number(lockedOrder.totalAmount)) {
         lockedOrder.paymentStatus = 'Failed';
@@ -662,13 +662,13 @@ export const iciciAdvice = async (req, res, next) => {
       session.endSession();
       return res.status(200).send('OK');
     }
-    if (lockedOrder.paymentStatus === 'Failed' && responseCode !== '0000' && responseCode !== '0') {
+    if (lockedOrder.paymentStatus === 'Failed' && responseCode !== '0000' && responseCode !== '0' && responseCode !== 'E000' && responseCode !== 'Success') {
       await session.commitTransaction();
       session.endSession();
       return res.status(200).send('OK');
     }
 
-    if (responseCode === '0000' || responseCode === '0') {
+    if (responseCode === '0000' || responseCode === '0' || responseCode === 'E000' || responseCode === 'Success') {
       if (Number(amount) !== Number(lockedOrder.totalAmount)) {
         lockedOrder.paymentStatus = 'Failed';
         lockedOrder.gatewayTxnId = txnId;
@@ -755,11 +755,7 @@ export const iciciAdvice = async (req, res, next) => {
 export const getMyOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ 
-      user: req.user._id,
-      $or: [
-        { paymentMode: 'ICICI', paymentStatus: 'Paid' },
-        { paymentMode: 'COD' }
-      ]
+      user: req.user._id
     })
       .populate('items.product', 'images name')
       .populate('items.combo', 'image name')
@@ -808,12 +804,7 @@ export const getAllOrders = async (req, res, next) => {
     const limitNum = Number(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    const query = {
-      $or: [
-        { paymentStatus: 'Paid', orderStatus: { $ne: 'Cancelled' } },
-        { paymentMode: 'COD', orderStatus: { $ne: 'Cancelled' } }
-      ]
-    };
+    const query = {};
 
     const total = await Order.countDocuments(query);
     const orders = await Order.find(query)
@@ -1003,7 +994,7 @@ export const mockICICIProcess = (req, res) => {
     merchantId: process.env.ICICI_MERCHANT_ID || 'TEST_MERCHANT_123',
     merchantTranId: merchantTranId,
     amount: amount,
-    ResponseCode: status === 'success' ? '0000' : 'E000',
+    ResponseCode: status === 'success' ? 'E000' : 'E003',
     txnId: 'MOCK_TXN_' + Date.now(),
     bankRefNo: 'MOCK_BANK_' + Math.floor(Math.random() * 1000000),
     message: status === 'success' ? 'Transaction Successful' : 'Transaction Failed'

@@ -61,7 +61,9 @@ if (config.NODE_ENV === 'production') {
     'AGG_ID',
     'SECURE_HASH_KEY',
     'INITIATE_SALE_URL',
-    'RETURN_URL'
+    'RETURN_URL',
+    'STATUS_URL',
+    'REFUND_URL'
   ];
   
   for (const key of requiredIciciVars) {
